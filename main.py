@@ -42,7 +42,7 @@ class MainWindow(QMainWindow):
         self.l = QLabel("Start")
 
         b = QPushButton("DANGER!")
-        b.pressed.connect(self.oh_no)
+        b.pressed.connect(self.open_file)
         layout.addWidget(self.l)
         layout.addWidget(b)
 
@@ -66,6 +66,10 @@ class MainWindow(QMainWindow):
         print(s)
     def thread_complete(self):
         print("THREAD COMPLETE")
+    def open_file(self):
+        file_name = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()", "","All Files (*);;CSV Files (*.csv)")
+        print("selected_file:")
+        print(file_name)
     def oh_no(self):
         worker = Worker(self.execute_this_fn)
         worker.signals.result.connect(self.print_output)
