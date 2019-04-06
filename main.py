@@ -109,12 +109,40 @@ class MainWindow(QMainWindow):
             for eachAsset in balance_result.data:
                 this_list_item = QListWidgetItem()
                 this_list_item.setData(0x0100, eachAsset)
-                this_list_item.setText(eachAsset.name)
+                this_list_item.setText(eachAsset.name.ljust(25)+":"+ eachAsset.balance)
                 balance_list.addItem(this_list_item)
-            balance_list.itemClicked.connect(self.wallet_list_record_selected)
+            balance_list.itemClicked.connect(self.balance_list_record_selected)
             self.balance_list = balance_list
             self.Balance_layout.addWidget(self.balance_list)
         return
+    def balance_list_record_selected(self, itemSelect):
+        wallet_instance_in_item = itemSelect.data(0x0100)
+        print(wallet_instance_in_item)
+        single_asset_layout = QVBoxLayout()
+        Title_Label = QLabel(wallet_instance_in_item.name)
+        Title_Label.setAlignment(Qt.AlignCenter)
+        single_asset_layout.addWidget(Title_Label)
+
+        balance_Label = QLabel(wallet_instance_in_item.balance)
+        balance_Label.setAlignment(Qt.AlignCenter)
+        single_asset_layout.addWidget(balance_Label)
+
+        deposit_Label = QLabel(wallet_instance_in_item.balance)
+        balance_Label.setAlignment(Qt.AlignCenter)
+        single_asset_layout.addWidget(balance_Label)
+
+
+
+        button_action = QPushButton("Show deposit address")
+        button_action.pressed.connect(self.open_file)
+
+
+        single_asset_layout.addWidget(button_action)
+ 
+        self.single_asset_widget = QWidget()
+        self.single_asset_widget.setLayout(single_asset_layout)
+        self.single_asset_widget.show()
+
     def wallet_list_record_selected(self, itemSelect):
         wallet_instance_in_item = itemSelect.data(0x0100)
         print(wallet_instance_in_item)
