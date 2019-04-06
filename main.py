@@ -91,8 +91,14 @@ class MainWindow(QMainWindow):
                 this_list_item.setData(0x0100, each_wallet)
                 this_list_item.setText(each_wallet.userid)
                 wallet_list.addItem(this_list_item)
-            wallet_list.itemClicked.connect(self.wallet_list_record_selected)
-            self.wallet_list_widget = wallet_list
+                wallet_list.itemClicked.connect(self.wallet_list_record_selected)
+            select_wallet_btn = QPushButton("Load selected wallet")
+            select_wallet_btn.pressed.connect(self.open_selected_wallet)
+            wallet_record_and_select_layout = QVBoxLayout()
+            wallet_record_and_select_layout.addWidget(wallet_list)
+            wallet_record_and_select_layout.addWidget(select_wallet_btn)
+            self.wallet_list_widget =  QWidget()
+            self.wallet_list_widget.setLayout(wallet_record_and_select_layout)
             self.wallet_list_widget.show()
             #self.rootLayout.addWidget(wallet_list)
 
@@ -144,21 +150,28 @@ class MainWindow(QMainWindow):
         self.single_asset_widget.show()
 
     def wallet_list_record_selected(self, itemSelect):
-        wallet_instance_in_item = itemSelect.data(0x0100)
-        print(wallet_instance_in_item)
-        print("%s selected"%wallet_instance_in_item.userid)
-        self.Balance_layout = QVBoxLayout()
-        Title_Label = QLabel("Balance")
-        Title_Label.setAlignment(Qt.AlignCenter)
-        self.Balance_layout.addWidget(Title_Label)
-        self.balance_widget = QWidget()
-        self.balance_widget.setLayout(self.Balance_layout)
-        self.balance_widget.show()
+        self.selected_wallet_record = itemSelect.data(0x0100)
+        print(self.selected_wallet_record)
+        print("%s selected"%self.selected_wallet_record.userid)
 
-        worker = Balance_Thread(wallet_instance_in_item)
-        worker.signals.result.connect(self.received_balance_result)
-        worker.signals.finished.connect(self.thread_complete)
-        self.threadPool.start(worker)
+
+
+    def open_selected_wallet(self):
+        if (hasattr(self, "selected_wallet_record")):
+            self.Balance_layout = QVBoxLayout()
+            Title_Label = QLabel("Balance")
+            Title_Label.setAlignment(Qt.AlignCenter)
+            self.Balance_layout.addWidget(Title_Label)
+            self.balance_widget = QWidget()
+            self.balance_widget.setLayout(self.Balance_layout)
+            self.balance_widget.show()
+         
+            worker = Balance_Thread(self.selected_wallet_record)
+            worker.signals.result.connect(self.received_balance_result)
+            worker.signals.finished.connect(self.thread_complete)
+            self.threadPool.start(worker)
+        else:
+            return
 
 
 app = QApplication([])
