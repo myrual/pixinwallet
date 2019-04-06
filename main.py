@@ -11,10 +11,10 @@ class WorkerSignals(QObject):
     finished = pyqtSignal()
     error = pyqtSignal(tuple)
     result = pyqtSignal(object)
-class Worker(QRunnable):
-    def __init__(self, fn, *args, **kwargs):
-        super(Worker, self).__init__()
-        self.fn = fn
+class Balance_Thread(QRunnable):
+    def __init__(self, wallt_obj, *args, **kwargs):
+        super(Balance_Thread, self).__init__()
+        self.wallt_obj = wallt_obj
         self.args = args
         self.kwargs = kwargs
         self.signals = WorkerSignals()
@@ -22,8 +22,7 @@ class Worker(QRunnable):
     @pyqtSlot()
     def run(self):
         try:
-            result = self.fn(*self.args, **self.kwargs, status = self.signals.status,
-                    progress=self.signals.progress,)
+            result = self.wallt_obj.get_balance()
         except:
             traceback.print_exc()
             exctype, value = sys.exc_info()[:2]
@@ -32,8 +31,7 @@ class Worker(QRunnable):
             self.signals.result.emit(result)
         finally:
             self.signals.finished.emit()
-        time.sleep(5)
-        print("Thread complete")
+        print("Balance Thread")
 class MainWindow(QMainWindow):
     def __init__(self, *args, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
@@ -96,19 +94,30 @@ class MainWindow(QMainWindow):
                 wallet_list.addItem(this_list_item)
                 i+=1
             wallet_list.itemClicked.connect(self.wallet_list_record_selected)
-            self.rootLayout.addWidget(wallet_list)
+            self.wallet_list_widget = wallet_list
+            self.wallet_list_widget.show()
+            #self.rootLayout.addWidget(wallet_list)
 
     def oh_no(self):
-        worker = Worker(self.execute_this_fn)
+        worker = Balance_Thread(self.execute_this_fn)
         worker.signals.result.connect(self.print_output)
         worker.signals.finished.connect(self.thread_complete)
         self.threadPool.start(worker)
     def recurring_timer(self):
         self.counter += 1
+    def balance_result(self):
+        return
     def wallet_list_record_selected(self, itemSelect):
-        data_in_item = itemSelect.data(0x0100)
-        print(data_in_item)
-        print("%s selected"%data_in_item.userid)
+        wallet_instance_in_item = itemSelect.data(0x0100)
+        print(wallet_instance_in_item)
+        print("%s selected"%wallet_instance_in_item.userid)
+        self.Balance_layout = QVBoxLayout()
+        Title_Label = QLabel("Balance")
+        Title_Label.setAlignment(Qt.AlignCenter)
+        self.Balance_layout.addWidget(Title_Label)
+        self.balance_widget = QWidget()
+        self.balance_widget.setLayout(self.Balance_layout)
+        self.balance_widget.show()
 
 app = QApplication([])
 window = MainWindow()
