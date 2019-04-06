@@ -86,13 +86,11 @@ class MainWindow(QMainWindow):
             self.l.setText("Select Wallet record")
             wallet_records = wallet_api.load_wallet_csv_file(file_name)
             wallet_list = QListWidget()
-            i = 0
             for each_wallet in wallet_records:
                 this_list_item = QListWidgetItem()
                 this_list_item.setData(0x0100, each_wallet)
                 this_list_item.setText(each_wallet.userid)
                 wallet_list.addItem(this_list_item)
-                i+=1
             wallet_list.itemClicked.connect(self.wallet_list_record_selected)
             self.wallet_list_widget = wallet_list
             self.wallet_list_widget.show()
@@ -105,7 +103,17 @@ class MainWindow(QMainWindow):
         self.threadPool.start(worker)
     def recurring_timer(self):
         self.counter += 1
-    def balance_result(self):
+    def received_balance_result(self, balance_result):
+        if(balance_result.is_success):
+            balance_list = QListWidget()
+            for eachAsset in balance_result.data:
+                this_list_item = QListWidgetItem()
+                this_list_item.setData(0x0100, eachAsset)
+                this_list_item.setText(eachAsset.name)
+                balance_list.addItem(this_list_item)
+            balance_list.itemClicked.connect(self.wallet_list_record_selected)
+            self.balance_list = balance_list
+            self.Balance_layout.addWidget(self.balance_list)
         return
     def wallet_list_record_selected(self, itemSelect):
         wallet_instance_in_item = itemSelect.data(0x0100)
@@ -118,6 +126,12 @@ class MainWindow(QMainWindow):
         self.balance_widget = QWidget()
         self.balance_widget.setLayout(self.Balance_layout)
         self.balance_widget.show()
+
+        worker = Balance_Thread(wallet_instance_in_item)
+        worker.signals.result.connect(self.received_balance_result)
+        worker.signals.finished.connect(self.thread_complete)
+        self.threadPool.start(worker)
+
 
 app = QApplication([])
 window = MainWindow()
