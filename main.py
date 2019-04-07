@@ -115,39 +115,22 @@ class MainWindow(QMainWindow):
             for eachAsset in balance_result.data:
                 this_list_item = QListWidgetItem()
                 this_list_item.setData(0x0100, eachAsset)
-                this_list_item.setText(eachAsset.name.ljust(25)+":"+ eachAsset.balance)
+                this_list_item.setText(eachAsset.name)
                 balance_list.addItem(this_list_item)
             balance_list.itemClicked.connect(self.balance_list_record_selected)
+            balance_list.currentItemChanged.connect(self.balance_list_record_selection_actived)
             self.balance_list = balance_list
             self.Balance_layout.addWidget(self.balance_list)
         return
+    def balance_list_record_selection_actived(self,itemCurr, itemPre):
+        self.asset_instance_in_item = itemCurr.data(0x0100)
+        self.asset_balance_label.setText(self.asset_instance_in_item.balance)
+        self.asset_balance_symbol_label.setText(self.asset_instance_in_item.symbol)
+
     def balance_list_record_selected(self, itemSelect):
-        wallet_instance_in_item = itemSelect.data(0x0100)
-        print(wallet_instance_in_item)
-        single_asset_layout = QVBoxLayout()
-        Title_Label = QLabel(wallet_instance_in_item.name)
-        Title_Label.setAlignment(Qt.AlignCenter)
-        single_asset_layout.addWidget(Title_Label)
-
-        balance_Label = QLabel(wallet_instance_in_item.balance)
-        balance_Label.setAlignment(Qt.AlignCenter)
-        single_asset_layout.addWidget(balance_Label)
-
-        deposit_Label = QLabel(wallet_instance_in_item.balance)
-        balance_Label.setAlignment(Qt.AlignCenter)
-        single_asset_layout.addWidget(balance_Label)
-
-
-
-        button_action = QPushButton("Show deposit address")
-        button_action.pressed.connect(self.open_file)
-
-
-        single_asset_layout.addWidget(button_action)
- 
-        self.single_asset_widget = QWidget()
-        self.single_asset_widget.setLayout(single_asset_layout)
-        self.single_asset_widget.show()
+        self.asset_instance_in_item = itemSelect.data(0x0100)
+        self.asset_balance_label.setText(self.asset_instance_in_item.balance)
+        self.asset_balance_symbol_label.setText(self.asset_instance_in_item.symbol)
 
     def wallet_list_record_selected(self, itemSelect):
         self.selected_wallet_record = itemSelect.data(0x0100)
@@ -156,16 +139,69 @@ class MainWindow(QMainWindow):
 
 
 
+    def copy_to_system(self, text_to_copy):
+        clipboard = QApplication.clipboard()
+        clipboard.setText(text_to_copy)
+        print(text_to_copy)
+    def open_deposit_address_asset(self):
+        print("hello")
+        deposit_address_layout = QVBoxLayout()
+
+        deposit_address_title_value_segments = self.asset_instance_in_item.deposit_address()
+        for each_seg in deposit_address_title_value_segments:
+            thisPartLayout = QHBoxLayout()
+            copy_to_clipboard_btn = QPushButton("Copy")
+            copy_to_clipboard_btn.pressed.connect(lambda:  self.copy_to_system(each_seg["value"]))
+            thisPartLayout.addWidget(copy_to_clipboard_btn)
+            thisLabel = QLabel(each_seg["title"] + " : " + each_seg["value"])
+            thisPartLayout.addWidget(thisLabel)
+            this_part_widget = QWidget()
+            this_part_widget.setLayout(thisPartLayout)
+            deposit_address_layout.addWidget(this_part_widget)
+
+        self.deposit_address_widget = QWidget()
+        self.deposit_address_widget.setLayout(deposit_address_layout)
+        self.deposit_address_widget.show()
     def open_selected_wallet(self):
         if (hasattr(self, "selected_wallet_record")):
+            self.Balance_list_detail_layout   = QHBoxLayout()
+            self.Balance_detail_layout = QVBoxLayout()
+            self.selected_asset_send = QPushButton("Send")
+            self.selected_asset_receive = QPushButton("Receive")
+            self.selected_asset_receive.pressed.connect(self.open_deposit_address_asset)
+            self.selected_asset_manageasset = QPushButton("Manage address")
+
+            self.asset_balance_label = QLabel()
+            balance_font = self.asset_balance_label.font()
+            balance_font.setPointSize(40)
+            self.asset_balance_label.setFont(balance_font)
+            self.asset_balance_label.setAlignment(Qt.AlignCenter)
+            self.asset_balance_symbol_label = QLabel()
+            self.asset_balance_symbol_label.setAlignment(Qt.AlignCenter)
+            asset_balance_symbole_layout = QHBoxLayout()
+            asset_balance_symbole_layout.addWidget(self.asset_balance_label)
+            asset_balance_symbole_layout.addWidget(self.asset_balance_symbol_label)
+            asset_balance_symbole_label_holder_widget = QWidget()
+            asset_balance_symbole_label_holder_widget.setLayout(asset_balance_symbole_layout)
+
+            self.Balance_detail_layout.addWidget(asset_balance_symbole_label_holder_widget)
+            self.Balance_detail_layout.addWidget(self.selected_asset_send)
+            self.Balance_detail_layout.addWidget(self.selected_asset_receive)
+            self.Balance_detail_layout.addWidget(self.selected_asset_manageasset)
+
             self.Balance_layout = QVBoxLayout()
-            Title_Label = QLabel("Balance")
-            Title_Label.setAlignment(Qt.AlignCenter)
-            self.Balance_layout.addWidget(Title_Label)
-            self.balance_widget = QWidget()
-            self.balance_widget.setLayout(self.Balance_layout)
-            self.balance_widget.show()
-         
+            self.balance_list_widget = QWidget()
+            self.balance_list_widget.setLayout(self.Balance_layout)
+            self.balance_list_widget.show()
+            self.balance_detail_widget = QWidget()
+            self.balance_detail_widget.setLayout(self.Balance_detail_layout)
+            self.balance_detail_widget.show()
+            self.Balance_list_detail_layout.addWidget(self.balance_list_widget)
+            self.Balance_list_detail_layout.addWidget(self.balance_detail_widget)
+            self.balance_list_detail_widget = QWidget()
+            self.balance_list_detail_widget.setLayout(self.Balance_list_detail_layout)
+            self.balance_list_detail_widget.show()
+
             worker = Balance_Thread(self.selected_wallet_record)
             worker.signals.result.connect(self.received_balance_result)
             worker.signals.finished.connect(self.thread_complete)
