@@ -120,6 +120,8 @@ class MainWindow(QMainWindow):
             balance_list.itemClicked.connect(self.balance_list_record_selected)
             balance_list.currentItemChanged.connect(self.balance_list_record_selection_actived)
             self.balance_list = balance_list
+            if(len(balance_result.data) > 0):
+                self.balance_list.setCurrentRow(0)
             self.Balance_layout.addWidget(self.balance_list)
         return
     def balance_list_record_selection_actived(self,itemCurr, itemPre):
@@ -139,10 +141,13 @@ class MainWindow(QMainWindow):
 
 
 
-    def copy_to_system(self, text_to_copy):
+    def copy_to_system(self, text_and_button):
+        text_to_copy = text_and_button[0]
+        copy_btn = text_and_button[1]
         clipboard = QApplication.clipboard()
         clipboard.setText(text_to_copy)
         print(text_to_copy)
+        copy_btn.setText("Copied")
     def open_deposit_address_asset(self):
         print("hello")
         deposit_address_layout = QVBoxLayout()
@@ -150,11 +155,11 @@ class MainWindow(QMainWindow):
         deposit_address_title_value_segments = self.asset_instance_in_item.deposit_address()
         for each_seg in deposit_address_title_value_segments:
             thisPartLayout = QHBoxLayout()
-            copy_to_clipboard_btn = QPushButton("Copy")
-            copy_to_clipboard_btn.pressed.connect(lambda:  self.copy_to_system(each_seg["value"]))
-            thisPartLayout.addWidget(copy_to_clipboard_btn)
+            copy_to_clipboard_btn = QPushButton("Copy to clipboard")
+            copy_to_clipboard_btn.pressed.connect(lambda:  self.copy_to_system((each_seg["value"], copy_to_clipboard_btn)))
             thisLabel = QLabel(each_seg["title"] + " : " + each_seg["value"])
             thisPartLayout.addWidget(thisLabel)
+            thisPartLayout.addWidget(copy_to_clipboard_btn)
             this_part_widget = QWidget()
             this_part_widget.setLayout(thisPartLayout)
             deposit_address_layout.addWidget(this_part_widget)
@@ -164,7 +169,7 @@ class MainWindow(QMainWindow):
         self.deposit_address_widget.show()
     def open_selected_wallet(self):
         if (hasattr(self, "selected_wallet_record")):
-            self.Balance_list_detail_layout   = QHBoxLayout()
+            self.balance_and_detail_layout = QHBoxLayout()
             self.Balance_detail_layout = QVBoxLayout()
             self.selected_asset_send = QPushButton("Send")
             self.selected_asset_receive = QPushButton("Receive")
@@ -190,17 +195,17 @@ class MainWindow(QMainWindow):
             self.Balance_detail_layout.addWidget(self.selected_asset_manageasset)
 
             self.Balance_layout = QVBoxLayout()
-            self.balance_list_widget = QWidget()
-            self.balance_list_widget.setLayout(self.Balance_layout)
-            self.balance_list_widget.show()
-            self.balance_detail_widget = QWidget()
-            self.balance_detail_widget.setLayout(self.Balance_detail_layout)
-            self.balance_detail_widget.show()
-            self.Balance_list_detail_layout.addWidget(self.balance_list_widget)
-            self.Balance_list_detail_layout.addWidget(self.balance_detail_widget)
-            self.balance_list_detail_widget = QWidget()
-            self.balance_list_detail_widget.setLayout(self.Balance_list_detail_layout)
-            self.balance_list_detail_widget.show()
+            self.widget_balance_list = QWidget()
+            self.widget_balance_list.setLayout(self.Balance_layout)
+            self.widget_balance_list.show()
+            self.widget_balance_detail = QWidget()
+            self.widget_balance_detail.setLayout(self.Balance_detail_layout)
+            self.widget_balance_detail.show()
+            self.balance_and_detail_layout.addWidget(self.widget_balance_list)
+            self.balance_and_detail_layout.addWidget(self.widget_balance_detail)
+            self.widget_balance = QWidget()
+            self.widget_balance.setLayout(self.balance_and_detail_layout)
+            self.widget_balance.show()
 
             worker = Balance_Thread(self.selected_wallet_record)
             worker.signals.result.connect(self.received_balance_result)
