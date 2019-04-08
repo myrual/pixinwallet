@@ -84,23 +84,20 @@ class MainWindow(QMainWindow):
         else:
             print("User select file with %s" % file_name)
             self.l.setText("Select Wallet record")
-            wallet_records = wallet_api.load_wallet_csv_file(file_name)
-            wallet_list = QListWidget()
-            for each_wallet in wallet_records:
-                this_list_item = QListWidgetItem()
-                this_list_item.setData(0x0100, each_wallet)
-                this_list_item.setText(each_wallet.userid)
-                wallet_list.addItem(this_list_item)
-                wallet_list.itemClicked.connect(self.wallet_list_record_selected)
-            select_wallet_btn = QPushButton("Load selected wallet")
-            select_wallet_btn.pressed.connect(self.open_selected_wallet)
-            wallet_record_and_select_layout = QVBoxLayout()
-            wallet_record_and_select_layout.addWidget(wallet_list)
-            wallet_record_and_select_layout.addWidget(select_wallet_btn)
-            self.wallet_list_widget =  QWidget()
-            self.wallet_list_widget.setLayout(wallet_record_and_select_layout)
-            self.wallet_list_widget.show()
-            #self.rootLayout.addWidget(wallet_list)
+            self.selected_wallet_record = wallet_api.load_wallet_from_clear_base64_file(file_name)
+            self.open_selected_wallet()
+    def create_wallet_file(self):
+        file_name_selected = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()", "","TXT Files (*.txt);;All Files (*)")
+        file_name = file_name_selected[0]
+        fileter   = file_name_selected[1]
+        if(file_name == ''):
+            print("User cancel file")
+        else:
+            print("User select file with %s" % file_name)
+            self.l.setText("Select Wallet record")
+            self.selected_wallet_record = wallet_api.load_wallet_from_clear_base64_file(file_name)
+            self.open_selected_wallet()
+
 
     def oh_no(self):
         worker = Balance_Thread(self.execute_this_fn)
@@ -136,12 +133,6 @@ class MainWindow(QMainWindow):
     def balance_list_record_selected(self, itemSelect):
         self.asset_instance_in_item = itemSelect.data(0x0100)
         self.asset_balance_label.setText(self.asset_instance_in_item.balance)
-
-    def wallet_list_record_selected(self, itemSelect):
-        self.selected_wallet_record = itemSelect.data(0x0100)
-        print(self.selected_wallet_record)
-        print("%s selected"%self.selected_wallet_record.userid)
-
 
 
     def open_selected_wallet(self):
