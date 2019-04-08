@@ -115,7 +115,7 @@ class MainWindow(QMainWindow):
             for eachAsset in balance_result.data:
                 this_list_item = QListWidgetItem()
                 this_list_item.setData(0x0100, eachAsset)
-                this_list_item.setText(eachAsset.balance + " " + eachAsset.symbol)
+                this_list_item.setText(eachAsset.name)
                 balance_list.addItem(this_list_item)
             balance_list.itemClicked.connect(self.balance_list_record_selected)
             balance_list.currentItemChanged.connect(self.balance_list_record_selection_actived)
@@ -126,7 +126,7 @@ class MainWindow(QMainWindow):
         return
     def balance_list_record_selection_actived(self,itemCurr, itemPre):
         self.asset_instance_in_item = itemCurr.data(0x0100)
-        self.asset_balance_label.setText(self.asset_instance_in_item.name)
+        self.asset_balance_label.setText(self.asset_instance_in_item.balance)
         deposit_address_title_value_segments = self.asset_instance_in_item.deposit_address()
         deposit_label_content = ""
         for each_seg in deposit_address_title_value_segments:
@@ -135,7 +135,7 @@ class MainWindow(QMainWindow):
 
     def balance_list_record_selected(self, itemSelect):
         self.asset_instance_in_item = itemSelect.data(0x0100)
-        self.asset_balance_label.setText(self.asset_instance_in_item.name)
+        self.asset_balance_label.setText(self.asset_instance_in_item.balance)
 
     def wallet_list_record_selected(self, itemSelect):
         self.selected_wallet_record = itemSelect.data(0x0100)
@@ -144,30 +144,11 @@ class MainWindow(QMainWindow):
 
 
 
-    def open_deposit_address_asset(self):
-        print("hello")
-        deposit_address_layout = QVBoxLayout()
-
-        deposit_address_title_value_segments = self.asset_instance_in_item.deposit_address()
-        for each_seg in deposit_address_title_value_segments:
-            thisPartLayout = QHBoxLayout()
-            thisLabel = QLabel(each_seg["title"] + " : " + each_seg["value"])
-            thisLabel.setTextInteractionFlags(Qt.TextSelectableByMouse)
-            thisPartLayout.addWidget(thisLabel)
-            this_part_widget = QWidget()
-            this_part_widget.setLayout(thisPartLayout)
-            deposit_address_layout.addWidget(this_part_widget)
-
-        self.deposit_address_widget = QWidget()
-        self.deposit_address_widget.setLayout(deposit_address_layout)
-        self.deposit_address_widget.show()
     def open_selected_wallet(self):
         if (hasattr(self, "selected_wallet_record")):
             self.balance_and_detail_layout = QHBoxLayout()
             self.Balance_detail_layout = QVBoxLayout()
             self.selected_asset_send = QPushButton("Send")
-            self.selected_asset_receive = QPushButton("Receive")
-            self.selected_asset_receive.pressed.connect(self.open_deposit_address_asset)
             self.selected_asset_manageasset = QPushButton("Manage address")
 
             self.asset_balance_label = QLabel()
@@ -184,7 +165,6 @@ class MainWindow(QMainWindow):
             self.Balance_detail_layout.addWidget(self.asset_deposit_label)
 
             self.Balance_detail_layout.addWidget(self.selected_asset_send)
-            self.Balance_detail_layout.addWidget(self.selected_asset_receive)
             self.Balance_detail_layout.addWidget(self.selected_asset_manageasset)
 
             self.Balance_layout = QVBoxLayout()

@@ -113,11 +113,11 @@ class Asset(Static_Asset):
     def deposit_address(self):
         result_desposit = []
         if(self.public_key != ""):
-            result_desposit.append({"title":"public_key", "value":self.public_key})
+            result_desposit.append({"title":"Deposit address", "value":self.public_key})
         if(self.account_name!= ""):
-            result_desposit.append({"title":"account_name", "value":self.account_name})
+            result_desposit.append({"title":"Deposit account name", "value":self.account_name})
         if(self.account_tag!= ""):
-            result_desposit.append({"title":"account_tag", "value":self.account_tag})
+            result_desposit.append({"title":"Deposit account tag", "value":self.account_tag})
         return result_desposit
 
 class Withdrawal():
