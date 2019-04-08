@@ -5,6 +5,14 @@ import iso8601
 import time
 import json
 import requests
+import base64
+import random
+import string
+
+def randomString(stringLength=10):
+    """Generate a random string of fixed length """
+    letters = string.ascii_lowercase
+    return ''.join(random.choice(letters) for i in range(stringLength))
 
 
 def pubkeyContent(inputContent):
@@ -359,6 +367,23 @@ def append_wallet_into_csv_file(this_wallet, file_name):
                             this_wallet.session_id,
                             this_wallet.user_id,
                             ""])
+
+def write_wallet_into_clear_base64_file(this_wallet, file_name):
+    finalObj = {"uid":this_wallet.user_id, "sid":this_wallet.session_id, "pintoken":this_wallet.pin_token, "key":this_wallet.private_key}
+    jsonstring_fromobj = json.dumps(finalObj)
+    base64decoded_json = base64.b64encode(jsonstring_fromobj.encode('utf-8')).decode('utf-8')
+    print(base64decoded_json)
+    with open(file_name, 'w') as wallet_file:
+        wallet_file.write(base64decoded_json)
+
+def load_wallet_from_clear_base64_file(file_name):
+    with open(file_name) as wallt_file:
+        base64decoded_json = wallt_file.read()
+        jsonstring = base64.b64decode(base64decoded_json)
+        wallet_dict = json.loads(jsonstring)
+        this_wallet_inst = WalletRecord("", wallet_dict.get("uid"), wallet_dict.get("sid"), wallet_dict.get("pintoken"), wallet_dict.get("key"))
+        return this_wallet_inst
+
 
 def load_wallet_csv_file(file_name):
     with open(file_name, newline='') as csvfile:
