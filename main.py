@@ -115,7 +115,7 @@ class MainWindow(QMainWindow):
             for eachAsset in balance_result.data:
                 this_list_item = QListWidgetItem()
                 this_list_item.setData(0x0100, eachAsset)
-                this_list_item.setText(eachAsset.name)
+                this_list_item.setText(eachAsset.balance + " " + eachAsset.symbol)
                 balance_list.addItem(this_list_item)
             balance_list.itemClicked.connect(self.balance_list_record_selected)
             balance_list.currentItemChanged.connect(self.balance_list_record_selection_actived)
@@ -126,13 +126,16 @@ class MainWindow(QMainWindow):
         return
     def balance_list_record_selection_actived(self,itemCurr, itemPre):
         self.asset_instance_in_item = itemCurr.data(0x0100)
-        self.asset_balance_label.setText(self.asset_instance_in_item.balance)
-        self.asset_balance_symbol_label.setText(self.asset_instance_in_item.symbol)
+        self.asset_balance_label.setText(self.asset_instance_in_item.name)
+        deposit_address_title_value_segments = self.asset_instance_in_item.deposit_address()
+        deposit_label_content = ""
+        for each_seg in deposit_address_title_value_segments:
+            deposit_label_content += each_seg["title"] + " : " + each_seg["value"] + "\n"
+        self.asset_deposit_label.setText(deposit_label_content)
 
     def balance_list_record_selected(self, itemSelect):
         self.asset_instance_in_item = itemSelect.data(0x0100)
-        self.asset_balance_label.setText(self.asset_instance_in_item.balance)
-        self.asset_balance_symbol_label.setText(self.asset_instance_in_item.symbol)
+        self.asset_balance_label.setText(self.asset_instance_in_item.name)
 
     def wallet_list_record_selected(self, itemSelect):
         self.selected_wallet_record = itemSelect.data(0x0100)
@@ -141,13 +144,6 @@ class MainWindow(QMainWindow):
 
 
 
-    def copy_to_system(self, text_and_button):
-        text_to_copy = text_and_button[0]
-        copy_btn = text_and_button[1]
-        clipboard = QApplication.clipboard()
-        clipboard.setText(text_to_copy)
-        print(text_to_copy)
-        copy_btn.setText("Copied")
     def open_deposit_address_asset(self):
         print("hello")
         deposit_address_layout = QVBoxLayout()
@@ -155,11 +151,9 @@ class MainWindow(QMainWindow):
         deposit_address_title_value_segments = self.asset_instance_in_item.deposit_address()
         for each_seg in deposit_address_title_value_segments:
             thisPartLayout = QHBoxLayout()
-            copy_to_clipboard_btn = QPushButton("Copy to clipboard")
-            copy_to_clipboard_btn.pressed.connect(lambda:  self.copy_to_system((each_seg["value"], copy_to_clipboard_btn)))
             thisLabel = QLabel(each_seg["title"] + " : " + each_seg["value"])
+            thisLabel.setTextInteractionFlags(Qt.TextSelectableByMouse)
             thisPartLayout.addWidget(thisLabel)
-            thisPartLayout.addWidget(copy_to_clipboard_btn)
             this_part_widget = QWidget()
             this_part_widget.setLayout(thisPartLayout)
             deposit_address_layout.addWidget(this_part_widget)
@@ -181,15 +175,14 @@ class MainWindow(QMainWindow):
             balance_font.setPointSize(40)
             self.asset_balance_label.setFont(balance_font)
             self.asset_balance_label.setAlignment(Qt.AlignCenter)
-            self.asset_balance_symbol_label = QLabel()
-            self.asset_balance_symbol_label.setAlignment(Qt.AlignCenter)
-            asset_balance_symbole_layout = QHBoxLayout()
-            asset_balance_symbole_layout.addWidget(self.asset_balance_label)
-            asset_balance_symbole_layout.addWidget(self.asset_balance_symbol_label)
-            asset_balance_symbole_label_holder_widget = QWidget()
-            asset_balance_symbole_label_holder_widget.setLayout(asset_balance_symbole_layout)
 
-            self.Balance_detail_layout.addWidget(asset_balance_symbole_label_holder_widget)
+            self.asset_deposit_label = QLabel()
+            self.asset_deposit_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
+
+
+            self.Balance_detail_layout.addWidget(self.asset_balance_label)
+            self.Balance_detail_layout.addWidget(self.asset_deposit_label)
+
             self.Balance_detail_layout.addWidget(self.selected_asset_send)
             self.Balance_detail_layout.addWidget(self.selected_asset_receive)
             self.Balance_detail_layout.addWidget(self.selected_asset_manageasset)
