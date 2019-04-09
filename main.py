@@ -138,7 +138,7 @@ class MainWindow(QMainWindow):
         print(s)
     def thread_complete(self):
         print("THREAD COMPLETE")
-    def create_wallet_confirm_chosen(self,user_input_name, user_input_pin, user_input_file):
+    def create_wallet_confirm_chosen_block(self,user_input_name, user_input_pin, user_input_file):
 
         thisAccountRSAKeyPair = wallet_api.RSAKey4Mixin()
         body = {
@@ -146,32 +146,34 @@ class MainWindow(QMainWindow):
             "full_name": user_input_name
         }
         wallet_obj = wallet_api.WalletRecord("","","", "","")
+        self.create_account_layout.addWidget(QLabel("Created key file"))
  
         token2create = wallet_api.fetchTokenForCreateUser(body, "http://freemixinapptoken.myrual.me/token")
  
         create_wallet_result = wallet_obj.create_wallet(thisAccountRSAKeyPair.session_key, user_input_name, token2create)
-        Create_account_result_widget = QMessageBox()
-        self.create_account_widget.close()
         if(create_wallet_result.is_success):
+            self.create_account_layout.addWidget(QLabel("Created account"))
+
             create_wallet_result.data.private_key = thisAccountRSAKeyPair.private_key
             new_wallet = wallet_api.WalletRecord("",create_wallet_result.data.user_id, create_wallet_result.data.session_id, create_wallet_result.data.pin_token, create_wallet_result.data.private_key)
  
             wallet_api.write_wallet_into_clear_base64_file(create_wallet_result.data, user_input_file)
+            self.create_account_layout.addWidget(QLabel("Wrote account info into "+user_input_file))
+
             create_pin_result = new_wallet.update_pin("", user_input_pin)
             for eachAssetID in mixin_asset_id_collection.MIXIN_DEFAULT_CHAIN_GROUP:
                 print(eachAssetID)
-                new_wallet.get_singleasset_balance(eachAssetID)
- 
+                asset_result = new_wallet.get_singleasset_balance(eachAssetID)
+                if(asset_result.is_success):
+                    self.create_account_layout.addWidget(QLabel("Created deposit address for " + asset_result.data.name))
             if(create_pin_result.is_success):
-                Create_account_result_widget.setText("Successfully created wallet with your pin")
-            else:
- 
-                Create_account_result_widget.setText("Wallet is created, pin is not created. Update pin please")
-        else:
-            
-            Create_account_result_widget.setText("Failed to create account")
-        Create_account_result_widget.exec_()
+                self.create_account_layout.addWidget(QLabel("Created pin"))
 
+            else:
+                self.create_account_layout.addWidget(QLabel("Failed to create pin"))
+        else:
+             self.create_account_layout.addWidget(QLabel("Failed to create account"))
+           
 
     def open_file(self):
         file_name_selected = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()", "","All Files (*);;CSV Files (*.csv)")
@@ -196,17 +198,25 @@ class MainWindow(QMainWindow):
 
     def create_wallet_progress_update(self, obj):
         print(obj)
-        self.create_account_progress_widget.setText(obj)
-    def create_account_finished(self):
+        self.create_account_layout.addWidget(QLabel(obj))
+    def create_account_button_pressed(self):
         self.create_account_widget.close()
+    def create_account_finished_callback(self):
+        Successful_created_account_button = QPushButton("Done")
+        Successful_created_account_button.pressed.connect(self.create_account_button_pressed)
+        self.create_account_layout.addWidget(Successful_created_account_button)
 
     def create_account_pressed(self):
         user_input_pin  = self.pin_selected_edit.text()
         user_input_file = self.file_selected_edit.text()
+        #self.create_wallet_confirm_chosen_block(wallet_api.randomString(), user_input_pin, user_input_file)
+
         worker = CreateAccount_Thread(wallet_api.randomString(), user_input_pin, user_input_file)
         worker.signals.progress.connect(self.create_wallet_progress_update)
-        worker.signals.finished.connect(self.create_account_finished)
+        worker.signals.finished.connect(self.create_account_finished_callback)
         self.threadPool.start(worker)
+        self.go_create_accout_btn.setDisabled(True)
+        
 
     def pop_create_wallet_window(self):
 
@@ -238,12 +248,15 @@ class MainWindow(QMainWindow):
 
         go_create_accout_btn  = QPushButton("Create wallet")
         go_create_accout_btn.pressed.connect(self.create_account_pressed)
+        self.go_create_accout_btn = go_create_accout_btn
 
         create_account_layout = QVBoxLayout()
         create_account_layout.addWidget(file_title_selection_widget)
         create_account_layout.addWidget(pin_edit_widget)
         create_account_layout.addWidget(go_create_accout_btn)
         create_account_layout.addWidget(self.create_account_progress_widget)
+
+        self.create_account_layout = create_account_layout
 
 
 
