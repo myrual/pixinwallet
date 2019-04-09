@@ -385,6 +385,15 @@ class MainWindow(QMainWindow):
         self.threadPool.start(worker)
     def recurring_timer(self):
         self.counter += 1
+    def received_send_withdraw_addresses_result(self, withdraw_addresses_asset_result):
+        if(withdraw_addresses_asset_result.is_success):
+            i = 0
+            for eachAsset in withdraw_addresses_asset_result.data:
+                self.send_address_selection_widget.insertItem(i, eachAsset.label, userData = eachAsset)
+                i += 0
+        return
+
+
     def received_asset_withdraw_addresses_result(self, withdraw_addresses_asset_result):
         if(withdraw_addresses_asset_result.is_success):
             for i in self.withdraw_address_list:
@@ -468,7 +477,48 @@ class MainWindow(QMainWindow):
         self.withdraw_address_instance_in_item = itemSelect.data(0x0100)
         self.update_asset_address_detail(self.withdraw_address_instance_in_item)
         self.remove_address_btn.setDisabled(False)
+    def send_withdrawaddress_list_record_selected(self, itemSelect):
+        if itemSelect == None:
+            return
 
+        self.withdraw_address_instance_in_item = itemSelect.data(0x0100)
+        self.update_asset_address_detail(self.withdraw_address_instance_in_item)
+        self.remove_address_btn.setDisabled(False)
+
+
+
+
+    def send_asset_to_address(self):
+        if (hasattr(self, "asset_instance_in_item")):
+            send_asset_title_label_widget = QLabel("Send " + self.asset_instance_in_item.name)
+            send_amount_title_widget = QLabel("amount:")
+            send_amount_edit_Label_widget = QLineEdit()
+            send_pin_title_widget = QLabel("Asset pin:")
+            send_pin_edit_Label_widget = QLineEdit()
+            send_address_title_widget = QLabel("to ")
+
+            self.send_address_selection_widget = QComboBox()
+
+            send_asset_layout = QVBoxLayout()
+            send_asset_layout.addWidget(send_asset_title_label_widget)
+            send_asset_layout.addWidget(send_address_title_widget)
+            send_asset_layout.addWidget(self.send_address_selection_widget)
+            send_asset_layout.addWidget(send_amount_title_widget)
+
+            send_asset_layout.addWidget(send_amount_edit_Label_widget)
+            send_asset_layout.addWidget(send_pin_title_widget)
+            send_asset_layout.addWidget(send_pin_edit_Label_widget)
+            self.send_asset_widget = QWidget()
+            self.send_asset_widget.setLayout(send_asset_layout)
+            self.send_asset_widget.show()
+
+
+            worker = Asset_addresses_Thread(self.selected_wallet_record, self.asset_instance_in_item)
+            worker.signals.result.connect(self.received_send_withdraw_addresses_result)
+            worker.signals.finished.connect(self.thread_complete)
+            self.threadPool.start(worker)
+        else:
+            return
 
 
 
@@ -539,6 +589,7 @@ class MainWindow(QMainWindow):
             self.balance_and_detail_layout = QHBoxLayout()
             self.Balance_detail_layout = QVBoxLayout()
             self.selected_asset_send = QPushButton("Send")
+            self.selected_asset_send.pressed.connect(self.send_asset_to_address)
             self.selected_asset_manageasset = QPushButton("Manage contact")
             self.selected_asset_manageasset.pressed.connect(self.open_widget_manage_asset)
 
