@@ -240,6 +240,11 @@ class MainWindow(QMainWindow):
 
     def close_Create_Windows(self):
         self.create_withdraw_address_widget.close()
+        worker = Asset_addresses_Thread(self.selected_wallet_record, self.asset_instance_in_item)
+        worker.signals.result.connect(self.received_asset_withdraw_addresses_result)
+        worker.signals.finished.connect(self.thread_complete)
+        self.threadPool.start(worker)
+
         return
     def pressed_create_withdraw_address_bitcoin(self):
         print("Account tag %s, deposit address %s, pin %s"%(self.account_tag_edit.text(), self.public_key_edit.text(), self.asset_pin_edit.text()))
@@ -257,6 +262,11 @@ class MainWindow(QMainWindow):
         remove_address_result  = self.selected_wallet_record.remove_address(self.withdraw_address_instance_in_item.address_id, self.asset_pin_edit.text())
         if remove_address_result.is_success:
             self.remove_withdraw_address__widget.close()
+            worker = Asset_addresses_Thread(self.selected_wallet_record, self.asset_instance_in_item)
+            worker.signals.result.connect(self.received_asset_withdraw_addresses_result)
+            worker.signals.finished.connect(self.thread_complete)
+            self.threadPool.start(worker)
+
         else:
             print("Failed to create address %s"%str(remove_address_result))
 
@@ -377,6 +387,10 @@ class MainWindow(QMainWindow):
         self.counter += 1
     def received_asset_withdraw_addresses_result(self, withdraw_addresses_asset_result):
         if(withdraw_addresses_asset_result.is_success):
+
+            if hasattr(self, "withdraw_addresses_list_widget"):
+                self.withdraw_addresses_list_and_new_layout.removeWidget(self.withdraw_addresses_list_widget)
+
             withdraw_address_list = QListWidget()
             for eachAsset in withdraw_addresses_asset_result.data:
                 this_list_item = QListWidgetItem()
@@ -390,6 +404,7 @@ class MainWindow(QMainWindow):
             self.withdraw_addresses_list_and_new_layout.insertWidget(0, self.withdraw_addresses_list_widget)
             if(len(withdraw_addresses_asset_result.data) > 0):
                 self.withdraw_addresses_list_widget.setCurrentRow(0)
+            self.withdraw_addresses_list_widget.repaint()
         return
 
     def received_balance_result(self, balance_result):
