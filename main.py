@@ -387,24 +387,23 @@ class MainWindow(QMainWindow):
         self.counter += 1
     def received_asset_withdraw_addresses_result(self, withdraw_addresses_asset_result):
         if(withdraw_addresses_asset_result.is_success):
+            for i in self.withdraw_address_list:
+                self.withdraw_addresses_list_widget.takeItem(0)
+            self.withdraw_address_list = []
 
-            if hasattr(self, "withdraw_addresses_list_widget"):
-                self.withdraw_addresses_list_and_new_layout.removeWidget(self.withdraw_addresses_list_widget)
-
-            withdraw_address_list = QListWidget()
             for eachAsset in withdraw_addresses_asset_result.data:
                 this_list_item = QListWidgetItem()
                 this_list_item.setData(0x0100, eachAsset)
                 this_list_item.setText(eachAsset.label)
-                withdraw_address_list.addItem(this_list_item)
-            withdraw_address_list.itemClicked.connect(self.withdrawaddress_list_record_selected)
-            withdraw_address_list.currentItemChanged.connect(self.withdraw_address_list_record_selection_actived)
-            self.withdraw_addresses_list_widget = withdraw_address_list
+                self.withdraw_addresses_list_widget.addItem(this_list_item)
+                self.withdraw_address_list.append(this_list_item)
 
-            self.withdraw_addresses_list_and_new_layout.insertWidget(0, self.withdraw_addresses_list_widget)
             if(len(withdraw_addresses_asset_result.data) > 0):
                 self.withdraw_addresses_list_widget.setCurrentRow(0)
-            self.withdraw_addresses_list_widget.repaint()
+            else:
+                self.remove_address_btn.setDisabled(True)
+
+            self.withdraw_addresses_list_widget.update()
         return
 
     def received_balance_result(self, balance_result):
@@ -431,9 +430,12 @@ class MainWindow(QMainWindow):
             deposit_label_content += each_seg["title"] + " : " + each_seg["value"] + "\n"
         self.asset_deposit_label.setText(deposit_label_content)
     def withdraw_address_list_record_selection_actived(self,itemCurr, itemPre):
+        if itemCurr == None:
+            self.clear_asset_address_detail()
+            return
         self.withdraw_address_instance_in_item = itemCurr.data(0x0100)
         self.update_asset_address_detail(self.withdraw_address_instance_in_item)
-
+        self.remove_address_btn.setDisabled(False)
 
     def balance_list_record_selected(self, itemSelect):
         self.asset_instance_in_item = itemSelect.data(0x0100)
@@ -448,9 +450,24 @@ class MainWindow(QMainWindow):
         self.dust_label_withdraw_address_asset.setText(this_withdraw_address.dust)
         self.updated_at_label_withdraw_address_asset.setText(this_withdraw_address.updated_at) 
 
+
+    def clear_asset_address_detail(self):
+        self.public_key_label_withdraw_address_asset.setText("")
+        self.label_label_withdraw_address_asset.setText("")
+        self.account_name_label_withdraw_address_asset.setText("")
+        self.account_tag_label_withdraw_address_asset.setText("")
+        self.fee_label_withdraw_address_asset.setText("")
+        self.reserve_label_withdraw_address_asset.setText("")
+        self.dust_label_withdraw_address_asset.setText("")
+        self.updated_at_label_withdraw_address_asset.setText("") 
+
     def withdrawaddress_list_record_selected(self, itemSelect):
+        if itemSelect == None:
+            return
+
         self.withdraw_address_instance_in_item = itemSelect.data(0x0100)
         self.update_asset_address_detail(self.withdraw_address_instance_in_item)
+        self.remove_address_btn.setDisabled(False)
 
 
 
@@ -463,6 +480,14 @@ class MainWindow(QMainWindow):
 
             self.withdraw_addresses_list_and_new_layout = QVBoxLayout()
             self.withdraw_addresses_list_and_new_layout.addWidget(add_withdraw_address_asset_btn)
+            self.withdraw_addresses_list_widget = QListWidget()
+            self.withdraw_addresses_list_widget.itemClicked.connect(self.withdrawaddress_list_record_selected)
+            self.withdraw_addresses_list_widget.currentItemChanged.connect(self.withdraw_address_list_record_selection_actived)
+            self.withdraw_address_list = []
+
+
+            self.withdraw_addresses_list_and_new_layout.addWidget(self.withdraw_addresses_list_widget)
+
 
             withdraw_addresses_list_and_new_widget = QWidget()
             withdraw_addresses_list_and_new_widget.setLayout(self.withdraw_addresses_list_and_new_layout)
@@ -477,6 +502,8 @@ class MainWindow(QMainWindow):
             self.updated_at_label_withdraw_address_asset = QLabel("updated at")
             remove_address_btn = QPushButton("Delete")
             remove_address_btn.pressed.connect(self.pop_Remove_withdraw_address_window_bitcoinstyle)
+            remove_address_btn.setDisabled(True)
+            self.remove_address_btn = remove_address_btn
 
             withdraw_addresses_detail_layout = QVBoxLayout()
 
