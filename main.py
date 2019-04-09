@@ -252,6 +252,33 @@ class MainWindow(QMainWindow):
             self.create_withdraw_address_layout.addWidget(OK_button)
         else:
             print("Failed to create address ")
+    def pressed_remove_withdraw_address_bitcoin(self):
+        self.Remove_address_btn.setDisabled(True)
+        remove_address_result  = self.selected_wallet_record.remove_address(self.withdraw_address_instance_in_item.address_id, self.asset_pin_edit.text())
+        if remove_address_result.is_success:
+            self.remove_withdraw_address__widget.close()
+        else:
+            print("Failed to create address %s"%str(remove_address_result))
+
+    def pop_Remove_withdraw_address_window_bitcoinstyle(self):
+
+
+        asset_pin_widget     = QLabel("Asset pin:")
+        self.asset_pin_edit  = QLineEdit()
+        self.asset_pin_edit.setEchoMode(QLineEdit.PasswordEchoOnEdit)
+        Remove_address_btn       = QPushButton("Remove")
+        Remove_address_btn.pressed.connect(self.pressed_remove_withdraw_address_bitcoin)
+        self.Remove_address_btn = Remove_address_btn
+
+        remove_withdraw_address_layout = QVBoxLayout()
+        remove_withdraw_address_layout.addWidget(asset_pin_widget)
+        remove_withdraw_address_layout.addWidget(self.asset_pin_edit)
+        remove_withdraw_address_layout.addWidget(Remove_address_btn)
+
+        self.remove_withdraw_address__widget = QWidget()
+        self.remove_withdraw_address__widget.setLayout(remove_withdraw_address_layout)
+        self.remove_withdraw_address__widget.show()
+
 
     def pop_create_withdraw_address_window_bitcoinstyle(self):
 
@@ -434,6 +461,7 @@ class MainWindow(QMainWindow):
             self.dust_label_withdraw_address_asset = QLabel("dust")
             self.updated_at_label_withdraw_address_asset = QLabel("updated at")
             remove_address_btn = QPushButton("Delete")
+            remove_address_btn.pressed.connect(self.pop_Remove_withdraw_address_window_bitcoinstyle)
 
             withdraw_addresses_detail_layout = QVBoxLayout()
 
