@@ -128,6 +128,14 @@ class MainWindow(QMainWindow):
         file_menu = menu.addMenu("File")
         file_menu.addAction(button_action)
 
+        pin_menu = menu.addMenu("Pin")
+        verify_pin_action = QAction("verify pin", self)
+        verify_pin_action.triggered.connect(self.open_verify_pin_window)
+        verify_pin_menu = pin_menu.addAction(verify_pin_action)
+        update_pin_action = QAction("update pin", self)
+        update_pin_action.triggered.connect(self.open_update_pin_window)
+        update_pin_menu = pin_menu.addAction(update_pin_action)
+
 
         self.counter = 0
         layout = QVBoxLayout()
@@ -206,6 +214,10 @@ class MainWindow(QMainWindow):
              self.create_account_layout.addWidget(QLabel("Failed to create account"))
            
 
+    def open_verify_pin_window(self):
+        print("verify pin")
+    def open_update_pin_window(self):
+        print("update pin")
     def open_file(self):
         file_name_selected = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()", "","All Files (*);;CSV Files (*.csv)")
         file_name = file_name_selected[0]
