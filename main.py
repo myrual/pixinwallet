@@ -270,6 +270,21 @@ class MainWindow(QMainWindow):
             failed_msg = QMessageBox()
             failed_msg.setText("Failed to create address %s"%str(create_address_result))
             failed_msg.exec_()
+    def pressed_create_withdraw_address_eos(self):
+        print("Account name %s, account memo %s, pin %s"%(self.account_name_edit.text(), self.account_memo_edit.text(), self.asset_pin_edit.text()))
+        self.Add_address_btn.setDisabled(True)
+        create_address_result  = self.selected_wallet_record.create_address(self.asset_instance_in_item.asset_id, "", "", self.asset_pin_edit.text(), self.account_name_edit.text(), self.account_memo_edit.text())
+        if create_address_result.is_success:
+            print("Address is created with id %s"%create_address_result.data.address_id)
+            OK_button = QPushButton("Done")
+            OK_button.pressed.connect(self.close_Create_Windows)
+            self.create_withdraw_address_eos_layout.addWidget(OK_button)
+        else:
+            print("Failed to create address because "%str(create_address_result))
+            failed_msg = QMessageBox()
+            failed_msg.setText("Failed to create address %s"%str(create_address_result))
+            failed_msg.exec_()
+
 
     def pressed_remove_withdraw_address_bitcoin(self):
         self.Remove_address_btn.setDisabled(True)
@@ -307,6 +322,37 @@ class MainWindow(QMainWindow):
         self.remove_withdraw_address__widget = QWidget()
         self.remove_withdraw_address__widget.setLayout(remove_withdraw_address_layout)
         self.remove_withdraw_address__widget.show()
+
+
+    def pop_create_withdraw_address_window_eosstyle(self):
+
+
+        account_name_widget    = QLabel("Account name:")
+        self.account_name_edit = QLineEdit()
+        account_memo_widget      = QLabel("Account memo:")
+        self.account_memo_edit = QLineEdit()
+        asset_pin_widget       = QLabel("Asset pin:")
+        self.asset_pin_edit    = QLineEdit()
+        self.asset_pin_edit.setEchoMode(QLineEdit.Password)
+        self.asset_pin_edit.setMaxLength(6)
+        Add_address_btn       = QPushButton("Create")
+        Add_address_btn.pressed.connect(self.pressed_create_withdraw_address_eos)
+        self.Add_address_btn = Add_address_btn
+
+        create_withdraw_address_layout = QVBoxLayout()
+        create_withdraw_address_layout.addWidget(account_name_widget)
+        create_withdraw_address_layout.addWidget(self.account_name_edit)
+        create_withdraw_address_layout.addWidget(account_memo_widget)
+        create_withdraw_address_layout.addWidget(self.account_memo_edit)
+        create_withdraw_address_layout.addWidget(asset_pin_widget)
+        create_withdraw_address_layout.addWidget(self.asset_pin_edit)
+        create_withdraw_address_layout.addWidget(Add_address_btn)
+
+        self.create_withdraw_address_eos_layout = create_withdraw_address_layout
+
+        self.create_withdraw_address_widget = QWidget()
+        self.create_withdraw_address_widget.setLayout(create_withdraw_address_layout)
+        self.create_withdraw_address_widget.show()
 
 
     def pop_create_withdraw_address_window_bitcoinstyle(self):
@@ -409,7 +455,10 @@ class MainWindow(QMainWindow):
             self.withdraw_address_of_asset_list = withdraw_addresses_asset_result.data
             i = 0
             for eachAsset in self.withdraw_address_of_asset_list:
-                self.send_address_selection_widget.insertItem(i, eachAsset.label, userData = eachAsset)
+                if(self.asset_instance_in_item.chain_id != mixin_asset_id_collection.EOS_ASSET_ID):
+                    self.send_address_selection_widget.insertItem(i, eachAsset.label, userData = eachAsset)
+                else:
+                    self.send_address_selection_widget.insertItem(i, eachAsset.account_tag, userData = eachAsset)
                 i += 0
         return
 
@@ -567,7 +616,10 @@ class MainWindow(QMainWindow):
         if (hasattr(self, "asset_instance_in_item")):
             
             add_withdraw_address_asset_btn = QPushButton("Add new address")
-            add_withdraw_address_asset_btn.pressed.connect(self.pop_create_withdraw_address_window_bitcoinstyle)
+            if(self.asset_instance_in_item.chain_id == mixin_asset_id_collection.EOS_ASSET_ID):
+                add_withdraw_address_asset_btn.pressed.connect(self.pop_create_withdraw_address_window_eosstyle)
+            else:
+                add_withdraw_address_asset_btn.pressed.connect(self.pop_create_withdraw_address_window_bitcoinstyle)
 
             self.withdraw_addresses_list_and_new_layout = QVBoxLayout()
             self.withdraw_addresses_list_and_new_layout.addWidget(add_withdraw_address_asset_btn)
