@@ -129,12 +129,12 @@ class MainWindow(QMainWindow):
         file_menu.addAction(button_action)
 
         pin_menu = menu.addMenu("Pin")
-        verify_pin_action = QAction("verify pin", self)
-        verify_pin_action.triggered.connect(self.open_verify_pin_window)
-        verify_pin_menu = pin_menu.addAction(verify_pin_action)
-        update_pin_action = QAction("update pin", self)
-        update_pin_action.triggered.connect(self.open_update_pin_window)
-        update_pin_menu = pin_menu.addAction(update_pin_action)
+        self.verify_pin_action = QAction("verify pin", self)
+        self.verify_pin_action.triggered.connect(self.pop_verify_pin_window)
+        pin_menu.addAction(self.verify_pin_action)
+        self.update_pin_action = QAction("update pin", self)
+        self.update_pin_action.triggered.connect(self.pop_update_pin_window)
+        pin_menu.addAction(self.update_pin_action)
 
 
         self.counter = 0
@@ -314,6 +314,98 @@ class MainWindow(QMainWindow):
             congratulations_msg = QMessageBox()
             congratulations_msg.setText("Failed to create address %s"%str(remove_address_result))
             congratulations_msg.exec_()
+
+    def pressed_verify_pin(self):
+        verify_pin_result  = self.selected_wallet_record.verify_pin(self.asset_pin_edit.text())
+        if(verify_pin_result.is_success):
+            self.verify_pin_widget.close()
+            load_wallet_msg = QMessageBox()
+            load_wallet_msg.setText("Pin is correct")
+            load_wallet_msg.exec_()
+        else:
+            load_wallet_msg = QMessageBox()
+            print(verify_pin_result.error.status)
+            if verify_pin_result.error.status == 202 and verify_pin_result.error.code == 20119:
+                print("pin incorrect")
+                load_wallet_msg.setText(str(verify_pin_result.error.description))
+            else:
+                print("other error")
+                load_wallet_msg.setText(str(verify_pin_result))
+            load_wallet_msg.exec_()
+
+    def pressed_update_pin(self):
+        update_pin_result  = self.selected_wallet_record.update_pin(self.asset_pin_edit.text(), self.update_new_pin_edit.text())
+        if(update_pin_result.is_success):
+            print("success")
+            self.update_pin_widget.close()
+            load_wallet_msg = QMessageBox()
+            load_wallet_msg.setText("Successfully updated pin")
+            load_wallet_msg.exec_()
+        else:
+            load_wallet_msg = QMessageBox()
+            load_wallet_msg.setText(str(update_pin_result))
+            load_wallet_msg.exec_()
+
+
+    def pop_verify_pin_window(self):
+
+
+        if (not hasattr(self, "selected_wallet_record")):
+            load_wallet_msg = QMessageBox()
+            load_wallet_msg.setText("Please load wallet file")
+            load_wallet_msg.exec_()
+            return
+
+        asset_pin_widget     = QLabel("Pin:")
+        self.asset_pin_edit  = QLineEdit()
+        self.asset_pin_edit.setEchoMode(QLineEdit.Password)
+        self.asset_pin_edit.setMaxLength(6)
+        Remove_address_btn       = QPushButton("Verify")
+        Remove_address_btn.pressed.connect(self.pressed_verify_pin)
+        self.Remove_address_btn = Remove_address_btn
+
+        verify_pin_layout = QVBoxLayout()
+        verify_pin_layout.addWidget(asset_pin_widget)
+        verify_pin_layout.addWidget(self.asset_pin_edit)
+        verify_pin_layout.addWidget(Remove_address_btn)
+
+        self.verify_pin_widget = QWidget()
+        self.verify_pin_widget.setLayout(verify_pin_layout)
+        self.verify_pin_widget.show()
+
+    def pop_update_pin_window(self):
+
+
+        if (not hasattr(self, "selected_wallet_record")):
+            load_wallet_msg = QMessageBox()
+            load_wallet_msg.setText("Please load wallet file")
+            load_wallet_msg.exec_()
+            return
+
+        asset_pin_widget     = QLabel("Old pin:")
+        self.asset_pin_edit  = QLineEdit()
+        self.asset_pin_edit.setEchoMode(QLineEdit.Password)
+        self.asset_pin_edit.setMaxLength(6)
+        asset_new_pin_widget     = QLabel("New pin:")
+        self.update_new_pin_edit  = QLineEdit()
+        self.update_new_pin_edit.setEchoMode(QLineEdit.Password)
+        self.update_new_pin_edit.setMaxLength(6)
+
+        update_pin_btn       = QPushButton("Update")
+        update_pin_btn.pressed.connect(self.pressed_update_pin)
+
+        update_pin_layout = QVBoxLayout()
+        update_pin_layout.addWidget(asset_pin_widget)
+        update_pin_layout.addWidget(self.asset_pin_edit)
+        update_pin_layout.addWidget(asset_new_pin_widget)
+        update_pin_layout.addWidget(self.update_new_pin_edit)
+        update_pin_layout.addWidget(update_pin_btn)
+
+        self.update_pin_widget = QWidget()
+        self.update_pin_widget.setLayout(update_pin_layout)
+        self.update_pin_widget.show()
+
+
 
     def pop_Remove_withdraw_address_window_bitcoinstyle(self):
 
@@ -536,10 +628,8 @@ class MainWindow(QMainWindow):
         self.asset_balance_label.setText(self.asset_instance_in_item.balance)
     def update_asset_address_detail(self, this_withdraw_address, label_widget):
         stringForAddress = ""
-        if this_withdraw_address.label != "":
-            stringForAddress += this_withdraw_address.label
         if this_withdraw_address.public_key != "":
-            stringForAddress +=  ("\n" + this_withdraw_address.public_key)
+            stringForAddress +=  ("\n" + u'Address: ' + this_withdraw_address.public_key)
         if(this_withdraw_address.account_name!= ""):
             stringForAddress += ("\n" + u'Account name:'.ljust(20) + this_withdraw_address.account_name)
         if(this_withdraw_address.account_tag!= ""):
