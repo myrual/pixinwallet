@@ -293,9 +293,8 @@ class MainWindow(QMainWindow):
 
         asset_pin_widget     = QLabel("Asset pin:")
         self.asset_pin_edit  = QLineEdit()
-        self.asset_pin_edit.setEchoMode(QLineEdit.PasswordEchoOnEdit)
+        self.asset_pin_edit.setEchoMode(QLineEdit.Password)
         self.asset_pin_edit.setMaxLength(6)
-        self.asset_pin_edit.setInputMask('999999')
         Remove_address_btn       = QPushButton("Remove")
         Remove_address_btn.pressed.connect(self.pressed_remove_withdraw_address_bitcoin)
         self.Remove_address_btn = Remove_address_btn
@@ -319,7 +318,8 @@ class MainWindow(QMainWindow):
         self.public_key_edit  = QLineEdit()
         asset_pin_widget     = QLabel("Asset pin:")
         self.asset_pin_edit  = QLineEdit()
-        self.asset_pin_edit.setEchoMode(QLineEdit.PasswordEchoOnEdit)
+        self.asset_pin_edit.setEchoMode(QLineEdit.Password)
+        self.asset_pin_edit.setMaxLength(6)
         Add_address_btn       = QPushButton("Create")
         Add_address_btn.pressed.connect(self.pressed_create_withdraw_address_bitcoin)
         self.Add_address_btn = Add_address_btn
@@ -358,8 +358,7 @@ class MainWindow(QMainWindow):
         self.pin_selected_edit     = QLineEdit()
         self.pin_selected_edit.setText("")
         self.pin_selected_edit.setMaxLength(6)
-        self.pin_selected_edit.setInputMask('999999')
-        self.pin_selected_edit.setEchoMode(QLineEdit.PasswordEchoOnEdit)
+        self.pin_selected_edit.setEchoMode(QLineEdit.Password)
         pin_selection_layout.addWidget(pin_title_widget)
         pin_selection_layout.addWidget(self.pin_selected_edit)
         pin_edit_widget = QWidget()
@@ -475,23 +474,25 @@ class MainWindow(QMainWindow):
         self.asset_instance_in_item = itemSelect.data(0x0100)
         self.asset_balance_label.setText(self.asset_instance_in_item.balance)
     def update_asset_address_detail(self, this_withdraw_address):
-        self.public_key_label_withdraw_address_asset.setText("address: "+this_withdraw_address.public_key)
-        self.label_label_withdraw_address_asset.setText(this_withdraw_address.label)
-        self.account_name_label_withdraw_address_asset.setText("account name: "+this_withdraw_address.account_name)
-        self.account_tag_label_withdraw_address_asset.setText("account tag: "+this_withdraw_address.account_tag)
-        self.fee_label_withdraw_address_asset.setText("fee: "+this_withdraw_address.fee)
-        self.reserve_label_withdraw_address_asset.setText("reserve: " + this_withdraw_address.reserve)
-        self.dust_label_withdraw_address_asset.setText("dust: " + this_withdraw_address.dust)
-
+        stringForAddress = ""
+        if this_withdraw_address.label != "":
+            stringForAddress += this_withdraw_address.label
+        if this_withdraw_address.public_key != "":
+            stringForAddress +=  ("\n" + this_withdraw_address.public_key)
+        if(this_withdraw_address.account_name!= ""):
+            stringForAddress += ("\n" + u'Account name:'.ljust(20) + this_withdraw_address.account_name)
+        if(this_withdraw_address.account_tag!= ""):
+            stringForAddress += ("\n" + u'Account tag:'.ljust(20) + this_withdraw_address.account_tag)
+        if(this_withdraw_address.fee!= ""):
+            stringForAddress += ("\n" + this_withdraw_address.fee + u' fee')
+        if(this_withdraw_address.reserve != ""):
+            stringForAddress += ("\n" + this_withdraw_address.reserve + u' reserve')
+        if(this_withdraw_address.dust!= ""):
+            stringForAddress += ("\n" + this_withdraw_address.dust + u' dust')
+        self.withdraw_address_of_asset_detail_label.setText(stringForAddress)
 
     def clear_asset_address_detail(self):
-        self.public_key_label_withdraw_address_asset.setText("")
-        self.label_label_withdraw_address_asset.setText("")
-        self.account_name_label_withdraw_address_asset.setText("")
-        self.account_tag_label_withdraw_address_asset.setText("")
-        self.fee_label_withdraw_address_asset.setText("")
-        self.reserve_label_withdraw_address_asset.setText("")
-        self.dust_label_withdraw_address_asset.setText("")
+        self.withdraw_address_of_asset_detail_label.setText("")
 
     def withdrawaddress_list_record_selected(self, itemSelect):
         if itemSelect == None:
@@ -525,6 +526,7 @@ class MainWindow(QMainWindow):
             self.send_amount_edit_Label_widget = QLineEdit()
             send_pin_title_widget = QLabel("Asset pin:")
             self.send_pin_edit_Label_widget = QLineEdit()
+            self.send_pin_edit_Label_widget.setMaxLength(6)
             self.send_pin_edit_Label_widget.setEchoMode(QLineEdit.Password)
             self.send_address_title_widget = QLabel("to ")
 
@@ -579,13 +581,7 @@ class MainWindow(QMainWindow):
             withdraw_addresses_list_and_new_widget = QWidget()
             withdraw_addresses_list_and_new_widget.setLayout(self.withdraw_addresses_list_and_new_layout)
 
-            self.public_key_label_withdraw_address_asset = QLabel("public key")
-            self.label_label_withdraw_address_asset = QLabel("label")
-            self.account_name_label_withdraw_address_asset = QLabel("account name:")
-            self.account_tag_label_withdraw_address_asset = QLabel("account label:")
-            self.fee_label_withdraw_address_asset = QLabel("fee")
-            self.reserve_label_withdraw_address_asset = QLabel("reserve")
-            self.dust_label_withdraw_address_asset = QLabel("dust")
+            self.withdraw_address_of_asset_detail_label = QLabel()
             remove_address_btn = QPushButton("Delete")
             remove_address_btn.pressed.connect(self.pop_Remove_withdraw_address_window_bitcoinstyle)
             remove_address_btn.setDisabled(True)
@@ -593,13 +589,8 @@ class MainWindow(QMainWindow):
 
             withdraw_addresses_detail_layout = QVBoxLayout()
 
-            withdraw_addresses_detail_layout.addWidget(self.public_key_label_withdraw_address_asset)
-            withdraw_addresses_detail_layout.addWidget(self.label_label_withdraw_address_asset )
-            withdraw_addresses_detail_layout.addWidget(self.account_name_label_withdraw_address_asset )
-            withdraw_addresses_detail_layout.addWidget(self.account_tag_label_withdraw_address_asset )
-            withdraw_addresses_detail_layout.addWidget(self.fee_label_withdraw_address_asset )
-            withdraw_addresses_detail_layout.addWidget(self.reserve_label_withdraw_address_asset )
-            withdraw_addresses_detail_layout.addWidget(self.dust_label_withdraw_address_asset )
+
+            withdraw_addresses_detail_layout.addWidget(self.withdraw_address_of_asset_detail_label)
             withdraw_addresses_detail_layout.addWidget(remove_address_btn)
 
             withdraw_addresses_detail_widget = QWidget()
