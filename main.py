@@ -387,8 +387,9 @@ class MainWindow(QMainWindow):
         self.counter += 1
     def received_send_withdraw_addresses_result(self, withdraw_addresses_asset_result):
         if(withdraw_addresses_asset_result.is_success):
+            self.withdraw_address_of_asset_list = withdraw_addresses_asset_result.data
             i = 0
-            for eachAsset in withdraw_addresses_asset_result.data:
+            for eachAsset in self.withdraw_address_of_asset_list:
                 self.send_address_selection_widget.insertItem(i, eachAsset.label, userData = eachAsset)
                 i += 0
         return
@@ -477,15 +478,10 @@ class MainWindow(QMainWindow):
         self.withdraw_address_instance_in_item = itemSelect.data(0x0100)
         self.update_asset_address_detail(self.withdraw_address_instance_in_item)
         self.remove_address_btn.setDisabled(False)
-    def send_withdrawaddress_list_record_selected(self, itemSelect):
-        if itemSelect == None:
-            return
-
-        self.withdraw_address_instance_in_item = itemSelect.data(0x0100)
-        self.update_asset_address_detail(self.withdraw_address_instance_in_item)
-        self.remove_address_btn.setDisabled(False)
-
-
+    def send_withdrawaddress_list_record_indexChanged(self, indexActived):
+        print("index changed %d"%indexActived)
+        selected_withdraw_address = self.withdraw_address_of_asset_list[indexActived]
+        self.send_address_title_widget.setText(str(selected_withdraw_address))
 
 
     def send_asset_to_address(self):
@@ -495,13 +491,14 @@ class MainWindow(QMainWindow):
             send_amount_edit_Label_widget = QLineEdit()
             send_pin_title_widget = QLabel("Asset pin:")
             send_pin_edit_Label_widget = QLineEdit()
-            send_address_title_widget = QLabel("to ")
+            self.send_address_title_widget = QLabel("to ")
 
             self.send_address_selection_widget = QComboBox()
+            self.send_address_selection_widget.currentIndexChanged.connect(self.send_withdrawaddress_list_record_indexChanged)
 
             send_asset_layout = QVBoxLayout()
             send_asset_layout.addWidget(send_asset_title_label_widget)
-            send_asset_layout.addWidget(send_address_title_widget)
+            send_asset_layout.addWidget(self.send_address_title_widget)
             send_asset_layout.addWidget(self.send_address_selection_widget)
             send_asset_layout.addWidget(send_amount_title_widget)
 
