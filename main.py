@@ -276,6 +276,8 @@ class MainWindow(QMainWindow):
         asset_pin_widget     = QLabel("Asset pin:")
         self.asset_pin_edit  = QLineEdit()
         self.asset_pin_edit.setEchoMode(QLineEdit.PasswordEchoOnEdit)
+        self.asset_pin_edit.setMaxLength(6)
+        self.asset_pin_edit.setInputMask('999999')
         Remove_address_btn       = QPushButton("Remove")
         Remove_address_btn.pressed.connect(self.pressed_remove_withdraw_address_bitcoin)
         self.Remove_address_btn = Remove_address_btn
@@ -480,31 +482,49 @@ class MainWindow(QMainWindow):
         self.remove_address_btn.setDisabled(False)
     def send_withdrawaddress_list_record_indexChanged(self, indexActived):
         print("index changed %d"%indexActived)
-        selected_withdraw_address = self.withdraw_address_of_asset_list[indexActived]
-        self.send_address_title_widget.setText(str(selected_withdraw_address))
+        self.selected_withdraw_address = self.withdraw_address_of_asset_list[indexActived]
+        self.send_address_title_widget.setText("To \n" + str(self.selected_withdraw_address))
+    def send_asset_to_withdraw_address_pressed(self):
+        self.selected_withdraw_address
+        withdraw_asset_result = self.selected_wallet_record.withdraw_asset_to(self.selected_withdraw_address.address_id, self.send_amount_edit_Label_widget.text(), "", "", self.send_pin_edit_Label_widget.text())
+        if withdraw_asset_result.is_success:
+            self.send_asset_widget.close()
+            congratulations_msg = QMessageBox()
+            congratulations_msg.setText("Your withdraw operation is successful, snapshot id is:%s" % withdraw_asset_result.data.snapshot_id)
+            congratulations_msg.exec_()
+        else:
+            congratulations_msg = QMessageBox()
+            congratulations_msg.setText("Failed to send, reason %s" % str(withdraw_asset_result))
+            congratulations_msg.exec_()
 
 
     def send_asset_to_address(self):
         if (hasattr(self, "asset_instance_in_item")):
             send_asset_title_label_widget = QLabel("Send " + self.asset_instance_in_item.name)
-            send_amount_title_widget = QLabel("amount:")
-            send_amount_edit_Label_widget = QLineEdit()
+            send_amount_title_widget = QLabel("amount, %s %s available"%(self.asset_instance_in_item.balance, self.asset_instance_in_item.symbol))
+            self.send_amount_edit_Label_widget = QLineEdit()
             send_pin_title_widget = QLabel("Asset pin:")
-            send_pin_edit_Label_widget = QLineEdit()
+            self.send_pin_edit_Label_widget = QLineEdit()
+            self.send_pin_edit_Label_widget.setEchoMode(QLineEdit.Password)
             self.send_address_title_widget = QLabel("to ")
 
             self.send_address_selection_widget = QComboBox()
             self.send_address_selection_widget.currentIndexChanged.connect(self.send_withdrawaddress_list_record_indexChanged)
+            send_asset_to_withdraw_address_btn = QPushButton("Send")
+            send_asset_to_withdraw_address_btn.pressed.connect(self.send_asset_to_withdraw_address_pressed)
 
             send_asset_layout = QVBoxLayout()
             send_asset_layout.addWidget(send_asset_title_label_widget)
             send_asset_layout.addWidget(self.send_address_title_widget)
             send_asset_layout.addWidget(self.send_address_selection_widget)
+
             send_asset_layout.addWidget(send_amount_title_widget)
 
-            send_asset_layout.addWidget(send_amount_edit_Label_widget)
+            send_asset_layout.addWidget(self.send_amount_edit_Label_widget)
             send_asset_layout.addWidget(send_pin_title_widget)
-            send_asset_layout.addWidget(send_pin_edit_Label_widget)
+            send_asset_layout.addWidget(self.send_pin_edit_Label_widget)
+
+            send_asset_layout.addWidget(send_asset_to_withdraw_address_btn)
             self.send_asset_widget = QWidget()
             self.send_asset_widget.setLayout(send_asset_layout)
             self.send_asset_widget.show()
