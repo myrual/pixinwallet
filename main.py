@@ -38,9 +38,10 @@ class Asset_addresses_Thread(QRunnable):
 
 
 class Balance_Thread(QRunnable):
-    def __init__(self, wallet_obj, *args, **kwargs):
+    def __init__(self, wallet_obj, delay_seconds = 0,  *args, **kwargs):
         super(Balance_Thread, self).__init__()
         self.wallet_obj = wallet_obj
+        self.delay_seconds = delay_seconds
         self.args = args
         self.kwargs = kwargs
         self.signals = WorkerSignals()
@@ -48,6 +49,7 @@ class Balance_Thread(QRunnable):
     @pyqtSlot()
     def run(self):
         try:
+            time.sleep(self.delay_seconds)
             result = self.wallet_obj.get_balance()
         except:
             traceback.print_exc()
@@ -159,6 +161,14 @@ class MainWindow(QMainWindow):
         print(s)
     def thread_complete(self):
         print("THREAD COMPLETE")
+
+    def balance_load_thread_complete(self):
+        print("THREAD COMPLETE")
+        worker = Balance_Thread(self.selected_wallet_record, 10)
+        worker.signals.result.connect(self.received_balance_result)
+        worker.signals.finished.connect(self.balance_load_thread_complete)
+        self.threadPool.start(worker)
+
     def create_wallet_confirm_chosen_block(self,user_input_name, user_input_pin, user_input_file):
 
         thisAccountRSAKeyPair = wallet_api.RSAKey4Mixin()
@@ -256,7 +266,11 @@ class MainWindow(QMainWindow):
             OK_button.pressed.connect(self.close_Create_Windows)
             self.create_withdraw_address_layout.addWidget(OK_button)
         else:
-            print("Failed to create address ")
+            print("Failed to create address because "%str(create_address_result))
+            failed_msg = QMessageBox()
+            failed_msg.setText("Failed to create address %s"%str(create_address_result))
+            failed_msg.exec_()
+
     def pressed_remove_withdraw_address_bitcoin(self):
         self.Remove_address_btn.setDisabled(True)
         remove_address_result  = self.selected_wallet_record.remove_address(self.withdraw_address_instance_in_item.address_id, self.asset_pin_edit.text())
@@ -268,7 +282,11 @@ class MainWindow(QMainWindow):
             self.threadPool.start(worker)
 
         else:
-            print("Failed to create address %s"%str(remove_address_result))
+            print("Failed to remove address %s"%str(remove_address_result))
+
+            congratulations_msg = QMessageBox()
+            congratulations_msg.setText("Failed to create address %s"%str(remove_address_result))
+            congratulations_msg.exec_()
 
     def pop_Remove_withdraw_address_window_bitcoinstyle(self):
 
@@ -428,9 +446,13 @@ class MainWindow(QMainWindow):
                 balance_list.addItem(this_list_item)
             balance_list.itemClicked.connect(self.balance_list_record_selected)
             balance_list.currentItemChanged.connect(self.balance_list_record_selection_actived)
+            current_select_row = 0
+            if hasattr(self, "balance_list"):
+                self.Balance_layout.removeWidget(self.balance_list)
+                current_select_row = self.balance_list.currentRow()
             self.balance_list = balance_list
             if(len(balance_result.data) > 0):
-                self.balance_list.setCurrentRow(0)
+                self.balance_list.setCurrentRow(current_select_row)
             self.Balance_layout.addWidget(self.balance_list)
         return
     def balance_list_record_selection_actived(self,itemCurr, itemPre):
@@ -453,14 +475,13 @@ class MainWindow(QMainWindow):
         self.asset_instance_in_item = itemSelect.data(0x0100)
         self.asset_balance_label.setText(self.asset_instance_in_item.balance)
     def update_asset_address_detail(self, this_withdraw_address):
-        self.public_key_label_withdraw_address_asset.setText(this_withdraw_address.public_key)
+        self.public_key_label_withdraw_address_asset.setText("address: "+this_withdraw_address.public_key)
         self.label_label_withdraw_address_asset.setText(this_withdraw_address.label)
-        self.account_name_label_withdraw_address_asset.setText(this_withdraw_address.account_name)
-        self.account_tag_label_withdraw_address_asset.setText(this_withdraw_address.account_tag)
-        self.fee_label_withdraw_address_asset.setText(this_withdraw_address.fee)
-        self.reserve_label_withdraw_address_asset.setText(this_withdraw_address.reserve)
-        self.dust_label_withdraw_address_asset.setText(this_withdraw_address.dust)
-        self.updated_at_label_withdraw_address_asset.setText(this_withdraw_address.updated_at) 
+        self.account_name_label_withdraw_address_asset.setText("account name: "+this_withdraw_address.account_name)
+        self.account_tag_label_withdraw_address_asset.setText("account tag: "+this_withdraw_address.account_tag)
+        self.fee_label_withdraw_address_asset.setText("fee: "+this_withdraw_address.fee)
+        self.reserve_label_withdraw_address_asset.setText("reserve: " + this_withdraw_address.reserve)
+        self.dust_label_withdraw_address_asset.setText("dust: " + this_withdraw_address.dust)
 
 
     def clear_asset_address_detail(self):
@@ -471,7 +492,6 @@ class MainWindow(QMainWindow):
         self.fee_label_withdraw_address_asset.setText("")
         self.reserve_label_withdraw_address_asset.setText("")
         self.dust_label_withdraw_address_asset.setText("")
-        self.updated_at_label_withdraw_address_asset.setText("") 
 
     def withdrawaddress_list_record_selected(self, itemSelect):
         if itemSelect == None:
@@ -566,7 +586,6 @@ class MainWindow(QMainWindow):
             self.fee_label_withdraw_address_asset = QLabel("fee")
             self.reserve_label_withdraw_address_asset = QLabel("reserve")
             self.dust_label_withdraw_address_asset = QLabel("dust")
-            self.updated_at_label_withdraw_address_asset = QLabel("updated at")
             remove_address_btn = QPushButton("Delete")
             remove_address_btn.pressed.connect(self.pop_Remove_withdraw_address_window_bitcoinstyle)
             remove_address_btn.setDisabled(True)
@@ -581,7 +600,6 @@ class MainWindow(QMainWindow):
             withdraw_addresses_detail_layout.addWidget(self.fee_label_withdraw_address_asset )
             withdraw_addresses_detail_layout.addWidget(self.reserve_label_withdraw_address_asset )
             withdraw_addresses_detail_layout.addWidget(self.dust_label_withdraw_address_asset )
-            withdraw_addresses_detail_layout.addWidget(self.updated_at_label_withdraw_address_asset )
             withdraw_addresses_detail_layout.addWidget(remove_address_btn)
 
             withdraw_addresses_detail_widget = QWidget()
@@ -641,7 +659,7 @@ class MainWindow(QMainWindow):
 
             worker = Balance_Thread(self.selected_wallet_record)
             worker.signals.result.connect(self.received_balance_result)
-            worker.signals.finished.connect(self.thread_complete)
+            worker.signals.finished.connect(self.balance_load_thread_complete)
             self.threadPool.start(worker)
         else:
             return
