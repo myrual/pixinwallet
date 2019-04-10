@@ -467,13 +467,13 @@ class MainWindow(QMainWindow):
             self.clear_asset_address_detail()
             return
         self.withdraw_address_instance_in_item = itemCurr.data(0x0100)
-        self.update_asset_address_detail(self.withdraw_address_instance_in_item)
+        self.update_asset_address_detail(self.withdraw_address_instance_in_item, self.withdraw_address_of_asset_detail_label)
         self.remove_address_btn.setDisabled(False)
 
     def balance_list_record_selected(self, itemSelect):
         self.asset_instance_in_item = itemSelect.data(0x0100)
         self.asset_balance_label.setText(self.asset_instance_in_item.balance)
-    def update_asset_address_detail(self, this_withdraw_address):
+    def update_asset_address_detail(self, this_withdraw_address, label_widget):
         stringForAddress = ""
         if this_withdraw_address.label != "":
             stringForAddress += this_withdraw_address.label
@@ -489,10 +489,10 @@ class MainWindow(QMainWindow):
             stringForAddress += ("\n" + this_withdraw_address.reserve + u' reserve')
         if(this_withdraw_address.dust!= ""):
             stringForAddress += ("\n" + this_withdraw_address.dust + u' dust')
-        self.withdraw_address_of_asset_detail_label.setText(stringForAddress)
+        label_widget.setText(stringForAddress)
 
-    def clear_asset_address_detail(self):
-        self.withdraw_address_of_asset_detail_label.setText("")
+    def clear_asset_address_detail(self, label_widget):
+        label_widget.setText("")
 
     def withdrawaddress_list_record_selected(self, itemSelect):
         if itemSelect == None:
@@ -504,14 +504,16 @@ class MainWindow(QMainWindow):
     def send_withdrawaddress_list_record_indexChanged(self, indexActived):
         print("index changed %d"%indexActived)
         self.selected_withdraw_address = self.withdraw_address_of_asset_list[indexActived]
-        self.send_address_title_widget.setText("To \n" + str(self.selected_withdraw_address))
+        self.update_asset_address_detail(self.selected_withdraw_address, self.send_address_title_widget)
+
     def send_asset_to_withdraw_address_pressed(self):
         self.selected_withdraw_address
         withdraw_asset_result = self.selected_wallet_record.withdraw_asset_to(self.selected_withdraw_address.address_id, self.send_amount_edit_Label_widget.text(), "", "", self.send_pin_edit_Label_widget.text())
         if withdraw_asset_result.is_success:
             self.send_asset_widget.close()
             congratulations_msg = QMessageBox()
-            congratulations_msg.setText("Your withdraw operation is successful, snapshot id is:%s" % withdraw_asset_result.data.snapshot_id)
+            congratulations_msg.setText("Your withdraw operation is successful, verify it on blockchain explorer on https://mixin.one/snapshots/%s" % withdraw_asset_result.data.snapshot_id)
+            congratulations_msg.setTextInteractionFlags(Qt.TextSelectableByMouse)
             congratulations_msg.exec_()
         else:
             congratulations_msg = QMessageBox()
@@ -521,7 +523,7 @@ class MainWindow(QMainWindow):
 
     def send_asset_to_address(self):
         if (hasattr(self, "asset_instance_in_item")):
-            send_asset_title_label_widget = QLabel("Send " + self.asset_instance_in_item.name)
+            send_asset_title_label_widget = QLabel("Send " + self.asset_instance_in_item.name + " to:")
             send_amount_title_widget = QLabel("amount, %s %s available"%(self.asset_instance_in_item.balance, self.asset_instance_in_item.symbol))
             self.send_amount_edit_Label_widget = QLineEdit()
             send_pin_title_widget = QLabel("Asset pin:")
