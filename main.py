@@ -7,7 +7,7 @@ import traceback, sys
 import wallet_api
 import mixin_asset_id_collection
 import sqlalchemy
-from mixin_sqlalchemy_type import *
+import mixin_sqlalchemy_type
 
 
 class WorkerSignals(QObject):
@@ -637,12 +637,43 @@ class MainWindow(QMainWindow):
         return
 
     def received_snapshot(self, searched_snapshots_result):
-        the_last_snapshots = searched_snapshots_result.data[-1].created_at
-        print(the_last_snapshots)
+        the_last_snapshots_time = searched_snapshots_result.data[-1].created_at
+        print(the_last_snapshots_time)
         for eachsnapshots in searched_snapshots_result.data:
             if (eachsnapshots.is_my_snap()):
-                print(eachsnapshots)
-        mysnapshots_worker = AccountsSnapshots_Thread(self.selected_wallet_record, the_last_snapshots)
+                my_snapshot = mixin_sqlalchemy_type.MySnapshot()
+                my_snapshot.snap_amount         = eachsnapshots.amount
+                my_snapshot.snap_type           = eachsnapshots.type
+                my_snapshot.snap_created_at     = eachsnapshots.created_at
+                my_snapshot.snap_asset_name     = eachsnapshots.asset.name
+                my_snapshot.snap_asset_asset_id = eachsnapshots.asset.asset_id
+                my_snapshot.snap_asset_chain_id = eachsnapshots.asset.chain_id
+                my_snapshot.snap_asset_symbol   = eachsnapshots.asset.symbol
+                my_snapshot.snap_snapshot_id    = eachsnapshots.snapshot_id
+ 
+                my_snapshot.snap_memo           = eachsnapshots.snapshot_id
+                my_snapshot.snap_source         = eachsnapshots.source
+                my_snapshot.snap_user_id        = eachsnapshots.user_id
+                my_snapshot.snap_trace_id       = eachsnapshots.trace_id
+                my_snapshot.snap_opponent_id    = eachsnapshots.opponent_id
+                self.session.add(my_snapshot)
+
+        if len(searched_snapshots_result.data) > 0:
+            the_last_snapshot = searched_snapshots_result.data[-1]
+            the_last_record = mixin_sqlalchemy_type.ScannedSnapshots()
+            the_last_record.snap_amount         = the_last_snapshot.amount
+            the_last_record.snap_type           = the_last_snapshot.type
+            the_last_record.snap_created_at     = the_last_snapshot.created_at
+            the_last_record.snap_asset_name     = the_last_snapshot.asset.name
+            the_last_record.snap_asset_asset_id = the_last_snapshot.asset.asset_id
+            the_last_record.snap_asset_chain_id = the_last_snapshot.asset.chain_id
+            the_last_record.snap_asset_symbol   = the_last_snapshot.asset.symbol
+            the_last_record.snap_snapshot_id    = the_last_snapshot.snapshot_id
+ 
+            self.session.add(the_last_record)
+            self.session.commit()
+
+        mysnapshots_worker = AccountsSnapshots_Thread(self.selected_wallet_record, the_last_snapshots_time)
         mysnapshots_worker.signals.result.connect(self.received_snapshot)
         mysnapshots_worker.signals.finished.connect(self.thread_complete)
         self.threadPool.start(mysnapshots_worker)
@@ -650,7 +681,14 @@ class MainWindow(QMainWindow):
     def received_user_profile_result(self, user_profile_result):
         self.loggedin_user_profile = user_profile_result
         print("user is created at %s"%self.loggedin_user_profile.data.created_at)
-        mysnapshots_worker = AccountsSnapshots_Thread(self.selected_wallet_record, self.loggedin_user_profile.data.created_at)
+        lastRecord = self.session.query(mixin_sqlalchemy_type.ScannedSnapshots).order_by(mixin_sqlalchemy_type.ScannedSnapshots.id.desc()).first()
+        print(lastRecord)
+        created_at_string = ""
+        if lastRecord != None: 
+            created_at_string = lastRecord.snap_created_at
+        else:
+            created_at_string = self.loggedin_user_profile.data.created_at
+        mysnapshots_worker = AccountsSnapshots_Thread(self.selected_wallet_record, created_at_string)
         mysnapshots_worker.signals.result.connect(self.received_snapshot)
         mysnapshots_worker.signals.finished.connect(self.thread_complete)
         self.threadPool.start(mysnapshots_worker)
@@ -879,11 +917,11 @@ class MainWindow(QMainWindow):
             engine = sqlalchemy.create_engine('sqlite:///' + self.file_name + '.snapshot.db')
             # Create all tables in the engine. This is equivalent to "Create Table"
             # statements in raw SQL.
-            Base.metadata.create_all(engine)
-            Base.metadata.bind = engine
+            mixin_sqlalchemy_type.Base.metadata.create_all(engine)
+            mixin_sqlalchemy_type.Base.metadata.bind = engine
  
-            DBSession = sessionmaker(bind=engine)
-            self.ession = DBSession()
+            DBSession = sqlalchemy.orm.sessionmaker(bind=engine)
+            self.session = DBSession()
 
             user_profile_worker.signals.result.connect(self.received_user_profile_result)
             user_profile_worker.signals.finished.connect(self.thread_complete)
