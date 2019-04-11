@@ -216,6 +216,22 @@ class MainWindow(QMainWindow):
 
         self.threadPool = QThreadPool()
         print("Multithreading with maximum %d threads" % self.threadPool.maxThreadCount())
+    def open_asset_transaction_history(self):
+        transaction_history_list_widget = QListWidget()
+        all_transaction_history_list = self.session.query(mixin_sqlalchemy_type.MySnapshot).filter_by(snap_asset_asset_id = self.asset_instance_in_item.asset_id).order_by(mixin_sqlalchemy_type.MySnapshot.id.desc()).all()
+
+        for each_sql_transaction in all_transaction_history_list:
+            amount = each_sql_transaction.snap_amount
+            if(float(amount) > 0):
+                amount = "+" + amount
+            itemN = QListWidgetItem(amount.ljust(15) + each_sql_transaction.snap_asset_symbol)
+            transaction_history_list_widget.addItem(itemN)
+        vlayer = QVBoxLayout()
+        vlayer.addWidget(transaction_history_list_widget)
+        self.transaction_history_list_widget = QWidget()
+        self.transaction_history_list_widget.setLayout(vlayer)
+        self.transaction_history_list_widget.show()
+
     def open_transaction_history(self):
         transaction_history_list_widget = QListWidget()
         all_transaction_history_list = self.session.query(mixin_sqlalchemy_type.MySnapshot).order_by(mixin_sqlalchemy_type.MySnapshot.id.desc()).all()
@@ -916,6 +932,8 @@ class MainWindow(QMainWindow):
             self.selected_asset_send.pressed.connect(self.send_asset_to_address)
             self.selected_asset_manageasset = QPushButton("Manage contact")
             self.selected_asset_manageasset.pressed.connect(self.open_widget_manage_asset)
+            self.selected_asset_show_history = QPushButton("History")
+            self.selected_asset_show_history.pressed.connect(self.open_asset_transaction_history)
 
             self.asset_balance_label = QLabel()
             balance_font = self.asset_balance_label.font()
@@ -933,6 +951,7 @@ class MainWindow(QMainWindow):
 
             self.Balance_detail_layout.addWidget(self.selected_asset_send)
             self.Balance_detail_layout.addWidget(self.selected_asset_manageasset)
+            self.Balance_detail_layout.addWidget(self.selected_asset_show_history)
 
             self.Balance_layout = QVBoxLayout()
             self.widget_balance_list = QWidget()
