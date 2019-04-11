@@ -863,9 +863,10 @@ class MainWindow(QMainWindow):
         self.transaction_record_detail.setText(totalString)
 
     def update_exin_detail(self):
-        self.trade_min_balance_label.setText("Minimum sell " + self.selected_exin_result.minimum_amount + " " + self.selected_exin_result.base_asset_symbol)
-        self.trade_max_balance_label.setText("Maximum sell " + self.selected_exin_result.maximum_amount + self.selected_exin_result.base_asset_symbol)
+        self.trade_min_balance_label.setText("Min " + self.selected_exin_result.minimum_amount + " --  " + self.selected_exin_result.maximum_amount + " Max "+ self.selected_exin_result.base_asset_symbol)
         self.trade_exchange_label.setText(self.selected_exin_result.supported_by_exchanges)
+        self.selected_trade_buy.setText("Buy " + self.selected_exin_result.exchange_asset_symbol)
+        self.selected_trade_sell.setText("Sell " + self.selected_exin_result.exchange_asset_symbol)
 
     def exin_trade_list_record_selected(self, itemSelect):
         self.selected_exin_result = itemSelect.data(0x0100)
@@ -1018,23 +1019,23 @@ class MainWindow(QMainWindow):
 
     def open_exin_exchange(self):
 
-        self.selected_trade_send = QPushButton("Send")
-        self.selected_trade_send.pressed.connect(self.send_asset_to_address)
+        self.selected_trade_buy = QPushButton("")
+        self.selected_trade_buy.pressed.connect(self.send_asset_to_address)
 
-        self.selected_trade_manageasset = QPushButton("Manage contact")
-        self.selected_trade_manageasset.pressed.connect(self.open_widget_manage_asset)
+        self.selected_trade_sell= QPushButton("")
+        self.selected_trade_sell.pressed.connect(self.open_widget_manage_asset)
 
-        self.trade_min_balance_label = QLabel("min")
-        self.trade_max_balance_label = QLabel("max")
-        self.trade_exchange_label= QLabel("min")
+        self.trade_min_balance_label = QLabel("")
+        self.trade_max_balance_label = QLabel("")
+        self.trade_exchange_label= QLabel("")
 
 
         exin_trade_detail_layout = QVBoxLayout()
         exin_trade_detail_layout.addWidget(self.trade_min_balance_label)
         exin_trade_detail_layout.addWidget(self.trade_max_balance_label)
         exin_trade_detail_layout.addWidget(self.trade_exchange_label)
-        exin_trade_detail_layout.addWidget(self.selected_trade_send)
-        exin_trade_detail_layout.addWidget(self.selected_trade_manageasset)
+        exin_trade_detail_layout.addWidget(self.selected_trade_buy)
+        exin_trade_detail_layout.addWidget(self.selected_trade_sell)
         self.exin_trade_detail_widget = QWidget()
         self.exin_trade_detail_widget.setLayout(exin_trade_detail_layout)
 
