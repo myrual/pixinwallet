@@ -8,6 +8,7 @@ import wallet_api
 import mixin_asset_id_collection
 import sqlalchemy
 import mixin_sqlalchemy_type
+import exincore_api
 
 
 class WorkerSignals(QObject):
@@ -54,6 +55,31 @@ class AccountsSnapshots_Thread(QRunnable):
         try:
             time.sleep(self.delay_seconds)
             result = self.wallet_obj.account_snapshots_after(self.starttime, "", 500)
+        except:
+            traceback.print_exc()
+            exctype, value = sys.exc_info()[:2]
+            self.signals.error.emit((exctype, value, traceback.format_exc()))
+        else:
+            self.signals.result.emit(result)
+        finally:
+            self.signals.finished.emit()
+        print("Balance Thread")
+
+class ExinPrice_Thread(QRunnable):
+    def __init__(self, base_asset_id, target_asset_id = "", delay_seconds = 0,  *args, **kwargs):
+        super(Balance_Thread, self).__init__()
+        self.target_asset_id = target_asset_id
+        self.base_asset_id = base_asset_id
+        self.delay_seconds = delay_seconds
+        self.args = args
+        self.kwargs = kwargs
+        self.signals = WorkerSignals()
+
+    @pyqtSlot()
+    def run(self):
+        try:
+            time.sleep(self.delay_seconds)
+            result = exincore_api.fetchExinPrice(self.base_asset_id, self.target_asset_id)
         except:
             traceback.print_exc()
             exctype, value = sys.exc_info()[:2]
@@ -190,6 +216,10 @@ class MainWindow(QMainWindow):
         self.update_pin_action.triggered.connect(self.pop_update_pin_window)
         pin_menu.addAction(self.update_pin_action)
 
+        exchange_menu = menu.addMenu("Exchanges")
+        self.exin_action = QAction("Instant change: Exin", self)
+        self.exin_action.triggered.connect(self.open_exin_exchange)
+        exchange_menu.addAction(self.exin_action)
 
 
         self.counter = 0
@@ -756,6 +786,20 @@ class MainWindow(QMainWindow):
         mysnapshots_worker.signals.finished.connect(self.thread_complete)
         self.threadPool.start(mysnapshots_worker)
  
+    def received_exin_result(self, exin_result):
+        exin_price_list_widget = QListWidget()
+        for eachPair in exin_result:
+            this_list_item = QListWidgetItem()
+            this_list_item.setData(0x0100, eachPair)
+            this_list_item.setText(str(eachPair))
+            exin_price_list_widget.addItem(this_list_item)
+        exin_price_list_widget.itemClicked.connect(self.balance_list_record_selected)
+        if hasattr(self, "exin_trade_pair_list"):
+            self.Balance_layout.removeWidget(self.exin_trade_pair_list)
+        self.exin_trade_pair_list = exin_price_list_widget
+        self.Balance_layout.addWidget(self.balance_list)
+        return
+
     def received_balance_result(self, balance_result):
         if(balance_result.is_success):
             balance_list = QListWidget()
@@ -958,6 +1002,36 @@ class MainWindow(QMainWindow):
         else:
             return
 
+
+    def open_exin_exchange(self):
+
+        self.selected_trade_send = QPushButton("Send")
+        self.selected_trade_send.pressed.connect(self.send_asset_to_address)
+
+        self.selected_trade_manageasset = QPushButton("Manage contact")
+        self.selected_trade_manageasset.pressed.connect(self.open_widget_manage_asset)
+
+        self.trade_min_balance_label = QLabel("min")
+        self.trade_max_balance_label = QLabel("max")
+
+        exin_trade_detail_layout = QVBoxLayout()
+        exin_trade_detail_layout.addWidget(self.trade_min_balance_label)
+        exin_trade_detail_layout.addWidget(self.trade_max_balance_label)
+        exin_trade_detail_layout.addWidget(self.selected_trade_send)
+        exin_trade_detail_layout.addWidget(self.selected_trade_manageasset)
+        self.exin_trade_detail_widget = QWidget()
+        self.exin_trade_detail_widget.setLayout(exin_trade_detail_layout)
+
+        self.exin_tradelist_layout = QVBoxLayout()
+        self.exin_tradelist_widget = QWidget()
+        self.exin_tradelist_widget.setLayout(self.exin_tradelist_layout)
+
+        self.exin_tradelist_and_detail_layout = QHBoxLayout()
+        self.exin_tradelist_and_detail_layout.addWidget(self.exin_tradelist_widget)
+        self.exin_tradelist_and_detail_layout.addWidget(self.exin_trade_detail_widget)
+        self.exin_tradelist_and_detail_widget = QWidget()
+        self.exin_tradelist_and_detail_widget.setLayout(self.exin_tradelist_and_detail_layout)
+        self.exin_tradelist_and_detail_widget.show()
 
     def open_selected_wallet(self):
         if (hasattr(self, "selected_wallet_record")):
