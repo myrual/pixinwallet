@@ -40,10 +40,11 @@ class Asset_addresses_Thread(QRunnable):
 
 
 class AccountsSnapshots_Thread(QRunnable):
-    def __init__(self, wallet_obj, starttime,  *args, **kwargs):
+    def __init__(self, wallet_obj, starttime, delay_seconds = 0, *args, **kwargs):
         super(AccountsSnapshots_Thread, self).__init__()
         self.wallet_obj = wallet_obj
         self.starttime = starttime
+        self.delay_seconds = delay_seconds
         self.args = args
         self.kwargs = kwargs
         self.signals = WorkerSignals()
@@ -51,6 +52,7 @@ class AccountsSnapshots_Thread(QRunnable):
     @pyqtSlot()
     def run(self):
         try:
+            time.sleep(self.delay_seconds)
             result = self.wallet_obj.account_snapshots_after(self.starttime, "", 500)
         except:
             traceback.print_exc()
@@ -187,6 +189,7 @@ class MainWindow(QMainWindow):
         self.update_pin_action = QAction("update pin", self)
         self.update_pin_action.triggered.connect(self.pop_update_pin_window)
         pin_menu.addAction(self.update_pin_action)
+
 
 
         self.counter = 0
@@ -668,39 +671,54 @@ class MainWindow(QMainWindow):
         print(the_last_snapshots_time)
         for eachsnapshots in searched_snapshots_result.data:
             if (eachsnapshots.is_my_snap()):
-                my_snapshot = mixin_sqlalchemy_type.MySnapshot()
-                my_snapshot.snap_amount         = eachsnapshots.amount
-                my_snapshot.snap_type           = eachsnapshots.type
-                my_snapshot.snap_created_at     = eachsnapshots.created_at
-                my_snapshot.snap_asset_name     = eachsnapshots.asset.name
-                my_snapshot.snap_asset_asset_id = eachsnapshots.asset.asset_id
-                my_snapshot.snap_asset_chain_id = eachsnapshots.asset.chain_id
-                my_snapshot.snap_asset_symbol   = eachsnapshots.asset.symbol
-                my_snapshot.snap_snapshot_id    = eachsnapshots.snapshot_id
+                found_snapshot_quantity = len(self.session.query(mixin_sqlalchemy_type.MySnapshot).filter_by(snap_snapshot_id = eachsnapshots.snapshot_id).all())
+                if(found_snapshot_quantity == 0):
+                    my_snapshot = mixin_sqlalchemy_type.MySnapshot()
+                    my_snapshot.snap_amount         = eachsnapshots.amount
+                    my_snapshot.snap_type           = eachsnapshots.type
+                    my_snapshot.snap_created_at     = eachsnapshots.created_at
+                    my_snapshot.snap_asset_name     = eachsnapshots.asset.name
+                    my_snapshot.snap_asset_asset_id = eachsnapshots.asset.asset_id
+                    my_snapshot.snap_asset_chain_id = eachsnapshots.asset.chain_id
+                    my_snapshot.snap_asset_symbol   = eachsnapshots.asset.symbol
+                    my_snapshot.snap_snapshot_id    = eachsnapshots.snapshot_id
  
-                my_snapshot.snap_memo           = eachsnapshots.snapshot_id
-                my_snapshot.snap_source         = eachsnapshots.source
-                my_snapshot.snap_user_id        = eachsnapshots.user_id
-                my_snapshot.snap_trace_id       = eachsnapshots.trace_id
-                my_snapshot.snap_opponent_id    = eachsnapshots.opponent_id
-                self.session.add(my_snapshot)
+                    my_snapshot.snap_memo           = eachsnapshots.snapshot_id
+                    my_snapshot.snap_source         = eachsnapshots.source
+                    my_snapshot.snap_user_id        = eachsnapshots.user_id
+                    my_snapshot.snap_trace_id       = eachsnapshots.trace_id
+                    my_snapshot.snap_opponent_id    = eachsnapshots.opponent_id
+                    self.session.add(my_snapshot)
 
         if len(searched_snapshots_result.data) > 0:
+            last_record_in_database = self.session.query(mixin_sqlalchemy_type.ScannedSnapshots).order_by(mixin_sqlalchemy_type.ScannedSnapshots.id.desc()).first()
             the_last_snapshot = searched_snapshots_result.data[-1]
-            the_last_record = mixin_sqlalchemy_type.ScannedSnapshots()
-            the_last_record.snap_amount         = the_last_snapshot.amount
-            the_last_record.snap_type           = the_last_snapshot.type
-            the_last_record.snap_created_at     = the_last_snapshot.created_at
-            the_last_record.snap_asset_name     = the_last_snapshot.asset.name
-            the_last_record.snap_asset_asset_id = the_last_snapshot.asset.asset_id
-            the_last_record.snap_asset_chain_id = the_last_snapshot.asset.chain_id
-            the_last_record.snap_asset_symbol   = the_last_snapshot.asset.symbol
-            the_last_record.snap_snapshot_id    = the_last_snapshot.snapshot_id
- 
-            self.session.add(the_last_record)
+            if last_record_in_database != None:
+                last_record_in_database.snap_amount         = the_last_snapshot.amount
+                last_record_in_database.snap_type           = the_last_snapshot.type
+                last_record_in_database.snap_created_at     = the_last_snapshot.created_at
+                last_record_in_database.snap_asset_name     = the_last_snapshot.asset.name
+                last_record_in_database.snap_asset_asset_id = the_last_snapshot.asset.asset_id
+                last_record_in_database.snap_asset_chain_id = the_last_snapshot.asset.chain_id
+                last_record_in_database.snap_asset_symbol   = the_last_snapshot.asset.symbol
+                last_record_in_database.snap_snapshot_id    = the_last_snapshot.snapshot_id
+            else:
+                the_last_record = mixin_sqlalchemy_type.ScannedSnapshots()
+                the_last_record.snap_amount         = the_last_snapshot.amount
+                the_last_record.snap_type           = the_last_snapshot.type
+                the_last_record.snap_created_at     = the_last_snapshot.created_at
+                the_last_record.snap_asset_name     = the_last_snapshot.asset.name
+                the_last_record.snap_asset_asset_id = the_last_snapshot.asset.asset_id
+                the_last_record.snap_asset_chain_id = the_last_snapshot.asset.chain_id
+                the_last_record.snap_asset_symbol   = the_last_snapshot.asset.symbol
+                the_last_record.snap_snapshot_id    = the_last_snapshot.snapshot_id
+                self.session.add(the_last_record)
             self.session.commit()
 
-        mysnapshots_worker = AccountsSnapshots_Thread(self.selected_wallet_record, the_last_snapshots_time)
+        delay_seconds = 0
+        if len(searched_snapshots_result.data) < 500:
+            delay_seconds = 120
+        mysnapshots_worker = AccountsSnapshots_Thread(self.selected_wallet_record, the_last_snapshots_time, delay_seconds)
         mysnapshots_worker.signals.result.connect(self.received_snapshot)
         mysnapshots_worker.signals.finished.connect(self.thread_complete)
         self.threadPool.start(mysnapshots_worker)
