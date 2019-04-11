@@ -37,6 +37,29 @@ class Asset_addresses_Thread(QRunnable):
         print("Withdraw address of asset Thread")
 
 
+class AccountsSnapshots_Thread(QRunnable):
+    def __init__(self, wallet_obj, starttime,  *args, **kwargs):
+        super(AccountsSnapshots_Thread, self).__init__()
+        self.wallet_obj = wallet_obj
+        self.starttime = starttime
+        self.args = args
+        self.kwargs = kwargs
+        self.signals = WorkerSignals()
+
+    @pyqtSlot()
+    def run(self):
+        try:
+            result = self.wallet_obj.account_snapshots_after(self.starttime, "", 500)
+        except:
+            traceback.print_exc()
+            exctype, value = sys.exc_info()[:2]
+            self.signals.error.emit((exctype, value, traceback.format_exc()))
+        else:
+            self.signals.result.emit(result)
+        finally:
+            self.signals.finished.emit()
+        print("Balance Thread")
+
 class Balance_Thread(QRunnable):
     def __init__(self, wallet_obj, delay_seconds = 0,  *args, **kwargs):
         super(Balance_Thread, self).__init__()
@@ -60,6 +83,28 @@ class Balance_Thread(QRunnable):
         finally:
             self.signals.finished.emit()
         print("Balance Thread")
+class UserProfile_Thread(QRunnable):
+    def __init__(self, wallet_obj, *args, **kwargs):
+        super(UserProfile_Thread, self).__init__()
+        self.wallet_obj = wallet_obj
+        self.args = args
+        self.kwargs = kwargs
+        self.signals = WorkerSignals()
+
+    @pyqtSlot()
+    def run(self):
+        try:
+            result = self.wallet_obj.fetch_my_profile()
+        except:
+            traceback.print_exc()
+            exctype, value = sys.exc_info()[:2]
+            self.signals.error.emit((exctype, value, traceback.format_exc()))
+        else:
+            self.signals.result.emit(result)
+        finally:
+            self.signals.finished.emit()
+        print("Balance Thread")
+
 
 class CreateAccount_Thread(QRunnable):
     def __init__(self, user_input_name, user_input_pin, user_input_file, *args, **kwargs):
@@ -588,6 +633,25 @@ class MainWindow(QMainWindow):
             self.withdraw_addresses_list_widget.update()
         return
 
+    def received_snapshot(self, searched_snapshots_result):
+        the_last_snapshots = searched_snapshots_result.data[-1].created_at
+        print(the_last_snapshots)
+        for eachsnapshots in searched_snapshots_result.data:
+            if (eachsnapshots.is_my_snap()):
+                print(eachsnapshots)
+        mysnapshots_worker = AccountsSnapshots_Thread(self.selected_wallet_record, the_last_snapshots)
+        mysnapshots_worker.signals.result.connect(self.received_snapshot)
+        mysnapshots_worker.signals.finished.connect(self.thread_complete)
+        self.threadPool.start(mysnapshots_worker)
+
+    def received_user_profile_result(self, user_profile_result):
+        self.loggedin_user_profile = user_profile_result
+        print("user is created at %s"%self.loggedin_user_profile.data.created_at)
+        mysnapshots_worker = AccountsSnapshots_Thread(self.selected_wallet_record, self.loggedin_user_profile.data.created_at)
+        mysnapshots_worker.signals.result.connect(self.received_snapshot)
+        mysnapshots_worker.signals.finished.connect(self.thread_complete)
+        self.threadPool.start(mysnapshots_worker)
+ 
     def received_balance_result(self, balance_result):
         if(balance_result.is_success):
             balance_list = QListWidget()
@@ -807,7 +871,12 @@ class MainWindow(QMainWindow):
             worker = Balance_Thread(self.selected_wallet_record)
             worker.signals.result.connect(self.received_balance_result)
             worker.signals.finished.connect(self.balance_load_thread_complete)
+
+            user_profile_worker = UserProfile_Thread(self.selected_wallet_record)
+            user_profile_worker.signals.result.connect(self.received_user_profile_result)
+            user_profile_worker.signals.finished.connect(self.thread_complete)
             self.threadPool.start(worker)
+            self.threadPool.start(user_profile_worker)
         else:
             return
 

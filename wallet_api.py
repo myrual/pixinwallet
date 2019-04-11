@@ -324,6 +324,11 @@ class WalletRecord():
         asset_withdraw_result_json = self.mixinAPIInstance.withdrawals(address_id, withdraw_amount, withdraw_memo, withdraw_this_uuid, withdraw_asset_pin)
         withdraw_result = Mixin_Wallet_API_Result(asset_withdraw_result_json, Withdrawal)
         return withdraw_result
+    def fetch_my_profile(self):
+        my_profile_json = self.mixinAPIInstance.getMyProfile("")
+        user_result = Mixin_Wallet_API_Result(my_profile_json, User_result)
+        return user_result
+
     def verify_pin(self, input_pin):
         verify_pin_result_json = self.mixinAPIInstance.verifyPin(input_pin)
         user_result = Mixin_Wallet_API_Result(verify_pin_result_json, User_result)
@@ -333,6 +338,11 @@ class WalletRecord():
         update_pin_result_json = self.mixinAPIInstance.updatePin(input_new_pin, input_old_pin)
         user_result = Mixin_Wallet_API_Result(update_pin_result_json, User_result)
         return user_result
+
+    def account_snapshots_after(self, timestamp, asset_id, max_record_quantity):
+        snapshots_json = self.mixinAPIInstance.account_snapshots_after(timestamp, asset_id, max_record_quantity)
+        snapshots_list_result = Mixin_Wallet_API_Result(snapshots_json, Snapshot_list)
+        return snapshots_list_result
 
     def my_snapshots_after(self, timestamp, asset_id = "", limit = 500, retry = 10):
         counter = 0

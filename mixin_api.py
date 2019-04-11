@@ -292,7 +292,7 @@ class MIXIN_API:
     Read self profile.
     """
     def getMyProfile(self, auth_token):
-        return self.__genGetRequest('/me', auth_token)
+        return self.__genNetworkGetRequest('/me', auth_token)
 
     """
     ?
