@@ -6,6 +6,8 @@ import time
 import traceback, sys
 import wallet_api
 import mixin_asset_id_collection
+import sqlalchemy
+from mixin_sqlalchemy_type import *
 
 
 class WorkerSignals(QObject):
@@ -271,6 +273,7 @@ class MainWindow(QMainWindow):
             print("User cancel file")
         else:
             print("User select file with %s" % file_name)
+            self.file_name = file_name
             self.selected_wallet_record = wallet_api.load_wallet_from_clear_base64_file(file_name)
             self.open_selected_wallet()
     def select_file_for_create_wallet(self):
@@ -873,6 +876,15 @@ class MainWindow(QMainWindow):
             worker.signals.finished.connect(self.balance_load_thread_complete)
 
             user_profile_worker = UserProfile_Thread(self.selected_wallet_record)
+            engine = sqlalchemy.create_engine('sqlite:///' + self.file_name + '.snapshot.db')
+            # Create all tables in the engine. This is equivalent to "Create Table"
+            # statements in raw SQL.
+            Base.metadata.create_all(engine)
+            Base.metadata.bind = engine
+ 
+            DBSession = sessionmaker(bind=engine)
+            self.ession = DBSession()
+
             user_profile_worker.signals.result.connect(self.received_user_profile_result)
             user_profile_worker.signals.finished.connect(self.thread_complete)
             self.threadPool.start(worker)
