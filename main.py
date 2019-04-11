@@ -216,36 +216,42 @@ class MainWindow(QMainWindow):
 
         self.threadPool = QThreadPool()
         print("Multithreading with maximum %d threads" % self.threadPool.maxThreadCount())
-    def open_asset_transaction_history(self):
+    def show_transaction_history(self, all_transaction_history_list):
         transaction_history_list_widget = QListWidget()
-        all_transaction_history_list = self.session.query(mixin_sqlalchemy_type.MySnapshot).filter_by(snap_asset_asset_id = self.asset_instance_in_item.asset_id).order_by(mixin_sqlalchemy_type.MySnapshot.id.desc()).all()
-
         for each_sql_transaction in all_transaction_history_list:
             amount = each_sql_transaction.snap_amount
             if(float(amount) > 0):
                 amount = "+" + amount
-            itemN = QListWidgetItem(amount.ljust(15) + each_sql_transaction.snap_asset_symbol)
+            itemN = QListWidgetItem()
+            itemN.setData(0x0100, each_sql_transaction)
+            itemN.setText(amount.ljust(15) + each_sql_transaction.snap_asset_symbol)
             transaction_history_list_widget.addItem(itemN)
+
+        transaction_history_list_widget.itemClicked.connect(self.transaction_list_record_selected)
+        transaction_history_list_widget.currentItemChanged.connect(self.transaction_list_record_actived)
         vlayer = QVBoxLayout()
         vlayer.addWidget(transaction_history_list_widget)
         self.transaction_history_list_widget = QWidget()
         self.transaction_history_list_widget.setLayout(vlayer)
-        self.transaction_history_list_widget.show()
+
+        transaction_history_and_detail_layout = QHBoxLayout()
+        transaction_history_and_detail_layout.addWidget(self.transaction_history_list_widget)
+
+        self.transaction_record_detail = QLabel("history detail")
+        transaction_history_and_detail_layout.addWidget(self.transaction_record_detail)
+
+        self.widget_transaction_list_detail = QWidget()
+        self.widget_transaction_list_detail.setLayout(transaction_history_and_detail_layout)
+        self.widget_transaction_list_detail.show()
+
+    def open_asset_transaction_history(self):
+        all_transaction_history_list = self.session.query(mixin_sqlalchemy_type.MySnapshot).filter_by(snap_asset_asset_id = self.asset_instance_in_item.asset_id).order_by(mixin_sqlalchemy_type.MySnapshot.id.desc()).all()
+        self.show_transaction_history(all_transaction_history_list)
 
     def open_transaction_history(self):
-        transaction_history_list_widget = QListWidget()
         all_transaction_history_list = self.session.query(mixin_sqlalchemy_type.MySnapshot).order_by(mixin_sqlalchemy_type.MySnapshot.id.desc()).all()
-        for each_sql_transaction in all_transaction_history_list:
-            amount = each_sql_transaction.snap_amount
-            if(float(amount) > 0):
-                amount = "+" + amount
-            itemN = QListWidgetItem(amount.ljust(15) + each_sql_transaction.snap_asset_symbol)
-            transaction_history_list_widget.addItem(itemN)
-        vlayer = QVBoxLayout()
-        vlayer.addWidget(transaction_history_list_widget)
-        self.transaction_history_list_widget = QWidget()
-        self.transaction_history_list_widget.setLayout(vlayer)
-        self.transaction_history_list_widget.show()
+        self.show_transaction_history(all_transaction_history_list)
+
     def execute_this_fn(self):
         for i in range(0, 5):
             time.sleep(1)
@@ -780,6 +786,31 @@ class MainWindow(QMainWindow):
         self.withdraw_address_instance_in_item = itemCurr.data(0x0100)
         self.update_asset_address_detail(self.withdraw_address_instance_in_item, self.withdraw_address_of_asset_detail_label)
         self.remove_address_btn.setDisabled(False)
+
+    def transaction_list_record_actived(self, itemCurr, itemPre):
+        self.transaction_record_in_item = itemCurr.data(0x0100)
+        totalString = ""
+        totalString += ("UTC Timestamp: %s\n"%self.transaction_record_in_item.snap_created_at)
+        totalString += ("opponent: %s\n"%self.transaction_record_in_item.snap_opponent_id)
+        totalString += ("asset name: %s\n"%self.transaction_record_in_item.snap_asset_name)
+        totalString += ("type: %s\n"%self.transaction_record_in_item.snap_type)
+        totalString += ("memo: %s\n"%self.transaction_record_in_item.snap_memo)
+
+
+        self.transaction_record_detail.setText(totalString)
+
+
+    def transaction_list_record_selected(self, itemSelect):
+        self.transaction_record_in_item = itemSelect.data(0x0100)
+        totalString = ""
+        totalString += ("UTC Timestamp: %s\n"%self.transaction_record_in_item.snap_created_at)
+        totalString += ("opponent: %s\n"%self.transaction_record_in_item.snap_opponent_id)
+        totalString += ("asset name: %s\n"%self.transaction_record_in_item.snap_asset_name)
+        totalString += ("type: %s\n"%self.transaction_record_in_item.snap_type)
+        totalString += ("memo: %s\n"%self.transaction_record_in_item.snap_memo)
+
+
+        self.transaction_record_detail.setText(totalString)
 
     def balance_list_record_selected(self, itemSelect):
         self.asset_instance_in_item = itemSelect.data(0x0100)
