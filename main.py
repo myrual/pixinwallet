@@ -792,9 +792,10 @@ class MainWindow(QMainWindow):
         for eachPair in exin_result:
             this_list_item = QListWidgetItem()
             this_list_item.setData(0x0100, eachPair)
-            this_list_item.setText(str(eachPair))
+            this_list_item.setText(eachPair.price + " " + eachPair.base_asset_symbol + "-> 1 "+ eachPair.exchange_asset_symbol)
             exin_price_list_widget.addItem(this_list_item)
-        #exin_price_list_widget.itemClicked.connect(self.balance_list_record_selected)
+        exin_price_list_widget.itemClicked.connect(self.exin_trade_list_record_selected)
+        exin_price_list_widget.currentItemChanged.connect(self.exin_trade_list_record_actived)
         if hasattr(self, "exin_trade_pair_list"):
             self.exin_tradelist_layout.removeWidget(self.exin_trade_pair_list)
         self.exin_trade_pair_list = exin_price_list_widget
@@ -861,6 +862,17 @@ class MainWindow(QMainWindow):
 
         self.transaction_record_detail.setText(totalString)
 
+    def update_exin_detail(self):
+        self.trade_min_balance_label.setText("Minimum sell " + self.selected_exin_result.minimum_amount + " " + self.selected_exin_result.base_asset_symbol)
+        self.trade_max_balance_label.setText("Maximum sell " + self.selected_exin_result.maximum_amount + self.selected_exin_result.base_asset_symbol)
+        self.trade_exchange_label.setText(self.selected_exin_result.supported_by_exchanges)
+
+    def exin_trade_list_record_selected(self, itemSelect):
+        self.selected_exin_result = itemSelect.data(0x0100)
+        self.update_exin_detail()
+    def exin_trade_list_record_actived(self, itemCurr, itemPre):
+        self.selected_exin_result = itemCurr.data(0x0100)
+        self.update_exin_detail()
     def balance_list_record_selected(self, itemSelect):
         self.asset_instance_in_item = itemSelect.data(0x0100)
         self.asset_balance_label.setText(self.asset_instance_in_item.balance)
@@ -1014,10 +1026,13 @@ class MainWindow(QMainWindow):
 
         self.trade_min_balance_label = QLabel("min")
         self.trade_max_balance_label = QLabel("max")
+        self.trade_exchange_label= QLabel("min")
+
 
         exin_trade_detail_layout = QVBoxLayout()
         exin_trade_detail_layout.addWidget(self.trade_min_balance_label)
         exin_trade_detail_layout.addWidget(self.trade_max_balance_label)
+        exin_trade_detail_layout.addWidget(self.trade_exchange_label)
         exin_trade_detail_layout.addWidget(self.selected_trade_send)
         exin_trade_detail_layout.addWidget(self.selected_trade_manageasset)
         self.exin_trade_detail_widget = QWidget()
