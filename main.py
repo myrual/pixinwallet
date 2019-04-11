@@ -175,6 +175,11 @@ class MainWindow(QMainWindow):
         file_menu = menu.addMenu("File")
         file_menu.addAction(button_action)
 
+        self.show_history_menu_action = QAction("Transaction history")
+        self.show_history_menu_action.triggered.connect(self.open_transaction_history)
+        file_menu.addAction(self.show_history_menu_action)
+
+
         pin_menu = menu.addMenu("Pin")
         self.verify_pin_action = QAction("verify pin", self)
         self.verify_pin_action.triggered.connect(self.pop_verify_pin_window)
@@ -208,6 +213,28 @@ class MainWindow(QMainWindow):
 
         self.threadPool = QThreadPool()
         print("Multithreading with maximum %d threads" % self.threadPool.maxThreadCount())
+    def open_transaction_history(self):
+        transaction_history_list_widget = QListWidget()
+        all_transaction_history_list = self.session.query(mixin_sqlalchemy_type.MySnapshot).order_by(mixin_sqlalchemy_type.MySnapshot.id.desc()).all()
+        for each_sql_transaction in all_transaction_history_list:
+            itemN = QListWidgetItem(transaction_history_list_widget)
+            amount_label  = QLabel(each_sql_transaction.snap_amount)
+            symble_label = QLabel(each_sql_transaction.snap_asset_symbol)
+            hlayout = QHBoxLayout()
+            hlayout.addWidget(amount_label)
+            hlayout.addWidget(symble_label)
+            hlayout.addStretch()
+            this_real_widget = QWidget()
+            this_real_widget.setLayout(hlayout)
+
+            itemN.setSizeHint(this_real_widget.sizeHint())
+            transaction_history_list_widget.addItem(itemN)
+            transaction_history_list_widget.setItemWidget(itemN, this_real_widget)
+        vlayer = QVBoxLayout()
+        vlayer.addWidget(transaction_history_list_widget)
+        self.transaction_history_list_widget = QWidget()
+        self.transaction_history_list_widget.setLayout(vlayer)
+        self.transaction_history_list_widget.show()
     def execute_this_fn(self):
         for i in range(0, 5):
             time.sleep(1)
