@@ -67,7 +67,7 @@ class AccountsSnapshots_Thread(QRunnable):
 
 class ExinPrice_Thread(QRunnable):
     def __init__(self, base_asset_id, target_asset_id = "", delay_seconds = 0,  *args, **kwargs):
-        super(Balance_Thread, self).__init__()
+        super(ExinPrice_Thread, self).__init__()
         self.target_asset_id = target_asset_id
         self.base_asset_id = base_asset_id
         self.delay_seconds = delay_seconds
@@ -787,17 +787,18 @@ class MainWindow(QMainWindow):
         self.threadPool.start(mysnapshots_worker)
  
     def received_exin_result(self, exin_result):
+        print(exin_result)
         exin_price_list_widget = QListWidget()
         for eachPair in exin_result:
             this_list_item = QListWidgetItem()
             this_list_item.setData(0x0100, eachPair)
             this_list_item.setText(str(eachPair))
             exin_price_list_widget.addItem(this_list_item)
-        exin_price_list_widget.itemClicked.connect(self.balance_list_record_selected)
+        #exin_price_list_widget.itemClicked.connect(self.balance_list_record_selected)
         if hasattr(self, "exin_trade_pair_list"):
-            self.Balance_layout.removeWidget(self.exin_trade_pair_list)
+            self.exin_tradelist_layout.removeWidget(self.exin_trade_pair_list)
         self.exin_trade_pair_list = exin_price_list_widget
-        self.Balance_layout.addWidget(self.balance_list)
+        self.exin_tradelist_layout.addWidget(self.exin_trade_pair_list)
         return
 
     def received_balance_result(self, balance_result):
@@ -1032,6 +1033,13 @@ class MainWindow(QMainWindow):
         self.exin_tradelist_and_detail_widget = QWidget()
         self.exin_tradelist_and_detail_widget.setLayout(self.exin_tradelist_and_detail_layout)
         self.exin_tradelist_and_detail_widget.show()
+
+        exin_worker = ExinPrice_Thread(mixin_asset_id_collection.USDT_ASSET_ID)
+        exin_worker.signals.result.connect(self.received_exin_result)
+        exin_worker.signals.finished.connect(self.thread_complete)
+
+        self.threadPool.start(exin_worker)
+
 
     def open_selected_wallet(self):
         if (hasattr(self, "selected_wallet_record")):
