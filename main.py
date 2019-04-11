@@ -243,6 +243,10 @@ class MainWindow(QMainWindow):
         self.widget_transaction_list_detail = QWidget()
         self.widget_transaction_list_detail.setLayout(transaction_history_and_detail_layout)
         self.widget_transaction_list_detail.show()
+        if(len(all_transaction_history_list) > 0):
+            transaction_history_list_widget.setCurrentRow(0)
+
+
 
     def open_asset_transaction_history(self):
         all_transaction_history_list = self.session.query(mixin_sqlalchemy_type.MySnapshot).filter_by(snap_asset_asset_id = self.asset_instance_in_item.asset_id).order_by(mixin_sqlalchemy_type.MySnapshot.id.desc()).all()
