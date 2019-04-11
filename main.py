@@ -304,7 +304,7 @@ class MainWindow(QMainWindow):
     def open_update_pin_window(self):
         print("update pin")
     def open_file(self):
-        file_name_selected = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()", "","All Files (*);;CSV Files (*.csv)")
+        file_name_selected = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()", "","TXT Files (*.txt);;All Files (*)")
         file_name = file_name_selected[0]
         fileter   = file_name_selected[1]
         if(file_name == ''):
