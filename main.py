@@ -220,19 +220,11 @@ class MainWindow(QMainWindow):
         transaction_history_list_widget = QListWidget()
         all_transaction_history_list = self.session.query(mixin_sqlalchemy_type.MySnapshot).order_by(mixin_sqlalchemy_type.MySnapshot.id.desc()).all()
         for each_sql_transaction in all_transaction_history_list:
-            itemN = QListWidgetItem(transaction_history_list_widget)
-            amount_label  = QLabel(each_sql_transaction.snap_amount)
-            symble_label = QLabel(each_sql_transaction.snap_asset_symbol)
-            hlayout = QHBoxLayout()
-            hlayout.addWidget(amount_label)
-            hlayout.addWidget(symble_label)
-            hlayout.addStretch()
-            this_real_widget = QWidget()
-            this_real_widget.setLayout(hlayout)
-
-            itemN.setSizeHint(this_real_widget.sizeHint())
+            amount = each_sql_transaction.snap_amount
+            if(float(amount) > 0):
+                amount = "+" + amount
+            itemN = QListWidgetItem(amount.ljust(15) + each_sql_transaction.snap_asset_symbol)
             transaction_history_list_widget.addItem(itemN)
-            transaction_history_list_widget.setItemWidget(itemN, this_real_widget)
         vlayer = QVBoxLayout()
         vlayer.addWidget(transaction_history_list_widget)
         self.transaction_history_list_widget = QWidget()
@@ -933,6 +925,7 @@ class MainWindow(QMainWindow):
 
             self.asset_deposit_label = QLabel()
             self.asset_deposit_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
+
 
 
             self.Balance_detail_layout.addWidget(self.asset_balance_label)
