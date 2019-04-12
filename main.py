@@ -731,7 +731,7 @@ class MainWindow(QMainWindow):
                     my_snapshot.snap_asset_symbol   = eachsnapshots.asset.symbol
                     my_snapshot.snap_snapshot_id    = eachsnapshots.snapshot_id
  
-                    my_snapshot.snap_memo           = eachsnapshots.snapshot_id
+                    my_snapshot.snap_memo           = eachsnapshots.memo
                     my_snapshot.snap_source         = eachsnapshots.source
                     my_snapshot.snap_user_id        = eachsnapshots.user_id
                     my_snapshot.snap_trace_id       = eachsnapshots.trace_id
@@ -805,11 +805,22 @@ class MainWindow(QMainWindow):
     def received_balance_result(self, balance_result):
         if(balance_result.is_success):
             balance_list = QListWidget()
+            asset_id_from_server = []
             for eachAsset in balance_result.data:
+                asset_id_from_server.append(eachAsset.asset_id)
                 this_list_item = QListWidgetItem()
                 this_list_item.setData(0x0100, eachAsset)
                 this_list_item.setText(eachAsset.name)
                 balance_list.addItem(this_list_item)
+            for default_id in mixin_asset_id_collection.MIXIN_DEFAULT_CHAIN_GROUP:
+                if not (default_id in asset_id_from_server):
+                    asset_balance_result = self.selected_wallet_record.get_singleasset_balance(default_id)
+                    if asset_balance_result.is_success:
+                        this_list_item = QListWidgetItem()
+                        this_list_item.setData(0x0100, asset_balance_result.data)
+                        this_list_item.setText(asset_balance_result.data.name)
+                        balance_list.addItem(this_list_item)
+
             balance_list.itemClicked.connect(self.balance_list_record_selected)
             balance_list.currentItemChanged.connect(self.balance_list_record_selection_actived)
             current_select_row = 0
@@ -908,8 +919,21 @@ class MainWindow(QMainWindow):
         self.selected_withdraw_address = self.withdraw_address_of_asset_list[indexActived]
         self.update_asset_address_detail(self.selected_withdraw_address, self.send_address_title_widget)
 
+    def pay_to_exin_pressed(self):
+        self.trade_exin_widget.close()
+        memo_for_exin = exincore_api.gen_memo_ExinBuy(self.selected_exin_result.echange_asset)
+        tranfer_result = self.selected_wallet_record.transfer_to(exincore_api.EXINCORE_UUID, self.selected_exin_result.base_asset, self.pay_exin_amount_edit_Label_widget.text(), memo_for_exin, "", self.pay_exin_pin_edit_Label_widget.text())
+        if tranfer_result.is_success:
+            congratulations_msg = QMessageBox()
+            congratulations_msg.setText("Your payment to exin is successful, verify it on blockchain explorer on https://mixin.one/snapshots/%s" % tranfer_result.data.snapshot_id)
+            congratulations_msg.setTextInteractionFlags(Qt.TextSelectableByMouse)
+            congratulations_msg.exec_()
+        else:
+            congratulations_msg = QMessageBox()
+            congratulations_msg.setText("Failed to pay, reason %s" % str(withdraw_asset_result))
+            congratulations_msg.exec_()
+
     def send_asset_to_withdraw_address_pressed(self):
-        self.selected_withdraw_address
         withdraw_asset_result = self.selected_wallet_record.withdraw_asset_to(self.selected_withdraw_address.address_id, self.send_amount_edit_Label_widget.text(), "", "", self.send_pin_edit_Label_widget.text())
         if withdraw_asset_result.is_success:
             self.send_asset_widget.close()
@@ -943,21 +967,21 @@ class MainWindow(QMainWindow):
 
             tradepair_price_title_label_widget = QLabel("Price:  %s %s  ==> 1 %s"%(price_base_asset, base_sym, target_sym))
             send_amount_title_widget = QLabel("amount(%s -> %s) %s:"%(minimum_pay_base_asset, maximum_pay_base_asset, base_sym))
-            self.send_amount_edit_Label_widget = QLineEdit()
+            self.pay_exin_amount_edit_Label_widget = QLineEdit()
             send_pin_title_widget = QLabel("Asset pin:")
-            self.send_pin_edit_Label_widget = QLineEdit()
-            self.send_pin_edit_Label_widget.setMaxLength(6)
-            self.send_pin_edit_Label_widget.setEchoMode(QLineEdit.Password)
+            self.pay_exin_pin_edit_Label_widget = QLineEdit()
+            self.pay_exin_pin_edit_Label_widget.setMaxLength(6)
+            self.pay_exin_pin_edit_Label_widget.setEchoMode(QLineEdit.Password)
 
             send_payment_to_exin_btn = QPushButton("Go")
-            send_payment_to_exin_btn.pressed.connect(self.send_asset_to_withdraw_address_pressed)
+            send_payment_to_exin_btn.pressed.connect(self.pay_to_exin_pressed)
 
             send_payment_to_exin_layout = QVBoxLayout()
             send_payment_to_exin_layout.addWidget(tradepair_price_title_label_widget)
             send_payment_to_exin_layout.addWidget(send_amount_title_widget)
-            send_payment_to_exin_layout.addWidget(self.send_amount_edit_Label_widget)
+            send_payment_to_exin_layout.addWidget(self.pay_exin_amount_edit_Label_widget)
             send_payment_to_exin_layout.addWidget(send_pin_title_widget)
-            send_payment_to_exin_layout.addWidget(self.send_pin_edit_Label_widget)
+            send_payment_to_exin_layout.addWidget(self.pay_exin_pin_edit_Label_widget)
             send_payment_to_exin_layout.addWidget(send_payment_to_exin_btn)
 
             self.trade_exin_widget = QWidget()
