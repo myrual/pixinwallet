@@ -923,10 +923,15 @@ class MainWindow(QMainWindow):
             congratulations_msg.exec_()
 
 
+    def open_sell_trade_detail_for_exin(self):
+        if (hasattr(self, "selected_exin_result")):
+            self.open_trade_trade_detail_for_exin(self.selected_exin_result.echange_asset, self.selected_exin_result.base_asset)
+
     def open_buy_trade_detail_for_exin(self):
         if (hasattr(self, "selected_exin_result")):
-            target_asset_id = self.selected_exin_result.echange_asset
-            base_asset_id   = self.selected_exin_result.base_asset
+            self.open_trade_trade_detail_for_exin(self.selected_exin_result.base_asset, self.selected_exin_result.echange_asset)
+    def open_trade_trade_detail_for_exin(self, base_asset_id, target_asset_id):
+        if (hasattr(self, "selected_exin_result")):
             asset_price_result = exincore_api.fetchExinPrice(base_asset_id, target_asset_id)
             #confirm price again
             this_trade_price = asset_price_result[0]
@@ -936,8 +941,8 @@ class MainWindow(QMainWindow):
             base_sym               = this_trade_price.base_asset_symbol
             target_sym             = this_trade_price.exchange_asset_symbol
 
-            tradepair_price_title_label_widget = QLabel("Price:  %s %s  to buy 1 %s"%(price_base_asset, base_sym, target_sym))
-            send_amount_title_widget = QLabel("amount: (Min %s -> %s Max) %s"%(minimum_pay_base_asset, maximum_pay_base_asset, base_sym))
+            tradepair_price_title_label_widget = QLabel("Price:  %s %s  ==> 1 %s"%(price_base_asset, base_sym, target_sym))
+            send_amount_title_widget = QLabel("amount(%s -> %s) %s:"%(minimum_pay_base_asset, maximum_pay_base_asset, base_sym))
             self.send_amount_edit_Label_widget = QLineEdit()
             send_pin_title_widget = QLabel("Asset pin:")
             self.send_pin_edit_Label_widget = QLineEdit()
@@ -1062,7 +1067,7 @@ class MainWindow(QMainWindow):
         self.selected_trade_buy_btn.pressed.connect(self.open_buy_trade_detail_for_exin)
 
         self.selected_trade_sell_btn= QPushButton("")
-        self.selected_trade_sell_btn.pressed.connect(self.open_widget_manage_asset)
+        self.selected_trade_sell_btn.pressed.connect(self.open_sell_trade_detail_for_exin)
 
         self.trade_min_balance_label = QLabel("")
         self.trade_max_balance_label = QLabel("")
