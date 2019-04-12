@@ -28,3 +28,12 @@ pip install --upgrade pip
 pip install -r requirements_wallet_api.txt
 pip install -r requirements_pyqt.txt
 ```
+
+Open wallet file
+![](https://github.com/myrual/pixinwallet/raw/master/open_wallet_file.png)
+
+Show balance
+![]()
+
+Instant trade api
+![]()
