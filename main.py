@@ -905,12 +905,6 @@ class MainWindow(QMainWindow):
             self.balance_list_tableview.update()
             self.account_balance = balance_result.data
         return
-    def balance_list_record_selection_actived(self,itemCurr, itemPre):
-        self.asset_instance_in_item = itemCurr.data(0x0100)
-        deposit_address_title_value_segments = self.asset_instance_in_item.deposit_address()
-        deposit_label_content = ""
-        for each_seg in deposit_address_title_value_segments:
-            deposit_label_content += each_seg["title"] + " : " + each_seg["value"] + "\n"
     def withdraw_address_list_record_selection_actived(self,itemCurr, itemPre):
         if itemCurr == None:
             self.clear_asset_address_detail()
@@ -964,9 +958,6 @@ class MainWindow(QMainWindow):
 
     def exin_trade_list_record_selected(self, index):
         self.selected_exin_result = self.exin_result[index.row()]
-        self.update_exin_detail()
-    def exin_trade_list_record_actived(self, itemCurr, itemPre):
-        self.selected_exin_result = itemCurr.data(0x0100)
         self.update_exin_detail()
     def balance_list_record_selected(self, index):
         row = index.row()
