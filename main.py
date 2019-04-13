@@ -858,7 +858,16 @@ class MainWindow(QMainWindow):
 
     def received_balance_result(self, balance_result):
         if(balance_result.is_success):
-            this_balance_model = Balance_TableModel(self, balance_result.data, ["Asset name", "Amount"])
+            final_balance_result = balance_result.data
+            asset_id_from_server = []
+            for eachAsset in balance_result.data:
+                asset_id_from_server.append(eachAsset.asset_id)
+            for default_id in mixin_asset_id_collection.MIXIN_DEFAULT_CHAIN_GROUP:
+                if not (default_id in asset_id_from_server):
+                    asset_balance_result = self.selected_wallet_record.get_singleasset_balance(default_id)
+                    if asset_balance_result.is_success:
+                        final_balance_result.append(asset_balance_result.data)
+            this_balance_model = Balance_TableModel(self, final_balance_result, ["Asset name", "Amount"])
             self.balance_list_tableview.setModel(this_balance_model)
             self.balance_list_tableview.update()
             self.account_balance = balance_result.data
