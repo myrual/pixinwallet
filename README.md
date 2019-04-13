@@ -33,7 +33,7 @@ Open wallet file
 ![](https://github.com/myrual/pixinwallet/raw/master/open_wallet_file.png)
 
 Show balance
-![]()
+![](https://github.com/myrual/pixinwallet/raw/master/wallet_balance.png)
 
 Instant trade api
 ![]()
