@@ -192,6 +192,44 @@ class CreateAccount_Thread(QRunnable):
             self.signals.finished.emit()
 
 
+class TransactionHistoryTableModel(QAbstractTableModel):
+    """
+    keep the method names
+    they are an integral part of the model
+    """
+    def __init__(self, parent, MySnapshot_list, header, *args):
+        QAbstractTableModel.__init__(self, parent, *args)
+        finalData = []
+        for eachSqlRecord in MySnapshot_list:
+            thisRecord = []
+            thisRecord.append(eachSqlRecord.snap_amount)
+            thisRecord.append(eachSqlRecord.snap_asset_symbol)
+            thisRecord.append(eachSqlRecord.snap_created_at)
+            thisRecord.append(eachSqlRecord.snap_type)
+            finalData.append(thisRecord)
+
+        self.mylist = finalData
+        self.header = header
+
+    def rowCount(self, parent):
+        return len(self.mylist)
+
+    def columnCount(self, parent):
+        return len(self.mylist[0])
+        
+    def data(self, index, role):
+        if not index.isValid():
+            return None
+        value = self.mylist[index.row()][index.column()]
+        if role == Qt.EditRole:
+            return value
+        elif role == Qt.DisplayRole:
+            return value
+
+    def headerData(self, col, orientation, role):
+        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+            return self.header[col]
+        return None
 class MainWindow(QMainWindow):
     def __init__(self, *args, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
@@ -242,34 +280,13 @@ class MainWindow(QMainWindow):
         self.threadPool = QThreadPool()
         print("Multithreading with maximum %d threads" % self.threadPool.maxThreadCount())
     def create_transaction_history(self, all_transaction_history_list):
-        transaction_history_list_widget = QListWidget()
-        for each_sql_transaction in all_transaction_history_list:
-            amount = each_sql_transaction.snap_amount
-            if(float(amount) > 0):
-                amount = "+" + amount
-            itemN = QListWidgetItem()
-            itemN.setData(0x0100, each_sql_transaction)
-            itemN.setText(amount.ljust(15) + each_sql_transaction.snap_asset_symbol)
-            transaction_history_list_widget.addItem(itemN)
 
-        transaction_history_list_widget.itemClicked.connect(self.transaction_list_record_selected)
-        transaction_history_list_widget.currentItemChanged.connect(self.transaction_list_record_actived)
-        vlayer = QVBoxLayout()
-        vlayer.addWidget(transaction_history_list_widget)
-        self.transaction_history_list_widget = QWidget()
-        self.transaction_history_list_widget.setLayout(vlayer)
+        header = ["Amount", "Asset", "Created at", "Type"]
+        this_tableModel = TransactionHistoryTableModel(self, all_transaction_history_list, header)
 
-        transaction_history_and_detail_layout = QHBoxLayout()
-        transaction_history_and_detail_layout.addWidget(self.transaction_history_list_widget)
-
-        self.transaction_record_detail = QLabel("history detail")
-        transaction_history_and_detail_layout.addWidget(self.transaction_record_detail)
-
-        widget_transaction_list_detail = QWidget()
-        widget_transaction_list_detail.setLayout(transaction_history_and_detail_layout)
-        if(len(all_transaction_history_list) > 0):
-            transaction_history_list_widget.setCurrentRow(0)
-        return widget_transaction_list_detail
+        transaction_table_view = QTableView()
+        transaction_table_view.setModel(this_tableModel)
+        return transaction_table_view
 
 
 
