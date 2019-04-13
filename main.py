@@ -383,6 +383,13 @@ class MainWindow(QMainWindow):
         return "Done."
     def print_output(self, s):
         print(s)
+    def snap_thread_complete(self):
+        header = ["Amount", "Asset", "Created at", "Type"]
+        all_transaction_history_list = self.session.query(mixin_sqlalchemy_type.MySnapshot).order_by(mixin_sqlalchemy_type.MySnapshot.id.desc()).all()
+        this_tableModel = TransactionHistoryTableModel(self, all_transaction_history_list, header)
+        self.account_transaction_history_widget.setModel(this_tableModel)
+        self.account_transaction_history_widget.update()
+
     def thread_complete(self):
         print("THREAD COMPLETE")
     def exin_thread_complete(self):
@@ -859,12 +866,13 @@ class MainWindow(QMainWindow):
                 self.session.add(the_last_record)
             self.session.commit()
 
+
         delay_seconds = 0
         if len(searched_snapshots_result.data) < 500:
             delay_seconds = 120
         mysnapshots_worker = AccountsSnapshots_Thread(self.selected_wallet_record, the_last_snapshots_time, delay_seconds)
         mysnapshots_worker.signals.result.connect(self.received_snapshot)
-        mysnapshots_worker.signals.finished.connect(self.thread_complete)
+        mysnapshots_worker.signals.finished.connect(self.snap_thread_complete)
         self.threadPool.start(mysnapshots_worker)
 
     def received_user_profile_result(self, user_profile_result):
