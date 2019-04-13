@@ -874,7 +874,6 @@ class MainWindow(QMainWindow):
         return
     def balance_list_record_selection_actived(self,itemCurr, itemPre):
         self.asset_instance_in_item = itemCurr.data(0x0100)
-        self.asset_balance_label.setText(self.asset_instance_in_item.balance)
         deposit_address_title_value_segments = self.asset_instance_in_item.deposit_address()
         deposit_label_content = ""
         for each_seg in deposit_address_title_value_segments:
@@ -940,7 +939,6 @@ class MainWindow(QMainWindow):
     def balance_list_record_selected(self, index):
         row = index.row()
         self.asset_instance_in_item = self.account_balance[row]
-        self.asset_balance_label.setText(self.asset_instance_in_item.balance)
     def update_asset_address_detail(self, this_withdraw_address, label_widget):
         stringForAddress = ""
         if this_withdraw_address.public_key != "":
@@ -1182,6 +1180,19 @@ class MainWindow(QMainWindow):
         self.threadPool.start(exin_worker)
 
 
+    def pop_deposit_addess_of_asset(self):
+        congratulations_msg = QMessageBox()
+        deposit_address_title_value_segments = self.asset_instance_in_item.deposit_address()
+        first_seg = deposit_address_title_value_segments[0]
+        deposit_label_content = first_seg["title"] + " : " + first_seg["value"]
+        if len(deposit_address_title_value_segments) > 1:
+            second_seg = deposit_address_title_value_segments[1]
+            deposit_label_content += "\n" + second_seg["title"] + " : " + second_seg["value"]
+
+        congratulations_msg.setText(deposit_label_content)
+        congratulations_msg.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        congratulations_msg.exec_()
+
     def create_balance_widget(self):
         self.balance_and_detail_layout = QHBoxLayout()
         self.Balance_detail_layout = QVBoxLayout()
@@ -1191,24 +1202,20 @@ class MainWindow(QMainWindow):
         self.selected_asset_manageasset.pressed.connect(self.open_widget_manage_asset)
         self.selected_asset_show_history = QPushButton("History")
         self.selected_asset_show_history.pressed.connect(self.open_asset_transaction_history)
-
-        self.asset_balance_label = QLabel()
-        balance_font = self.asset_balance_label.font()
-        balance_font.setPointSize(40)
-        self.asset_balance_label.setFont(balance_font)
-        self.asset_balance_label.setAlignment(Qt.AlignCenter)
+        self.show_deposit_address_btn = QPushButton("Deposit address")
+        self.show_deposit_address_btn.pressed.connect(self.pop_deposit_addess_of_asset)
 
         self.asset_deposit_label = QLabel()
         self.asset_deposit_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
 
 
 
-        self.Balance_detail_layout.addWidget(self.asset_balance_label)
         self.Balance_detail_layout.addWidget(self.asset_deposit_label)
 
         self.Balance_detail_layout.addWidget(self.selected_asset_send)
-        self.Balance_detail_layout.addWidget(self.selected_asset_manageasset)
         self.Balance_detail_layout.addWidget(self.selected_asset_show_history)
+        self.Balance_detail_layout.addWidget(self.selected_asset_manageasset)
+        self.Balance_detail_layout.addWidget(self.show_deposit_address_btn)
 
         self.balance_list_tableview = QTableView()
         self.balance_list_tableview.clicked.connect(self.balance_list_record_selected)
