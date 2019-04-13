@@ -1099,8 +1099,7 @@ class MainWindow(QMainWindow):
             return
 
 
-    def open_exin_exchange(self):
-
+    def create_exin_exchange_widget(self):
         self.selected_trade_buy_btn = QPushButton("")
         self.selected_trade_buy_btn.pressed.connect(self.open_buy_trade_detail_for_exin)
 
@@ -1134,8 +1133,14 @@ class MainWindow(QMainWindow):
         this_layout = QVBoxLayout()
         this_layout.addWidget(exin_label)
         this_layout.addWidget(self.exin_tradelist_and_detail_widget)
-        self.exin_title_trade_list_detail = QWidget()
-        self.exin_title_trade_list_detail.setLayout(this_layout)
+        exin_title_trade_list_detail = QWidget()
+        exin_title_trade_list_detail.setLayout(this_layout)
+        exin_title_trade_list_detail.show()
+        return exin_title_trade_list_detail
+
+
+    def open_exin_exchange(self):
+        self.exin_title_trade_list_detail = self.create_exin_exchange_widget()
         self.exin_title_trade_list_detail.show()
 
         exin_worker = ExinPrice_Thread(mixin_asset_id_collection.USDT_ASSET_ID)
