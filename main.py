@@ -215,7 +215,9 @@ class TransactionHistoryTableModel(QAbstractTableModel):
         return len(self.mylist)
 
     def columnCount(self, parent):
-        return len(self.mylist[0])
+        if len(self.mylist) > 0:
+            return len(self.mylist[0])
+        return 0
         
     def data(self, index, role):
         if not index.isValid():
@@ -293,6 +295,7 @@ class MainWindow(QMainWindow):
     def open_asset_transaction_history(self):
         asset_transaction_history_list = self.session.query(mixin_sqlalchemy_type.MySnapshot).filter_by(snap_asset_asset_id = self.asset_instance_in_item.asset_id).order_by(mixin_sqlalchemy_type.MySnapshot.id.desc()).all()
         self.widget_transaction_list_detail = self.create_transaction_history(asset_transaction_history_list)
+        self.widget_transaction_list_detail.show()
 
     def open_transaction_history(self):
         all_transaction_history_list = self.session.query(mixin_sqlalchemy_type.MySnapshot).order_by(mixin_sqlalchemy_type.MySnapshot.id.desc()).all()
@@ -356,7 +359,7 @@ class MainWindow(QMainWindow):
     def open_update_pin_window(self):
         print("update pin")
     def open_file(self):
-        file_name_selected = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()", "","TXT Files (*.txt);;All Files (*)")
+        file_name_selected = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()", "","mixinkey Files (*.mixinkey);;All Files (*)")
         file_name = file_name_selected[0]
         fileter   = file_name_selected[1]
         if(file_name == ''):
