@@ -883,8 +883,6 @@ class MainWindow(QMainWindow):
         self.update_transaction_list_record_detail()
 
     def update_exin_detail(self):
-        self.trade_min_balance_label.setText("Min " + self.selected_exin_result.minimum_amount + " --  " + self.selected_exin_result.maximum_amount + " Max "+ self.selected_exin_result.base_asset_symbol)
-        self.trade_exchange_label.setText(self.selected_exin_result.supported_by_exchanges)
         self.selected_trade_buy_btn.setText("Buy " + self.selected_exin_result.exchange_asset_symbol)
         self.selected_trade_sell_btn.setText("Sell " + self.selected_exin_result.exchange_asset_symbol)
 
@@ -1101,32 +1099,26 @@ class MainWindow(QMainWindow):
         self.selected_trade_sell_btn= QPushButton("")
         self.selected_trade_sell_btn.pressed.connect(self.open_sell_trade_detail_for_exin)
 
-        self.trade_min_balance_label = QLabel("")
-        self.trade_max_balance_label = QLabel("")
-        self.trade_exchange_label= QLabel("")
 
-
-        exin_trade_detail_layout = QVBoxLayout()
-        exin_trade_detail_layout.addWidget(self.trade_min_balance_label)
-        exin_trade_detail_layout.addWidget(self.trade_max_balance_label)
-        exin_trade_detail_layout.addWidget(self.trade_exchange_label)
-        exin_trade_detail_layout.addWidget(self.selected_trade_buy_btn)
-        exin_trade_detail_layout.addWidget(self.selected_trade_sell_btn)
-        self.exin_trade_detail_widget = QWidget()
-        self.exin_trade_detail_widget.setLayout(exin_trade_detail_layout)
 
         self.exin_tradelist_layout = QVBoxLayout()
         self.exin_tradelist_widget = QWidget()
         self.exin_tradelist_widget.setLayout(self.exin_tradelist_layout)
 
-        self.exin_tradelist_and_detail_layout = QHBoxLayout()
+        self.exin_tradelist_and_detail_layout = QVBoxLayout()
         self.exin_tradelist_and_detail_layout.addWidget(self.exin_tradelist_widget)
-        self.exin_tradelist_and_detail_layout.addWidget(self.exin_trade_detail_widget)
         self.exin_tradelist_and_detail_widget = QWidget()
         self.exin_tradelist_and_detail_widget.setLayout(self.exin_tradelist_and_detail_layout)
         fetch_exin_price_btn = QPushButton("Fetch price")
+        button_layout = QHBoxLayout()
+        button_layout.addWidget(fetch_exin_price_btn)
+        button_layout.addWidget(self.selected_trade_buy_btn)
+        button_layout.addWidget(self.selected_trade_sell_btn)
+        button_group_widget = QWidget()
+        button_group_widget.setLayout(button_layout)
+
         this_layout = QVBoxLayout()
-        this_layout.addWidget(fetch_exin_price_btn)
+        this_layout.addWidget(button_group_widget)
         this_layout.addWidget(self.exin_tradelist_and_detail_widget)
         exin_title_trade_list_detail = QWidget()
         exin_title_trade_list_detail.setLayout(this_layout)
