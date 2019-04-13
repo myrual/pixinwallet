@@ -192,6 +192,45 @@ class CreateAccount_Thread(QRunnable):
             self.signals.finished.emit()
 
 
+class Balance_TableModel(QAbstractTableModel):
+    """
+    keep the method names
+    they are an integral part of the model
+    """
+    def __init__(self, parent, balance_result_list, header, *args):
+        QAbstractTableModel.__init__(self, parent, *args)
+        finalData = []
+        for eachAsset in balance_result_list:
+            thisRecord = []
+            thisRecord.append(eachAsset.name)
+            thisRecord.append(eachAsset.balance)
+            finalData.append(thisRecord)
+
+        self.mylist = finalData
+        self.header = header
+
+    def rowCount(self, parent):
+        return len(self.mylist)
+
+    def columnCount(self, parent):
+        if len(self.mylist) > 0:
+            return len(self.mylist[0])
+        return 0
+        
+    def data(self, index, role):
+        if not index.isValid():
+            return None
+        value = self.mylist[index.row()][index.column()]
+        if role == Qt.EditRole:
+            return value
+        elif role == Qt.DisplayRole:
+            return value
+
+    def headerData(self, col, orientation, role):
+        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+            return self.header[col]
+        return None
+
 class TransactionHistoryTableModel(QAbstractTableModel):
     """
     keep the method names
@@ -819,33 +858,10 @@ class MainWindow(QMainWindow):
 
     def received_balance_result(self, balance_result):
         if(balance_result.is_success):
-            balance_list = QListWidget()
-            asset_id_from_server = []
-            for eachAsset in balance_result.data:
-                asset_id_from_server.append(eachAsset.asset_id)
-                this_list_item = QListWidgetItem()
-                this_list_item.setData(0x0100, eachAsset)
-                this_list_item.setText(eachAsset.name)
-                balance_list.addItem(this_list_item)
-            for default_id in mixin_asset_id_collection.MIXIN_DEFAULT_CHAIN_GROUP:
-                if not (default_id in asset_id_from_server):
-                    asset_balance_result = self.selected_wallet_record.get_singleasset_balance(default_id)
-                    if asset_balance_result.is_success:
-                        this_list_item = QListWidgetItem()
-                        this_list_item.setData(0x0100, asset_balance_result.data)
-                        this_list_item.setText(asset_balance_result.data.name)
-                        balance_list.addItem(this_list_item)
-
-            balance_list.itemClicked.connect(self.balance_list_record_selected)
-            balance_list.currentItemChanged.connect(self.balance_list_record_selection_actived)
-            current_select_row = 0
-            if hasattr(self, "balance_list"):
-                self.Balance_layout.removeWidget(self.balance_list)
-                current_select_row = self.balance_list.currentRow()
-            self.balance_list = balance_list
-            if(len(balance_result.data) > 0):
-                self.balance_list.setCurrentRow(current_select_row)
-            self.Balance_layout.addWidget(self.balance_list)
+            this_balance_model = Balance_TableModel(self, balance_result.data, ["Asset name", "Amount"])
+            self.balance_list_tableview.setModel(this_balance_model)
+            self.balance_list_tableview.update()
+            self.account_balance = balance_result.data
         return
     def balance_list_record_selection_actived(self,itemCurr, itemPre):
         self.asset_instance_in_item = itemCurr.data(0x0100)
@@ -912,8 +928,9 @@ class MainWindow(QMainWindow):
     def exin_trade_list_record_actived(self, itemCurr, itemPre):
         self.selected_exin_result = itemCurr.data(0x0100)
         self.update_exin_detail()
-    def balance_list_record_selected(self, itemSelect):
-        self.asset_instance_in_item = itemSelect.data(0x0100)
+    def balance_list_record_selected(self, index):
+        row = index.row()
+        self.asset_instance_in_item = self.account_balance[row]
         self.asset_balance_label.setText(self.asset_instance_in_item.balance)
     def update_asset_address_detail(self, this_withdraw_address, label_widget):
         stringForAddress = ""
@@ -1184,14 +1201,12 @@ class MainWindow(QMainWindow):
         self.Balance_detail_layout.addWidget(self.selected_asset_manageasset)
         self.Balance_detail_layout.addWidget(self.selected_asset_show_history)
 
-        self.Balance_layout = QVBoxLayout()
-        self.widget_balance_list = QWidget()
-        self.widget_balance_list.setLayout(self.Balance_layout)
-        self.widget_balance_list.show()
+        self.balance_list_tableview = QTableView()
+        self.balance_list_tableview.clicked.connect(self.balance_list_record_selected)
         self.widget_balance_detail = QWidget()
         self.widget_balance_detail.setLayout(self.Balance_detail_layout)
         self.widget_balance_detail.show()
-        self.balance_and_detail_layout.addWidget(self.widget_balance_list)
+        self.balance_and_detail_layout.addWidget(self.balance_list_tableview)
         self.balance_and_detail_layout.addWidget(self.widget_balance_detail)
         widget_balance = QWidget()
         widget_balance.setLayout(self.balance_and_detail_layout)
