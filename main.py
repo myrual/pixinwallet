@@ -231,6 +231,49 @@ class Balance_TableModel(QAbstractTableModel):
             return self.header[col]
         return None
 
+class ExinPrice_TableModel(QAbstractTableModel):
+    """
+    keep the method names
+    they are an integral part of the model
+    """
+    def __init__(self, parent, exintrade_price_list, header, *args):
+        QAbstractTableModel.__init__(self, parent, *args)
+        finalData = []
+        for eachAsset in exintrade_price_list:
+            thisRecord = []
+            thisRecord.append(eachAsset.price)
+            thisRecord.append(eachAsset.base_asset_symbol + "/" + eachAsset.exchange_asset_symbol)
+            thisRecord.append(eachAsset.minimum_amount)
+            thisRecord.append(eachAsset.maximum_amount)
+
+            finalData.append(thisRecord)
+
+        self.mylist = finalData
+        self.header = header
+
+    def rowCount(self, parent):
+        return len(self.mylist)
+
+    def columnCount(self, parent):
+        if len(self.mylist) > 0:
+            return len(self.mylist[0])
+        return 0
+        
+    def data(self, index, role):
+        if not index.isValid():
+            return None
+        value = self.mylist[index.row()][index.column()]
+        if role == Qt.EditRole:
+            return value
+        elif role == Qt.DisplayRole:
+            return value
+
+    def headerData(self, col, orientation, role):
+        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+            return self.header[col]
+        return None
+
+
 class TransactionHistoryTableModel(QAbstractTableModel):
     """
     keep the method names
@@ -290,12 +333,6 @@ class MainWindow(QMainWindow):
         self.update_pin_action.triggered.connect(self.pop_update_pin_window)
         pin_menu.addAction(self.update_pin_action)
 
-        exchange_menu = menu.addMenu("Exchanges")
-        self.exin_action = QAction("Instant change: Exin", self)
-        self.exin_action.triggered.connect(self.open_exin_exchange)
-        exchange_menu.addAction(self.exin_action)
-
-
         self.counter = 0
         layout = QVBoxLayout()
         self.rootLayout = layout
@@ -348,6 +385,11 @@ class MainWindow(QMainWindow):
         print(s)
     def thread_complete(self):
         print("THREAD COMPLETE")
+    def exin_thread_complete(self):
+        print("EXIN THREAD COMPLETE")
+        exin_worker = ExinPrice_Thread(mixin_asset_id_collection.USDT_ASSET_ID, 10)
+        exin_worker.signals.result.connect(self.received_exin_result)
+        exin_worker.signals.finished.connect(self.exin_thread_complete)
 
     def balance_load_thread_complete(self):
         print("THREAD COMPLETE")
@@ -409,7 +451,7 @@ class MainWindow(QMainWindow):
             self.selected_wallet_record = wallet_api.load_wallet_from_clear_base64_file(file_name)
             self.open_selected_wallet()
     def select_file_for_create_wallet(self):
-        file_name_selected = QFileDialog.getSaveFileName(self, "QFileDialog.getOpenFileName()", "","TXT Files (*.txt);;All Files (*)")
+        file_name_selected = QFileDialog.getSaveFileName(self, "QFileDialog.getOpenFileName()", "","mixinkey Files (*.mixinkey);;All Files (*)")
         file_name = file_name_selected[0]
         fileter   = file_name_selected[1]
         if(file_name == ''):
@@ -716,7 +758,7 @@ class MainWindow(QMainWindow):
         self.create_account_widget.show()
 
     def create_wallet_file(self):
-        file_name_selected = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()", "","TXT Files (*.txt);;All Files (*)")
+        file_name_selected = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()", "","mixinkey Files (*.mixinkey);;All Files (*)")
         file_name = file_name_selected[0]
         fileter   = file_name_selected[1]
         if(file_name == ''):
@@ -841,19 +883,10 @@ class MainWindow(QMainWindow):
         self.threadPool.start(mysnapshots_worker)
  
     def received_exin_result(self, exin_result):
-        print(exin_result)
-        exin_price_list_widget = QListWidget()
-        for eachPair in exin_result:
-            this_list_item = QListWidgetItem()
-            this_list_item.setData(0x0100, eachPair)
-            this_list_item.setText(eachPair.price + " " + eachPair.base_asset_symbol + "-> 1 "+ eachPair.exchange_asset_symbol)
-            exin_price_list_widget.addItem(this_list_item)
-        exin_price_list_widget.itemClicked.connect(self.exin_trade_list_record_selected)
-        exin_price_list_widget.currentItemChanged.connect(self.exin_trade_list_record_actived)
-        if hasattr(self, "exin_trade_pair_list"):
-            self.exin_tradelist_layout.removeWidget(self.exin_trade_pair_list)
-        self.exin_trade_pair_list = exin_price_list_widget
-        self.exin_tradelist_layout.addWidget(self.exin_trade_pair_list)
+        self.exin_result = exin_result
+        this_model = ExinPrice_TableModel(self, exin_result, ["price", "trade", "min pay", "max pay"])
+        self.exin_tradelist_widget.setModel(this_model)
+        self.exin_tradelist_widget.update()
         return
 
     def received_balance_result(self, balance_result):
@@ -929,8 +962,8 @@ class MainWindow(QMainWindow):
         self.selected_trade_buy_btn.setText("Buy " + self.selected_exin_result.exchange_asset_symbol)
         self.selected_trade_sell_btn.setText("Sell " + self.selected_exin_result.exchange_asset_symbol)
 
-    def exin_trade_list_record_selected(self, itemSelect):
-        self.selected_exin_result = itemSelect.data(0x0100)
+    def exin_trade_list_record_selected(self, index):
+        self.selected_exin_result = self.exin_result[index.row()]
         self.update_exin_detail()
     def exin_trade_list_record_actived(self, itemCurr, itemPre):
         self.selected_exin_result = itemCurr.data(0x0100)
@@ -1145,16 +1178,14 @@ class MainWindow(QMainWindow):
 
 
         self.exin_tradelist_layout = QVBoxLayout()
-        self.exin_tradelist_widget = QWidget()
-        self.exin_tradelist_widget.setLayout(self.exin_tradelist_layout)
+        self.exin_tradelist_widget = QTableView()
+        self.exin_tradelist_widget.clicked.connect(self.exin_trade_list_record_selected)
 
         self.exin_tradelist_and_detail_layout = QVBoxLayout()
         self.exin_tradelist_and_detail_layout.addWidget(self.exin_tradelist_widget)
         self.exin_tradelist_and_detail_widget = QWidget()
         self.exin_tradelist_and_detail_widget.setLayout(self.exin_tradelist_and_detail_layout)
-        fetch_exin_price_btn = QPushButton("Fetch price")
         button_layout = QHBoxLayout()
-        button_layout.addWidget(fetch_exin_price_btn)
         button_layout.addWidget(self.selected_trade_buy_btn)
         button_layout.addWidget(self.selected_trade_sell_btn)
         button_group_widget = QWidget()
@@ -1168,29 +1199,20 @@ class MainWindow(QMainWindow):
         return exin_title_trade_list_detail
 
 
-    def open_exin_exchange(self):
-        self.exin_title_trade_list_detail = self.create_exin_exchange_widget()
-        self.exin_title_trade_list_detail.show()
-
-        exin_worker = ExinPrice_Thread(mixin_asset_id_collection.USDT_ASSET_ID)
-        exin_worker.signals.result.connect(self.received_exin_result)
-        exin_worker.signals.finished.connect(self.thread_complete)
-
-        self.threadPool.start(exin_worker)
-
-
     def pop_deposit_addess_of_asset(self):
-        congratulations_msg = QMessageBox()
-        deposit_address_title_value_segments = self.asset_instance_in_item.deposit_address()
-        first_seg = deposit_address_title_value_segments[0]
-        deposit_label_content = first_seg["title"] + " : " + first_seg["value"]
-        if len(deposit_address_title_value_segments) > 1:
-            second_seg = deposit_address_title_value_segments[1]
-            deposit_label_content += "\n" + second_seg["title"] + " : " + second_seg["value"]
+        if (hasattr(self, "asset_instance_in_item")):
+            congratulations_msg = QMessageBox()
+            deposit_address_title_value_segments = self.asset_instance_in_item.deposit_address()
+            first_seg = deposit_address_title_value_segments[0]
+            deposit_label_content = first_seg["title"] + " : " + first_seg["value"]
 
-        congratulations_msg.setText(deposit_label_content)
-        congratulations_msg.setTextInteractionFlags(Qt.TextSelectableByMouse)
-        congratulations_msg.exec_()
+            if len(deposit_address_title_value_segments) > 1:
+                second_seg = deposit_address_title_value_segments[1]
+                deposit_label_content += "\n" + second_seg["title"] + " : " + second_seg["value"]
+         
+            congratulations_msg.setText(deposit_label_content)
+            congratulations_msg.setTextInteractionFlags(Qt.TextSelectableByMouse)
+            congratulations_msg.exec_()
 
     def create_balance_widget(self):
         self.balance_and_detail_layout = QVBoxLayout()
@@ -1253,7 +1275,7 @@ class MainWindow(QMainWindow):
 
             exin_worker = ExinPrice_Thread(mixin_asset_id_collection.USDT_ASSET_ID)
             exin_worker.signals.result.connect(self.received_exin_result)
-            exin_worker.signals.finished.connect(self.thread_complete)
+            exin_worker.signals.finished.connect(self.exin_thread_complete)
 
             self.threadPool.start(exin_worker)
         else:
