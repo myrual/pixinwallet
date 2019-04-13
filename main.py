@@ -1145,48 +1145,52 @@ class MainWindow(QMainWindow):
         self.threadPool.start(exin_worker)
 
 
+    def create_balance_widget(self):
+        self.balance_and_detail_layout = QHBoxLayout()
+        self.Balance_detail_layout = QVBoxLayout()
+        self.selected_asset_send = QPushButton("Send")
+        self.selected_asset_send.pressed.connect(self.send_asset_to_address)
+        self.selected_asset_manageasset = QPushButton("Manage contact")
+        self.selected_asset_manageasset.pressed.connect(self.open_widget_manage_asset)
+        self.selected_asset_show_history = QPushButton("History")
+        self.selected_asset_show_history.pressed.connect(self.open_asset_transaction_history)
+
+        self.asset_balance_label = QLabel()
+        balance_font = self.asset_balance_label.font()
+        balance_font.setPointSize(40)
+        self.asset_balance_label.setFont(balance_font)
+        self.asset_balance_label.setAlignment(Qt.AlignCenter)
+
+        self.asset_deposit_label = QLabel()
+        self.asset_deposit_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
+
+
+
+        self.Balance_detail_layout.addWidget(self.asset_balance_label)
+        self.Balance_detail_layout.addWidget(self.asset_deposit_label)
+
+        self.Balance_detail_layout.addWidget(self.selected_asset_send)
+        self.Balance_detail_layout.addWidget(self.selected_asset_manageasset)
+        self.Balance_detail_layout.addWidget(self.selected_asset_show_history)
+
+        self.Balance_layout = QVBoxLayout()
+        self.widget_balance_list = QWidget()
+        self.widget_balance_list.setLayout(self.Balance_layout)
+        self.widget_balance_list.show()
+        self.widget_balance_detail = QWidget()
+        self.widget_balance_detail.setLayout(self.Balance_detail_layout)
+        self.widget_balance_detail.show()
+        self.balance_and_detail_layout.addWidget(self.widget_balance_list)
+        self.balance_and_detail_layout.addWidget(self.widget_balance_detail)
+        widget_balance = QWidget()
+        widget_balance.setLayout(self.balance_and_detail_layout)
+        return widget_balance
+
+
     def open_selected_wallet(self):
         if (hasattr(self, "selected_wallet_record")):
-            self.balance_and_detail_layout = QHBoxLayout()
-            self.Balance_detail_layout = QVBoxLayout()
-            self.selected_asset_send = QPushButton("Send")
-            self.selected_asset_send.pressed.connect(self.send_asset_to_address)
-            self.selected_asset_manageasset = QPushButton("Manage contact")
-            self.selected_asset_manageasset.pressed.connect(self.open_widget_manage_asset)
-            self.selected_asset_show_history = QPushButton("History")
-            self.selected_asset_show_history.pressed.connect(self.open_asset_transaction_history)
-
-            self.asset_balance_label = QLabel()
-            balance_font = self.asset_balance_label.font()
-            balance_font.setPointSize(40)
-            self.asset_balance_label.setFont(balance_font)
-            self.asset_balance_label.setAlignment(Qt.AlignCenter)
-
-            self.asset_deposit_label = QLabel()
-            self.asset_deposit_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
-
-
-
-            self.Balance_detail_layout.addWidget(self.asset_balance_label)
-            self.Balance_detail_layout.addWidget(self.asset_deposit_label)
-
-            self.Balance_detail_layout.addWidget(self.selected_asset_send)
-            self.Balance_detail_layout.addWidget(self.selected_asset_manageasset)
-            self.Balance_detail_layout.addWidget(self.selected_asset_show_history)
-
-            self.Balance_layout = QVBoxLayout()
-            self.widget_balance_list = QWidget()
-            self.widget_balance_list.setLayout(self.Balance_layout)
-            self.widget_balance_list.show()
-            self.widget_balance_detail = QWidget()
-            self.widget_balance_detail.setLayout(self.Balance_detail_layout)
-            self.widget_balance_detail.show()
-            self.balance_and_detail_layout.addWidget(self.widget_balance_list)
-            self.balance_and_detail_layout.addWidget(self.widget_balance_detail)
-            self.widget_balance = QWidget()
-            self.widget_balance.setLayout(self.balance_and_detail_layout)
+            self.widget_balance = self.create_balance_widget()
             self.widget_balance.show()
-
             worker = Balance_Thread(self.selected_wallet_record)
             worker.signals.result.connect(self.received_balance_result)
             worker.signals.finished.connect(self.balance_load_thread_complete)
