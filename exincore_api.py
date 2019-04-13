@@ -42,10 +42,12 @@ def gen_memo_ExinBuy(asset_id_string):
 
 def memo_is_pay_to_exin(input_snapshot):
     memo_at_snap = input_snapshot.memo
+    if input_snapshot.opponent_id != EXINCORE_UUID:
+        return False
     try:
         exin_order = umsgpack.unpackb(base64.b64decode(memo_at_snap))
 
-        if "A"in exin_order:
+        if type(exin_order) == type({}) and "A"in exin_order:
             target_asset_uuid_in_myorder = str(uuid.UUID(bytes = exin_order["A"]))
 
             my_request_to_exin = Exin_execute_request(input_snapshot, target_asset_uuid_in_myorder)
@@ -125,6 +127,8 @@ class Exin_execute_result(Exin_execute):
 
 def memo_is_pay_from_exin(input_snapshot):
     memo_at_snap = input_snapshot.memo
+    if input_snapshot.opponent_id != EXINCORE_UUID:
+        return False
     try:
         exin_order = Exin_execute_result(umsgpack.unpackb(base64.b64decode(memo_at_snap)))
         return exin_order

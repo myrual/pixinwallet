@@ -1124,13 +1124,12 @@ class MainWindow(QMainWindow):
         self.exin_tradelist_and_detail_layout.addWidget(self.exin_trade_detail_widget)
         self.exin_tradelist_and_detail_widget = QWidget()
         self.exin_tradelist_and_detail_widget.setLayout(self.exin_tradelist_and_detail_layout)
-        exin_label = QLabel("EXIN exchange on Mixin Network")
+        fetch_exin_price_btn = QPushButton("Fetch price")
         this_layout = QVBoxLayout()
-        this_layout.addWidget(exin_label)
+        this_layout.addWidget(fetch_exin_price_btn)
         this_layout.addWidget(self.exin_tradelist_and_detail_widget)
         exin_title_trade_list_detail = QWidget()
         exin_title_trade_list_detail.setLayout(this_layout)
-        exin_title_trade_list_detail.show()
         return exin_title_trade_list_detail
 
 
@@ -1210,10 +1209,18 @@ class MainWindow(QMainWindow):
 
             self.widget_balance_widget = self.create_balance_widget()
             self.account_transaction_history_widget = self.open_transaction_history()
+            self.exin_title_trade_list_detail = self.create_exin_exchange_widget()
             self.account_tab_widget = QTabWidget()
             self.account_tab_widget.addTab(self.widget_balance_widget, "Balance")
             self.account_tab_widget.addTab(self.account_transaction_history_widget, "Transactions")
+            self.account_tab_widget.addTab(self.exin_title_trade_list_detail, "Instant Exin Exchange")
             self.account_tab_widget.show()
+
+            exin_worker = ExinPrice_Thread(mixin_asset_id_collection.USDT_ASSET_ID)
+            exin_worker.signals.result.connect(self.received_exin_result)
+            exin_worker.signals.finished.connect(self.thread_complete)
+
+            self.threadPool.start(exin_worker)
         else:
             return
 
