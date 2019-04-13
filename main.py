@@ -203,11 +203,6 @@ class MainWindow(QMainWindow):
         file_menu = menu.addMenu("File")
         file_menu.addAction(button_action)
 
-        self.show_history_menu_action = QAction("Transaction history")
-        self.show_history_menu_action.triggered.connect(self.open_transaction_history)
-        file_menu.addAction(self.show_history_menu_action)
-
-
         pin_menu = menu.addMenu("Pin")
         self.verify_pin_action = QAction("verify pin", self)
         self.verify_pin_action.triggered.connect(self.pop_verify_pin_window)
@@ -246,7 +241,7 @@ class MainWindow(QMainWindow):
 
         self.threadPool = QThreadPool()
         print("Multithreading with maximum %d threads" % self.threadPool.maxThreadCount())
-    def show_transaction_history(self, all_transaction_history_list):
+    def create_transaction_history(self, all_transaction_history_list):
         transaction_history_list_widget = QListWidget()
         for each_sql_transaction in all_transaction_history_list:
             amount = each_sql_transaction.snap_amount
@@ -270,21 +265,21 @@ class MainWindow(QMainWindow):
         self.transaction_record_detail = QLabel("history detail")
         transaction_history_and_detail_layout.addWidget(self.transaction_record_detail)
 
-        self.widget_transaction_list_detail = QWidget()
-        self.widget_transaction_list_detail.setLayout(transaction_history_and_detail_layout)
-        self.widget_transaction_list_detail.show()
+        widget_transaction_list_detail = QWidget()
+        widget_transaction_list_detail.setLayout(transaction_history_and_detail_layout)
         if(len(all_transaction_history_list) > 0):
             transaction_history_list_widget.setCurrentRow(0)
+        return widget_transaction_list_detail
 
 
 
     def open_asset_transaction_history(self):
-        all_transaction_history_list = self.session.query(mixin_sqlalchemy_type.MySnapshot).filter_by(snap_asset_asset_id = self.asset_instance_in_item.asset_id).order_by(mixin_sqlalchemy_type.MySnapshot.id.desc()).all()
-        self.show_transaction_history(all_transaction_history_list)
+        asset_transaction_history_list = self.session.query(mixin_sqlalchemy_type.MySnapshot).filter_by(snap_asset_asset_id = self.asset_instance_in_item.asset_id).order_by(mixin_sqlalchemy_type.MySnapshot.id.desc()).all()
+        self.widget_transaction_list_detail = self.create_transaction_history(asset_transaction_history_list)
 
     def open_transaction_history(self):
         all_transaction_history_list = self.session.query(mixin_sqlalchemy_type.MySnapshot).order_by(mixin_sqlalchemy_type.MySnapshot.id.desc()).all()
-        self.show_transaction_history(all_transaction_history_list)
+        return self.create_transaction_history(all_transaction_history_list)
 
     def execute_this_fn(self):
         for i in range(0, 5):
@@ -1194,8 +1189,6 @@ class MainWindow(QMainWindow):
 
     def open_selected_wallet(self):
         if (hasattr(self, "selected_wallet_record")):
-            self.widget_balance = self.create_balance_widget()
-            self.widget_balance.show()
             worker = Balance_Thread(self.selected_wallet_record)
             worker.signals.result.connect(self.received_balance_result)
             worker.signals.finished.connect(self.balance_load_thread_complete)
@@ -1214,6 +1207,13 @@ class MainWindow(QMainWindow):
             user_profile_worker.signals.finished.connect(self.thread_complete)
             self.threadPool.start(worker)
             self.threadPool.start(user_profile_worker)
+
+            self.widget_balance_widget = self.create_balance_widget()
+            self.account_transaction_history_widget = self.open_transaction_history()
+            self.account_tab_widget = QTabWidget()
+            self.account_tab_widget.addTab(self.widget_balance_widget, "Balance")
+            self.account_tab_widget.addTab(self.account_transaction_history_widget, "Transactions")
+            self.account_tab_widget.show()
         else:
             return
 
