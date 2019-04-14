@@ -374,8 +374,8 @@ class MainWindow(QMainWindow):
         self.widget_transaction_list_detail.show()
 
     def open_transaction_history(self):
-        all_transaction_history_list = self.session.query(mixin_sqlalchemy_type.MySnapshot).order_by(mixin_sqlalchemy_type.MySnapshot.id.desc()).all()
-        return self.create_transaction_history(all_transaction_history_list)
+            all_transaction_history_list = self.session.query(mixin_sqlalchemy_type.MySnapshot).order_by(mixin_sqlalchemy_type.MySnapshot.id.desc()).all()
+            return self.create_transaction_history(all_transaction_history_list)
 
     def execute_this_fn(self):
         for i in range(0, 5):
@@ -911,6 +911,8 @@ class MainWindow(QMainWindow):
             this_balance_model = Balance_TableModel(self, final_balance_result, ["Asset name", "Amount"])
             self.balance_list_tableview.setModel(this_balance_model)
             self.balance_list_tableview.update()
+            if hasattr(self, "balance_selected_row"):
+                self.balance_list_tableview.selectRow(self.balance_selected_row)
             self.account_balance = balance_result.data
         return
     def withdraw_address_list_record_selection_actived(self,itemCurr, itemPre):
@@ -962,14 +964,25 @@ class MainWindow(QMainWindow):
 
     def update_exin_detail(self):
         self.selected_trade_buy_btn.setText("Buy " + self.selected_exin_result.exchange_asset_symbol)
+        self.selected_trade_buy_btn.setDisabled(False)
         self.selected_trade_sell_btn.setText("Sell " + self.selected_exin_result.exchange_asset_symbol)
+        self.selected_trade_sell_btn.setDisabled(False)
 
     def exin_trade_list_record_selected(self, index):
-        self.selected_exin_result = self.exin_result[index.row()]
+        self.exin_price_selected_row = index.row()
+        self.selected_exin_result = self.exin_result[self.exin_price_selected_row]
         self.update_exin_detail()
     def balance_list_record_selected(self, index):
-        row = index.row()
-        self.asset_instance_in_item = self.account_balance[row]
+        self.balance_selected_row = index.row()
+        self.asset_instance_in_item = self.account_balance[self.balance_selected_row]
+        self.selected_asset_send.setDisabled(False)
+        self.selected_asset_send.setText("Send " + self.asset_instance_in_item.name)
+        self.selected_asset_manageasset.setDisabled(False)
+        self.selected_asset_show_history.setDisabled(False)
+        self.selected_asset_show_history.setText("History of " + self.asset_instance_in_item.name)
+        self.show_deposit_address_btn.setDisabled(False)
+        self.show_deposit_address_btn.setText("Deposit address of " + self.asset_instance_in_item.name)
+
     def update_asset_address_detail(self, this_withdraw_address, label_widget):
         stringForAddress = ""
         if this_withdraw_address.public_key != "":
@@ -1168,11 +1181,13 @@ class MainWindow(QMainWindow):
 
 
     def create_exin_exchange_widget(self):
-        self.selected_trade_buy_btn = QPushButton("")
+        self.selected_trade_buy_btn = QPushButton("Buy")
         self.selected_trade_buy_btn.pressed.connect(self.open_buy_trade_detail_for_exin)
+        self.selected_trade_buy_btn.setDisabled(True)
 
-        self.selected_trade_sell_btn= QPushButton("")
+        self.selected_trade_sell_btn= QPushButton("Sell")
         self.selected_trade_sell_btn.pressed.connect(self.open_sell_trade_detail_for_exin)
+        self.selected_trade_sell_btn.setDisabled(True)
 
 
 
@@ -1217,13 +1232,17 @@ class MainWindow(QMainWindow):
         self.balance_and_detail_layout = QVBoxLayout()
         self.Balance_detail_layout = QHBoxLayout()
         self.selected_asset_send = QPushButton("Send")
+        self.selected_asset_send.setDisabled(True)
         self.selected_asset_send.pressed.connect(self.send_asset_to_address)
         self.selected_asset_manageasset = QPushButton("Manage contact")
+        self.selected_asset_manageasset.setDisabled(True)
         self.selected_asset_manageasset.pressed.connect(self.open_widget_manage_asset)
         self.selected_asset_show_history = QPushButton("History")
         self.selected_asset_show_history.pressed.connect(self.open_asset_transaction_history)
+        self.selected_asset_show_history.setDisabled(True)
         self.show_deposit_address_btn = QPushButton("Deposit address")
         self.show_deposit_address_btn.pressed.connect(self.pop_deposit_addess_of_asset)
+        self.show_deposit_address_btn.setDisabled(True)
 
         self.Balance_detail_layout.addWidget(self.selected_asset_send)
         self.Balance_detail_layout.addWidget(self.selected_asset_show_history)
