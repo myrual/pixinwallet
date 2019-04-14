@@ -36,4 +36,4 @@ Show balance
 ![](https://github.com/myrual/pixinwallet/blob/master/balance_screen.png)
 
 Instant trade api
-![](https://github.com/myrual/pixinwallet/blob/master/instant_trade.png)
+![](https://github.com/myrual/pixinwallet/blob/master/exin_exchange_screen.png)
