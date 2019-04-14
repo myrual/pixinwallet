@@ -33,4 +33,7 @@ exe = EXE(pyz,
 app = BUNDLE(exe,
              name='pixin wallet.app',
              icon=None,
-             bundle_identifier='me.myrual.pixinwallet')
+             bundle_identifier='me.myrual.pixinwallet',
+             info_plist={
+               'NSHighResolutionCapable':True,
+	       'CFBundleShortVersionString':'0.0.2'},)
