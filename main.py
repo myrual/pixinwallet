@@ -394,9 +394,11 @@ class MainWindow(QMainWindow):
         print("THREAD COMPLETE")
     def exin_thread_complete(self):
         print("EXIN THREAD COMPLETE")
-        exin_worker = ExinPrice_Thread(mixin_asset_id_collection.USDT_ASSET_ID, 10)
+        exin_worker = ExinPrice_Thread(mixin_asset_id_collection.USDT_ASSET_ID, "", 60)
         exin_worker.signals.result.connect(self.received_exin_result)
         exin_worker.signals.finished.connect(self.exin_thread_complete)
+        self.threadPool.start(exin_worker)
+
 
     def balance_load_thread_complete(self):
         print("THREAD COMPLETE")
@@ -895,6 +897,8 @@ class MainWindow(QMainWindow):
         this_model = ExinPrice_TableModel(self, exin_result, ["price", "trade", "min pay", "max pay"])
         self.exin_tradelist_widget.setModel(this_model)
         self.exin_tradelist_widget.update()
+        if hasattr(self, "exin_price_selected_row"):
+            self.exin_tradelist_widget.selectRow(self.exin_price_selected_row)
         return
 
     def received_balance_result(self, balance_result):
@@ -1291,7 +1295,7 @@ class MainWindow(QMainWindow):
             self.account_tab_widget.addTab(self.exin_title_trade_list_detail, "Instant Exin Exchange")
             self.account_tab_widget.show()
 
-            exin_worker = ExinPrice_Thread(mixin_asset_id_collection.USDT_ASSET_ID)
+            exin_worker = ExinPrice_Thread(mixin_asset_id_collection.USDT_ASSET_ID, "")
             exin_worker.signals.result.connect(self.received_exin_result)
             exin_worker.signals.finished.connect(self.exin_thread_complete)
 
