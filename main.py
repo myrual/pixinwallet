@@ -402,7 +402,7 @@ class MainWindow(QMainWindow):
 
     def balance_load_thread_complete(self):
         print("THREAD COMPLETE")
-        worker = Balance_Thread(self.selected_wallet_record, 10)
+        worker = Balance_Thread(self.selected_wallet_record, 60)
         worker.signals.result.connect(self.received_balance_result)
         worker.signals.finished.connect(self.balance_load_thread_complete)
         self.threadPool.start(worker)
@@ -1265,6 +1265,8 @@ class MainWindow(QMainWindow):
         return widget_balance
 
 
+    def tab_is_selected(self, index):
+        print("tab is changed" + str(index))
     def open_selected_wallet(self):
         if (hasattr(self, "selected_wallet_record")):
             worker = Balance_Thread(self.selected_wallet_record)
@@ -1294,6 +1296,7 @@ class MainWindow(QMainWindow):
             self.account_tab_widget.addTab(self.account_transaction_history_widget, "Transactions")
             self.account_tab_widget.addTab(self.exin_title_trade_list_detail, "Instant Exin Exchange")
             self.account_tab_widget.show()
+            self.account_tab_widget.currentChanged.connect(self.tab_is_selected)
 
             exin_worker = ExinPrice_Thread(mixin_asset_id_collection.USDT_ASSET_ID, "")
             exin_worker.signals.result.connect(self.received_exin_result)
