@@ -287,6 +287,7 @@ class TransactionHistoryTableModel(QAbstractTableModel):
             thisRecord.append(eachSqlRecord.snap_amount)
             thisRecord.append(eachSqlRecord.snap_asset_symbol)
             thisRecord.append(eachSqlRecord.snap_created_at)
+            thisRecord.append(eachSqlRecord.snap_opponent_id)
             thisRecord.append(eachSqlRecord.snap_type)
             finalData.append(thisRecord)
 
@@ -359,7 +360,7 @@ class MainWindow(QMainWindow):
         print("Multithreading with maximum %d threads" % self.threadPool.maxThreadCount())
     def create_transaction_history(self, all_transaction_history_list):
 
-        header = ["Amount", "Asset", "Created at", "Type"]
+        header = ["Amount", "Asset", "Created at", "opponent", "Type"]
         this_tableModel = TransactionHistoryTableModel(self, all_transaction_history_list, header)
 
         transaction_table_view = QTableView()
@@ -384,7 +385,7 @@ class MainWindow(QMainWindow):
     def print_output(self, s):
         print(s)
     def snap_thread_complete(self):
-        header = ["Amount", "Asset", "Created at", "Type"]
+        header = ["Amount", "Asset", "Created at", "opponent", "Type"]
         all_transaction_history_list = self.session.query(mixin_sqlalchemy_type.MySnapshot).order_by(mixin_sqlalchemy_type.MySnapshot.id.desc()).all()
         this_tableModel = TransactionHistoryTableModel(self, all_transaction_history_list, header)
         self.account_transaction_history_widget.setModel(this_tableModel)
@@ -1197,6 +1198,8 @@ class MainWindow(QMainWindow):
 
         self.exin_tradelist_layout = QVBoxLayout()
         self.exin_tradelist_widget = QTableView()
+
+        self.exin_tradelist_widget.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.exin_tradelist_widget.clicked.connect(self.exin_trade_list_record_selected)
 
         self.exin_tradelist_and_detail_layout = QVBoxLayout()
@@ -1255,6 +1258,8 @@ class MainWindow(QMainWindow):
 
         self.balance_list_tableview = QTableView()
         self.balance_list_tableview.clicked.connect(self.balance_list_record_selected)
+        self.balance_list_tableview.setSelectionBehavior(QAbstractItemView.SelectRows)
+
         self.widget_balance_detail = QWidget()
         self.widget_balance_detail.setLayout(self.Balance_detail_layout)
         self.widget_balance_detail.show()
