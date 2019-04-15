@@ -1328,6 +1328,15 @@ class MainWindow(QMainWindow):
 
             self.widget_balance_widget = self.create_balance_widget()
             self.account_transaction_history_widget = self.open_transaction_history()
+            header = self.account_transaction_history_widget.horizontalHeader()       
+            header.setSectionResizeMode(0, QHeaderView.Stretch)
+            header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+            header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
+            header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
+            header.setSectionResizeMode(4, QHeaderView.ResizeToContents)
+            header.setSectionResizeMode(5, QHeaderView.ResizeToContents)
+            header.setSectionResizeMode(6, QHeaderView.ResizeToContents)
+
             self.exin_title_trade_list_detail = self.create_exin_exchange_widget()
             self.account_tab_widget = QTabWidget()
             self.account_tab_widget.addTab(self.widget_balance_widget, "Balance")
