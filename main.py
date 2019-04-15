@@ -1052,10 +1052,12 @@ class MainWindow(QMainWindow):
         self.selected_withdraw_address = self.withdraw_address_of_asset_list[indexActived]
         self.update_asset_address_detail(self.selected_withdraw_address, self.send_address_title_widget)
 
-    def pay_to_exin_pressed(self):
+    def pay_to_exin_pressed(self, base_asset, echange_asset):
         self.trade_exin_widget.close()
-        memo_for_exin = exincore_api.gen_memo_ExinBuy(self.selected_exin_result.echange_asset)
-        tranfer_result = self.selected_wallet_record.transfer_to(exincore_api.EXINCORE_UUID, self.selected_exin_result.base_asset, self.pay_exin_amount_edit_Label_widget.text(), memo_for_exin, "", self.pay_exin_pin_edit_Label_widget.text())
+        memo_for_exin = exincore_api.gen_memo_ExinBuy(echange_asset)
+        print("amount is %s"%self.pay_exin_amount_edit_Label_widget.text())
+        print("base asset is %s"%base_asset)
+        tranfer_result = self.selected_wallet_record.transfer_to(exincore_api.EXINCORE_UUID, base_asset, self.pay_exin_amount_edit_Label_widget.text(), memo_for_exin, "", self.pay_exin_pin_edit_Label_widget.text())
         if tranfer_result.is_success:
             congratulations_msg = QMessageBox()
             congratulations_msg.setText("Your payment to exin is successful, verify it on blockchain explorer on https://mixin.one/snapshots/%s" % tranfer_result.data.snapshot_id)
@@ -1063,7 +1065,7 @@ class MainWindow(QMainWindow):
             congratulations_msg.exec_()
         else:
             congratulations_msg = QMessageBox()
-            congratulations_msg.setText("Failed to pay, reason %s" % str(withdraw_asset_result))
+            congratulations_msg.setText("Failed to pay, reason %s" % str(tranfer_result))
             congratulations_msg.exec_()
 
     def send_asset_to_withdraw_address_pressed(self):
@@ -1107,7 +1109,7 @@ class MainWindow(QMainWindow):
             self.pay_exin_pin_edit_Label_widget.setEchoMode(QLineEdit.Password)
 
             send_payment_to_exin_btn = QPushButton("Go")
-            send_payment_to_exin_btn.pressed.connect(self.pay_to_exin_pressed)
+            send_payment_to_exin_btn.pressed.connect(lambda :self.pay_to_exin_pressed(base_asset_id, target_asset_id))
 
             send_payment_to_exin_layout = QVBoxLayout()
             send_payment_to_exin_layout.addWidget(tradepair_price_title_label_widget)
