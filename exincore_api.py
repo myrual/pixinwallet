@@ -59,6 +59,24 @@ def memo_is_pay_to_exin(input_snapshot):
     except binascii.Error:
         return False
 
+def memo_is_pay_from_exin(input_snapshot):
+    memo_at_snap = input_snapshot.memo
+    if input_snapshot.opponent_id != EXINCORE_UUID or float(input_snapshot.amount) < 0:
+        return False
+    try:
+        exin_order = Exin_execute_result(umsgpack.unpackb(base64.b64decode(memo_at_snap)))
+        return exin_order
+    except umsgpack.InsufficientDataException:
+        return False
+    except binascii.Error:
+        return False
+
+def exincore_can_explain_snapshot(input_snapshot):
+    result = memo_is_pay_from_exin(input_snapshot)
+    if result == False:
+        return memo_is_pay_to_exin(input_snapshot)
+    return result
+
 EXIN_EXEC_TYPE_REQUEST = 0
 EXIN_EXEC_TYPE_RESULT  = 1
 
@@ -92,11 +110,11 @@ class Exin_execute_result(Exin_execute):
         self.order          = exin_order["O"]
         super().__init__(EXIN_EXEC_TYPE_RESULT)
     def __str__(self):
-        headString = "Status of your payment to exin is : "
+        headString = "Payment to exin: "
         if(self.order_result == 1000):
-            headString = headString + "Successful Exchange"
-            headString = headString + ", your order is executed at price:" +  self.price
-            headString = headString + ", Exin core fee is " + self.fee  + " with fee asset" + str(uuid.UUID(bytes = self.fee_asset_type))
+            headString = headString + "Successful exchanged"
+            headString = headString + " at price:" +  self.price
+            headString = headString + " with fee: " + self.fee 
 
         if(self.order_result == 1001):
             headString = headString + "The order not found or invalid"
@@ -116,26 +134,12 @@ class Exin_execute_result(Exin_execute):
             headString = headString + "Exceeding the maximum exchange amount"
         if (self.type == "F"):
             headString = headString +", your order is refund to you because your memo is not correct"
-        if (self.type == "R"):
-            headString = headString +", your order is executed successfully"
         if (self.type == "E"):
             headString = headString +", exin failed to execute your order"
-        headString = headString +", trace id of your payment to exincore is " + str(uuid.UUID(bytes = self.order))
+        headString = headString +", trace:" + str(uuid.UUID(bytes = self.order))
         return headString
 
 
-
-def memo_is_pay_from_exin(input_snapshot):
-    memo_at_snap = input_snapshot.memo
-    if input_snapshot.opponent_id != EXINCORE_UUID:
-        return False
-    try:
-        exin_order = Exin_execute_result(umsgpack.unpackb(base64.b64decode(memo_at_snap)))
-        return exin_order
-    except umsgpack.InsufficientDataException:
-        return False
-    except binascii.Error:
-        return False
 
 
 

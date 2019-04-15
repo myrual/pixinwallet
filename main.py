@@ -272,6 +272,34 @@ class ExinPrice_TableModel(QAbstractTableModel):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             return self.header[col]
         return None
+plugins_func_list = [exincore_api.exincore_can_explain_snapshot]
+def Snapshot_fromSql(transaction_record_in_item):
+    singleSnapShot                  = wallet_api.Snapshot()
+    singleSnapShot.snapshot_id      = transaction_record_in_item.snap_snapshot_id
+    singleSnapShot.type             = transaction_record_in_item.snap_type
+    singleSnapShot.amount           = transaction_record_in_item.snap_amount
+    singleSnapShot.created_at       = transaction_record_in_item.snap_created_at
+    singleSnapShot.asset            = wallet_api.Static_Asset()
+
+    singleSnapShot.asset.asset_id   = transaction_record_in_item.snap_asset_asset_id
+    singleSnapShot.asset.chain_id   = transaction_record_in_item.snap_asset_chain_id
+    singleSnapShot.asset.name       = transaction_record_in_item.snap_asset_name
+    singleSnapShot.asset.symbol     = transaction_record_in_item.snap_asset_symbol
+    singleSnapShot.source           = transaction_record_in_item.snap_source
+    singleSnapShot.user_id          = transaction_record_in_item.snap_user_id
+    singleSnapShot.opponent_id      = transaction_record_in_item.snap_opponent_id
+    singleSnapShot.trace_id         = transaction_record_in_item.snap_trace_id
+    singleSnapShot.memo             = transaction_record_in_item.snap_memo
+    return singleSnapShot
+
+
+def plugin_can_explain_snapshot(input_snapshot):
+    resultString = ""
+    for eachFunc in plugins_func_list:
+        result = eachFunc(input_snapshot)
+        if result != False:
+            resultString += str(result)
+    return resultString
 
 
 class TransactionHistoryTableModel(QAbstractTableModel):
@@ -289,10 +317,15 @@ class TransactionHistoryTableModel(QAbstractTableModel):
             thisRecord.append(eachSqlRecord.snap_created_at)
             thisRecord.append(eachSqlRecord.snap_opponent_id)
             thisRecord.append(eachSqlRecord.snap_type)
+            thisRecord.append(eachSqlRecord.snap_memo)
+
+            thisSnapshot = Snapshot_fromSql(eachSqlRecord)
+            result = plugin_can_explain_snapshot(thisSnapshot)
+            thisRecord.append(result)
             finalData.append(thisRecord)
 
         self.mylist = finalData
-        self.header = header
+        self.header = ["Amount", "Asset", "Created at", "opponent", "type", "memo", "memo explain"]
 
     def rowCount(self, parent):
         return len(self.mylist)
