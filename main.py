@@ -9,6 +9,7 @@ import mixin_asset_id_collection
 import sqlalchemy
 import mixin_sqlalchemy_type
 import exincore_api
+import oceanone_api
 
 
 class WorkerSignals(QObject):
@@ -64,6 +65,32 @@ class AccountsSnapshots_Thread(QRunnable):
         finally:
             self.signals.finished.emit()
         print("Account snapshot Thread")
+
+class Ocean_Thread(QRunnable):
+    def __init__(self, base_asset_id, target_asset_id , delay_seconds = 0,  *args, **kwargs):
+        super(Ocean_Thread, self).__init__()
+        self.target_asset_id = target_asset_id
+        self.base_asset_id = base_asset_id
+        self.delay_seconds = delay_seconds
+        self.args = args
+        self.kwargs = kwargs
+        self.signals = WorkerSignals()
+
+    @pyqtSlot()
+    def run(self):
+        try:
+            time.sleep(self.delay_seconds)
+            result = oceanone_api.fetchTradePrice(self.base_asset_id, self.target_asset_id)
+        except:
+            traceback.print_exc()
+            exctype, value = sys.exc_info()[:2]
+            self.signals.error.emit((exctype, value, traceback.format_exc()))
+        else:
+            self.signals.result.emit(result)
+        finally:
+            self.signals.finished.emit()
+        print("ExinPrice Thread")
+
 
 class ExinPrice_Thread(QRunnable):
     def __init__(self, base_asset_id, target_asset_id = "", delay_seconds = 0,  *args, **kwargs):
@@ -1230,6 +1257,31 @@ class MainWindow(QMainWindow):
             return
 
 
+    def fetchOceanPrice(self):
+        print("pressed")
+        ocean_worker = Ocean_Thread(self.ocean_base_asset_id_input.text(), self.ocean_target_asset_id_input.text())
+        #ocean_worker.signals.result.connect(self.received_exin_result)
+        #ocean_worker.signals.finished.connect(self.thread_complete)
+        self.threadPool.start(ocean_worker)
+
+    def create_ocean_exchange_widget(self):
+        self.ocean_order_book_widget = QTableView()
+        this_layout = QVBoxLayout()
+        self.ocean_base_asset_id_input   = QLineEdit()
+        self.ocean_target_asset_id_input = QLineEdit()
+        this_layout.addWidget(self.ocean_base_asset_id_input)
+        this_layout.addWidget(self.ocean_target_asset_id_input)
+        fetchOceanPriceBtn = QPushButton("Get price")
+        fetchOceanPriceBtn.pressed.connect(self.fetchOceanPrice)
+        this_layout.addWidget(self.ocean_base_asset_id_input)
+        this_layout.addWidget(self.ocean_target_asset_id_input)
+        this_layout.addWidget(fetchOceanPriceBtn)
+        this_layout.addWidget(self.ocean_order_book_widget)
+        exin_title_trade_list_detail = QWidget()
+        exin_title_trade_list_detail.setLayout(this_layout)
+        return exin_title_trade_list_detail
+
+
     def create_exin_exchange_widget(self):
         self.selected_trade_buy_btn = QPushButton("Buy")
         self.selected_trade_buy_btn.pressed.connect(self.open_buy_trade_detail_for_exin)
@@ -1354,10 +1406,13 @@ class MainWindow(QMainWindow):
             header.setSectionResizeMode(4, QHeaderView.ResizeToContents)
 
             self.exin_title_trade_list_detail = self.create_exin_exchange_widget()
+            self.oceanone_title_trade_list_detail = self.create_ocean_exchange_widget()
+
             self.account_tab_widget = QTabWidget()
             self.account_tab_widget.addTab(self.widget_balance_widget, "Balance")
             self.account_tab_widget.addTab(self.account_transaction_history_widget, "Transactions")
             self.account_tab_widget.addTab(self.exin_title_trade_list_detail, "Instant Exin Exchange")
+            self.account_tab_widget.addTab(self.oceanone_title_trade_list_detail, "CNB exchange")
             self.account_tab_widget.show()
             self.account_tab_widget.currentChanged.connect(self.tab_is_selected)
 
@@ -1366,6 +1421,13 @@ class MainWindow(QMainWindow):
             exin_worker.signals.finished.connect(self.exin_thread_complete)
 
             self.threadPool.start(exin_worker)
+
+            ocean_worker = Ocean_Thread(mixin_asset_id_collection.USDT_ASSET_ID, mixin_asset_id_collection.BTC_ASSET_ID)
+            #ocean_worker.signals.result.connect(self.received_exin_result)
+            #ocean_worker.signals.finished.connect(self.thread_complete)
+
+            self.threadPool.start(ocean_worker)
+
         else:
             return
 
