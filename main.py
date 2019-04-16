@@ -1329,13 +1329,13 @@ class MainWindow(QMainWindow):
             print(oceanResult.timestamp)
 
             print("total ask order is %d"%len(oceanResult.ask_order_list))
-            ask_order_model = OceanOrder_TableModel(None, reversed(oceanResult.ask_order_list))
+            ask_order_model = OceanOrder_TableModel(None, reversed(oceanResult.ask_order_list), ["Ask price", "Amount", "Funds"])
             self.ocean_order_ask_book_widget.setModel(ask_order_model)
             self.ocean_order_ask_book_widget.update()
             self.ocean_order_ask_book_widget.selectRow(len(oceanResult.ask_order_list) - 1)
 
             print("total bid order is %d"%len(oceanResult.bid_order_list))
-            bid_order_model = OceanOrder_TableModel(None, oceanResult.bid_order_list)
+            bid_order_model = OceanOrder_TableModel(None, oceanResult.bid_order_list, ["Bid price", "Amount", "Funds"])
             self.ocean_order_bid_book_widget.setModel(bid_order_model)
             self.ocean_order_bid_book_widget.update()
             self.ocean_order_bid_book_widget.selectRow(0)
