@@ -41,3 +41,15 @@ class MySnapshot(Base):
     def __repr__(self):
         return "<Snap (id='%s', created at ='%s')>" % (
                                 self.snap_snapshot_id, self.snap_created_at)
+class Mixin_asset_record(Base):
+    __tablename__ = 'mixin_asset_record'
+    # Here we define columns for the table person
+    # Notice that each column is also a normal Python instance attribute.
+    id = Column(Integer, primary_key=True)
+    asset_id = Column(String(64))
+    asset_symbol = Column(String(64))
+    asset_name = Column(String(256))
+
+    def __repr__(self):
+        return "<Asset (id='%s', symbol ='%s', name ='%s')>" % (
+                                self.asset_id, self.asset_symbol, self.asset_name)

@@ -66,6 +66,30 @@ class AccountsSnapshots_Thread(QRunnable):
             self.signals.finished.emit()
         print("Account snapshot Thread")
 
+class ReadAsset_Info_Thread(QRunnable):
+    def __init__(self, wallet_obj, asset_id , *args, **kwargs):
+        super(ReadAsset_Info_Thread, self).__init__()
+        self.wallet_obj = wallet_obj
+        self.asset_id = asset_id
+        self.args = args
+        self.kwargs = kwargs
+        self.signals = WorkerSignals()
+
+    @pyqtSlot()
+    def run(self):
+        try:
+            result = self.wallet_obj.get_singleasset_balance(self.asset_id)
+        except:
+            traceback.print_exc()
+            exctype, value = sys.exc_info()[:2]
+            self.signals.error.emit((exctype, value, traceback.format_exc()))
+        else:
+            self.signals.result.emit(result)
+        finally:
+            self.signals.finished.emit()
+        print("Account snapshot Thread")
+
+
 class Ocean_Thread(QRunnable):
     def __init__(self, base_asset_id, target_asset_id , delay_seconds = 0,  *args, **kwargs):
         super(Ocean_Thread, self).__init__()
@@ -258,7 +282,50 @@ class Balance_TableModel(QAbstractTableModel):
             return self.header[col]
         return None
 
+class OceanOrder_TableModel(QAbstractTableModel):
+
+    """
+    keep the method names
+    they are an integral part of the model
+    """
+    def __init__(self, parent, ocean_order_group, header = ["price", "amount", "funds"], *args):
+        QAbstractTableModel.__init__(self, parent, *args)
+        finalData = []
+        for eachOrder in ocean_order_group:
+            thisRecord = []
+            thisRecord.append(eachOrder.price)
+            thisRecord.append(eachOrder.amount)
+            thisRecord.append(eachOrder.funds)
+            finalData.append(thisRecord)
+
+        self.mylist = finalData
+        self.header = header
+
+    def rowCount(self, parent):
+        return len(self.mylist)
+
+    def columnCount(self, parent):
+        if len(self.mylist) > 0:
+            return len(self.mylist[0])
+        return 0
+        
+    def data(self, index, role):
+        if not index.isValid():
+            return None
+        value = self.mylist[index.row()][index.column()]
+        if role == Qt.EditRole:
+            return value
+        elif role == Qt.DisplayRole:
+            return value
+
+    def headerData(self, col, orientation, role):
+        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+            return self.header[col]
+        return None
+
+
 class ExinPrice_TableModel(QAbstractTableModel):
+
     """
     keep the method names
     they are an integral part of the model
@@ -1257,29 +1324,119 @@ class MainWindow(QMainWindow):
             return
 
 
+    def received_ocean_result(self, oceanResult):
+        if hasattr(oceanResult, "timestamp"):
+            print(oceanResult.timestamp)
+
+            print("total ask order is %d"%len(oceanResult.ask_order_list))
+            ask_order_model = OceanOrder_TableModel(None, reversed(oceanResult.ask_order_list))
+            self.ocean_order_ask_book_widget.setModel(ask_order_model)
+            self.ocean_order_ask_book_widget.update()
+            self.ocean_order_ask_book_widget.selectRow(len(oceanResult.ask_order_list) - 1)
+
+            print("total bid order is %d"%len(oceanResult.bid_order_list))
+            bid_order_model = OceanOrder_TableModel(None, oceanResult.bid_order_list)
+            self.ocean_order_bid_book_widget.setModel(bid_order_model)
+            self.ocean_order_bid_book_widget.update()
+            self.ocean_order_bid_book_widget.selectRow(0)
+
     def fetchOceanPrice(self):
         print("pressed")
-        ocean_worker = Ocean_Thread(self.ocean_base_asset_id_input.text(), self.ocean_target_asset_id_input.text())
-        #ocean_worker.signals.result.connect(self.received_exin_result)
+        if self.ocean_target_asset_id_input.text() != "":
+            ocean_worker = Ocean_Thread(self.ocean_base_asset_selection_asset_id, self.ocean_target_asset_id_input.text())
+            update_asset_name_worker = ReadAsset_Info_Thread(self.selected_wallet_record, self.ocean_target_asset_id_input.text())
+            update_asset_name_worker.signals.result.connect(self.received_asset_balance)
+            self.threadPool.start(update_asset_name_worker)
+
+        else:
+            ocean_worker = Ocean_Thread(self.ocean_base_asset_selection_asset_id, self.ocean_target_asset_selection_asset_id)
+        ocean_worker.signals.result.connect(self.received_ocean_result)
         #ocean_worker.signals.finished.connect(self.thread_complete)
         self.threadPool.start(ocean_worker)
 
+    def ocean_base_asset_change(self, indexActived):
+        self.ocean_base_asset_selection_asset_id = self.ocean_id_name[indexActived][1]
+    def ocean_target_asset_change(self, indexActived):
+        print("indexActived%d"%indexActived)
+        self.ocean_target_asset_selection_asset_id = self.ocean_target_id_name[indexActived]
+
+    def received_asset_balance(self, asset):
+        if asset.is_success:
+            len_of_known_asset_id = len(self.session.query(mixin_sqlalchemy_type.Mixin_asset_record).filter_by(asset_id = asset.data.asset_id).all())
+            if len_of_known_asset_id == 0:
+                this_asset_cache = mixin_sqlalchemy_type.Mixin_asset_record()
+                this_asset_cache.asset_id = asset.data.asset_id
+                this_asset_cache.asset_name = asset.data.name
+                this_asset_cache.asset_symbol = asset.data.symbol
+                self.session.add(this_asset_cache)
+                self.session.commit()
+    def known_assets(self):
+        know_asset_id_name_groups = self.session.query(mixin_sqlalchemy_type.Mixin_asset_record).order_by(mixin_sqlalchemy_type.Mixin_asset_record.id.desc()).all()
+        know_id_groups = []
+        for each in know_asset_id_name_groups:
+            know_id_groups.append(each.asset_id)
+        for default_id in mixin_asset_id_collection.MIXIN_DEFAULT_CHAIN_GROUP:
+            if not (default_id in know_asset_id_name_groups):
+                update_asset_name_worker = ReadAsset_Info_Thread(self.selected_wallet_record, default_id)
+                update_asset_name_worker.signals.result.connect(self.received_asset_balance)
+                self.threadPool.start(update_asset_name_worker)
+        return know_asset_id_name_groups
+
     def create_ocean_exchange_widget(self):
-        self.ocean_order_book_widget = QTableView()
-        this_layout = QVBoxLayout()
-        self.ocean_base_asset_id_input   = QLineEdit()
+        self.ocean_order_ask_book_widget = QTableView()
+        self.ocean_order_bid_book_widget = QTableView()
+
+        self.ocean_id_name = [("XIN", mixin_asset_id_collection.XIN_ASSET_ID), ("USDT", mixin_asset_id_collection.USDT_ASSET_ID), ("BTC", mixin_asset_id_collection.BTC_ASSET_ID)] 
+
+        quote_asset_selection = QComboBox()
+        quote_asset_selection.insertItem(0, "XIN", mixin_asset_id_collection.XIN_ASSET_ID)
+        quote_asset_selection.insertItem(1, "USDT", mixin_asset_id_collection.USDT_ASSET_ID)
+        quote_asset_selection.insertItem(2, "BTC", mixin_asset_id_collection.BTC_ASSET_ID)
+        quote_asset_selection.currentIndexChanged.connect(self.ocean_base_asset_change)
+
+        self.ocean_base_asset_selection_asset_id = self.ocean_id_name[0][1]
+
+        quote_target_asset_selection = QComboBox()
+        known_asset_list = self.known_assets()
+        i = 0
+        self.ocean_target_id_name = []
+        for each in known_asset_list:
+            quote_target_asset_selection.insertItem(i, each.asset_symbol, each.asset_id)
+            self.ocean_target_id_name.append(each.asset_id)
+            i += 1
+
+        quote_target_asset_selection.currentIndexChanged.connect(self.ocean_target_asset_change)
+        self.ocean_target_asset_selection_asset_id = self.ocean_target_id_name[0]
+
+
         self.ocean_target_asset_id_input = QLineEdit()
-        this_layout.addWidget(self.ocean_base_asset_id_input)
-        this_layout.addWidget(self.ocean_target_asset_id_input)
+
+        operation_this_layout = QVBoxLayout()
+
+        operation_this_layout.addWidget(QLabel("quote asset"))
+        operation_this_layout.addWidget(quote_asset_selection)
+
+        operation_this_layout.addWidget(QLabel("target asset"))
+        operation_this_layout.addWidget(quote_target_asset_selection)
+        operation_this_layout.addWidget(self.ocean_target_asset_id_input)
+
         fetchOceanPriceBtn = QPushButton("Get price")
         fetchOceanPriceBtn.pressed.connect(self.fetchOceanPrice)
-        this_layout.addWidget(self.ocean_base_asset_id_input)
-        this_layout.addWidget(self.ocean_target_asset_id_input)
-        this_layout.addWidget(fetchOceanPriceBtn)
-        this_layout.addWidget(self.ocean_order_book_widget)
-        exin_title_trade_list_detail = QWidget()
-        exin_title_trade_list_detail.setLayout(this_layout)
-        return exin_title_trade_list_detail
+        operation_this_layout.addWidget(fetchOceanPriceBtn)
+        order_book_layout = QVBoxLayout()
+        order_book_layout.addWidget(self.ocean_order_ask_book_widget)
+        order_book_layout.addWidget(self.ocean_order_bid_book_widget)
+        operation_detail = QWidget() 
+        operation_detail.setLayout(operation_this_layout)
+        order_book_widget = QWidget()
+        order_book_widget.setLayout(order_book_layout)
+        final_widget = QWidget()
+        final_layout = QHBoxLayout()
+        final_widget.setLayout(final_layout)
+
+        final_layout.addWidget(order_book_widget)
+        final_layout.addWidget(operation_detail)
+        return final_widget
 
 
     def create_exin_exchange_widget(self):
@@ -1404,6 +1561,7 @@ class MainWindow(QMainWindow):
             header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
             header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
             header.setSectionResizeMode(4, QHeaderView.ResizeToContents)
+            header.setSectionResizeMode(5, QHeaderView.ResizeToContents)
 
             self.exin_title_trade_list_detail = self.create_exin_exchange_widget()
             self.oceanone_title_trade_list_detail = self.create_ocean_exchange_widget()

@@ -8,7 +8,7 @@ import binascii
 class ocean_order():
     def __init__(self, asset_order):
         self.amount = asset_order.get("amount")
-        self.funds  = asset_order.get("amount")
+        self.funds  = asset_order.get("funds")
         self.price  = asset_order.get("price")
         self.side   = asset_order.get("side")
 class Ocean_pair_price():
@@ -33,8 +33,8 @@ class Ocean_pair_price():
             self.bid_order_list.append(ocean_order(each))
 
 
-def fetchTradePrice(source_asset_id , target_asset_id):
-    url = "https://events.ocean.one/markets/" + source_asset_id + "-" + target_asset_id + "/book"
+def fetchTradePrice(quote_asset_id, target_asset_id):
+    url = "https://events.ocean.one/markets/" + target_asset_id + "-" + quote_asset_id+ "/book"
     print(url)
     result_fetchPrice = requests.get(url)
     ocean_response = result_fetchPrice.json()
