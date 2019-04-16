@@ -294,12 +294,11 @@ def Snapshot_fromSql(transaction_record_in_item):
 
 
 def plugin_can_explain_snapshot(input_snapshot):
-    resultString = ""
     for eachFunc in plugins_func_list:
         result = eachFunc(input_snapshot)
         if result != False:
-            resultString += str(result)
-    return resultString
+            return result
+    return False
 
 
 class TransactionHistoryTableModel(QAbstractTableModel):
@@ -312,20 +311,24 @@ class TransactionHistoryTableModel(QAbstractTableModel):
         finalData = []
         for eachSqlRecord in MySnapshot_list:
             thisRecord = []
+            thisRecord.append(eachSqlRecord.snap_created_at)
+            thisRecord.append(eachSqlRecord.snap_type)
             thisRecord.append(eachSqlRecord.snap_amount)
             thisRecord.append(eachSqlRecord.snap_asset_symbol)
-            thisRecord.append(eachSqlRecord.snap_created_at)
-            thisRecord.append(eachSqlRecord.snap_opponent_id)
-            thisRecord.append(eachSqlRecord.snap_type)
-            thisRecord.append(eachSqlRecord.snap_memo)
 
+ 
             thisSnapshot = Snapshot_fromSql(eachSqlRecord)
             result = plugin_can_explain_snapshot(thisSnapshot)
-            thisRecord.append(result)
+            if result != False:
+                thisRecord.append(result.get("opponent_name"))
+                thisRecord.append(result.get("memo"))
+            else:
+                thisRecord.append(eachSqlRecord.snap_opponent_id)
+                thisRecord.append(eachSqlRecord.snap_memo)
             finalData.append(thisRecord)
 
         self.mylist = finalData
-        self.header = ["Amount", "Asset", "Created at", "opponent", "type", "memo", "memo explain"]
+        self.header = ["Created at", "Type", "Amount", "Asset", "opponent", "memo"]
 
     def rowCount(self, parent):
         return len(self.mylist)
@@ -1336,8 +1339,6 @@ class MainWindow(QMainWindow):
             header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
             header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
             header.setSectionResizeMode(4, QHeaderView.ResizeToContents)
-            header.setSectionResizeMode(5, QHeaderView.ResizeToContents)
-            header.setSectionResizeMode(6, QHeaderView.ResizeToContents)
 
             self.exin_title_trade_list_detail = self.create_exin_exchange_widget()
             self.account_tab_widget = QTabWidget()

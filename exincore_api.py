@@ -73,9 +73,12 @@ def memo_is_pay_from_exin(input_snapshot):
 
 def exincore_can_explain_snapshot(input_snapshot):
     result = memo_is_pay_from_exin(input_snapshot)
-    if result == False:
-        return memo_is_pay_to_exin(input_snapshot)
-    return result
+    if result != False:
+        return {"opponent_name":"EXIN CORE Exchange", "memo":str(memo_is_pay_from_exin(input_snapshot))}
+    result = memo_is_pay_to_exin(input_snapshot)
+    if result != False:
+        return {"opponent_name":"EXIN CORE Exchange", "memo":str(memo_is_pay_to_exin(input_snapshot))}
+    return False
 
 EXIN_EXEC_TYPE_REQUEST = 0
 EXIN_EXEC_TYPE_RESULT  = 1
@@ -110,7 +113,7 @@ class Exin_execute_result(Exin_execute):
         self.order          = exin_order["O"]
         super().__init__(EXIN_EXEC_TYPE_RESULT)
     def __str__(self):
-        headString = "Payment to exin: "
+        headString = ""
         if(self.order_result == 1000):
             headString = headString + "Successful exchanged"
             headString = headString + " at price:" +  self.price
