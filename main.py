@@ -1339,6 +1339,14 @@ class MainWindow(QMainWindow):
             self.ocean_order_bid_book_widget.setModel(bid_order_model)
             self.ocean_order_bid_book_widget.update()
             self.ocean_order_bid_book_widget.selectRow(0)
+        else:
+            ask_order_model = OceanOrder_TableModel(None, [])
+            self.ocean_order_ask_book_widget.setModel(ask_order_model)
+            self.ocean_order_ask_book_widget.update()
+
+            bid_order_model = OceanOrder_TableModel(None, [])
+            self.ocean_order_bid_book_widget.setModel(bid_order_model)
+            self.ocean_order_bid_book_widget.update()
 
     def fetchOceanPrice(self):
         print("pressed")
