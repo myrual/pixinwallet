@@ -63,7 +63,7 @@ class AccountsSnapshots_Thread(QRunnable):
             self.signals.result.emit(result)
         finally:
             self.signals.finished.emit()
-        print("Balance Thread")
+        print("Account snapshot Thread")
 
 class ExinPrice_Thread(QRunnable):
     def __init__(self, base_asset_id, target_asset_id = "", delay_seconds = 0,  *args, **kwargs):
@@ -88,7 +88,7 @@ class ExinPrice_Thread(QRunnable):
             self.signals.result.emit(result)
         finally:
             self.signals.finished.emit()
-        print("Balance Thread")
+        print("ExinPrice Thread")
 
 class Balance_Thread(QRunnable):
     def __init__(self, wallet_obj, delay_seconds = 0,  *args, **kwargs):
@@ -133,7 +133,7 @@ class UserProfile_Thread(QRunnable):
             self.signals.result.emit(result)
         finally:
             self.signals.finished.emit()
-        print("Balance Thread")
+        print("User profile Thread")
 
 
 class CreateAccount_Thread(QRunnable):
@@ -438,7 +438,7 @@ class MainWindow(QMainWindow):
 
 
     def balance_load_thread_complete(self):
-        print("THREAD COMPLETE")
+        print("Balance THREAD COMPLETE")
         worker = Balance_Thread(self.selected_wallet_record, 60)
         worker.signals.result.connect(self.received_balance_result)
         worker.signals.finished.connect(self.balance_load_thread_complete)
@@ -911,7 +911,7 @@ class MainWindow(QMainWindow):
             delay_seconds = 120
         mysnapshots_worker = AccountsSnapshots_Thread(self.selected_wallet_record, the_last_snapshots_time, delay_seconds)
         mysnapshots_worker.signals.result.connect(self.received_snapshot)
-        mysnapshots_worker.signals.finished.connect(self.snap_thread_complete)
+        #mysnapshots_worker.signals.finished.connect(self.snap_thread_complete)
         self.threadPool.start(mysnapshots_worker)
 
     def received_user_profile_result(self, user_profile_result):
@@ -1062,6 +1062,7 @@ class MainWindow(QMainWindow):
         print("base asset is %s"%base_asset)
         tranfer_result = self.selected_wallet_record.transfer_to(exincore_api.EXINCORE_UUID, base_asset, self.pay_exin_amount_edit_Label_widget.text(), memo_for_exin, "", self.pay_exin_pin_edit_Label_widget.text())
         if tranfer_result.is_success:
+            self.update_balance()
             congratulations_msg = QMessageBox()
             congratulations_msg.setText("Your payment to exin is successful, verify it on blockchain explorer on https://mixin.one/snapshots/%s" % tranfer_result.data.snapshot_id)
             congratulations_msg.setTextInteractionFlags(Qt.TextSelectableByMouse)
@@ -1074,6 +1075,7 @@ class MainWindow(QMainWindow):
     def send_asset_to_withdraw_address_pressed(self):
         withdraw_asset_result = self.selected_wallet_record.withdraw_asset_to(self.selected_withdraw_address.address_id, self.send_amount_edit_Label_widget.text(), "", "", self.send_pin_edit_Label_widget.text())
         if withdraw_asset_result.is_success:
+            self.update_balance()
             self.send_asset_widget.close()
             congratulations_msg = QMessageBox()
             congratulations_msg.setText("Your withdraw operation is successful, verify it on blockchain explorer on https://mixin.one/snapshots/%s" % withdraw_asset_result.data.snapshot_id)
@@ -1095,6 +1097,11 @@ class MainWindow(QMainWindow):
     def open_trade_trade_detail_for_exin(self, base_asset_id, target_asset_id):
         if (hasattr(self, "selected_exin_result")):
             asset_price_result = exincore_api.fetchExinPrice(base_asset_id, target_asset_id)
+            base_asset_balance_result = self.selected_wallet_record.get_singleasset_balance(base_asset_id)
+            if base_asset_balance_result.is_success:
+                available_amount = base_asset_balance_result.data.balance + " in your wallet"
+            else:
+                available_amount = ""
             #confirm price again
             this_trade_price = asset_price_result[0]
             minimum_pay_base_asset = this_trade_price.minimum_amount
@@ -1104,7 +1111,7 @@ class MainWindow(QMainWindow):
             target_sym             = this_trade_price.exchange_asset_symbol
 
             tradepair_price_title_label_widget = QLabel("Price:  %s %s  ==> 1 %s"%(price_base_asset, base_sym, target_sym))
-            send_amount_title_widget = QLabel("amount(%s -> %s) %s:"%(minimum_pay_base_asset, maximum_pay_base_asset, base_sym))
+            send_amount_title_widget = QLabel("Amount(min %s -> max %s) %s:%s"%(minimum_pay_base_asset, maximum_pay_base_asset, base_sym, available_amount))
             self.pay_exin_amount_edit_Label_widget = QLineEdit()
             send_pin_title_widget = QLabel("Asset pin:")
             self.pay_exin_pin_edit_Label_widget = QLineEdit()
@@ -1310,6 +1317,12 @@ class MainWindow(QMainWindow):
 
     def tab_is_selected(self, index):
         print("tab is changed" + str(index))
+    def update_balance(self):
+        worker = Balance_Thread(self.selected_wallet_record)
+        worker.signals.result.connect(self.received_balance_result)
+        worker.signals.finished.connect(self.balance_load_thread_complete)
+        self.threadPool.start(worker)
+
     def open_selected_wallet(self):
         if (hasattr(self, "selected_wallet_record")):
             worker = Balance_Thread(self.selected_wallet_record)
@@ -1334,7 +1347,7 @@ class MainWindow(QMainWindow):
             self.widget_balance_widget = self.create_balance_widget()
             self.account_transaction_history_widget = self.open_transaction_history()
             header = self.account_transaction_history_widget.horizontalHeader()       
-            header.setSectionResizeMode(0, QHeaderView.Stretch)
+            header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
             header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
             header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
             header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
