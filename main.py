@@ -1364,11 +1364,13 @@ class MainWindow(QMainWindow):
 
     def ocean_base_asset_change(self, indexActived):
         self.ocean_base_asset_selection_asset_id = self.ocean_id_name[indexActived][1]
+        self.price_unit.setText(self.ocean_id_name[indexActived][0])
         self.fetchOceanPrice()
 
     def ocean_target_asset_change(self, indexActived):
         print("indexActived%d"%indexActived)
-        self.ocean_target_asset_selection_asset_id = self.ocean_target_id_name[indexActived]
+        self.ocean_target_asset_selection_asset_id = self.ocean_target_id_name[indexActived][0]
+        self.amount_unit.setText(self.ocean_target_id_name[indexActived][1])
         self.fetchOceanPrice()
 
     def received_asset_balance(self, asset):
@@ -1413,16 +1415,16 @@ class MainWindow(QMainWindow):
         self.ocean_target_id_name = []
         for each in known_asset_list:
             quote_target_asset_selection.insertItem(i, each.asset_symbol, each.asset_id)
-            self.ocean_target_id_name.append(each.asset_id)
+            self.ocean_target_id_name.append((each.asset_id, each.asset_symbol))
             i += 1
 
         quote_target_asset_selection.currentIndexChanged.connect(self.ocean_target_asset_change)
-        self.ocean_target_asset_selection_asset_id = self.ocean_target_id_name[0]
+        self.ocean_target_asset_selection_asset_id = self.ocean_target_id_name[0][0]
 
 
         self.ocean_target_asset_id_input = QLineEdit()
+        self.ocean_target_asset_id_input.setPlaceholderText("Asset id")
 
-        operation_this_layout = QVBoxLayout()
         quote_layout = QHBoxLayout()
         quote_layout.addWidget(QLabel("quote"))
         quote_layout.addWidget(quote_asset_selection)
@@ -1432,17 +1434,71 @@ class MainWindow(QMainWindow):
         quote_widget = QWidget()
         quote_widget.setLayout(quote_layout)
 
+
+        operation_this_layout = QVBoxLayout()
         operation_this_layout.addWidget(quote_widget)
         operation_this_layout.addWidget(self.ocean_target_asset_id_input)
 
         fetchOceanPriceBtn = QPushButton("Get price")
         fetchOceanPriceBtn.pressed.connect(self.fetchOceanPrice)
         operation_this_layout.addWidget(fetchOceanPriceBtn)
+
+        make_order_layout = QVBoxLayout()
+        self.ocean_target_asset_amount_input = QLineEdit()
+        self.ocean_target_asset_price_input = QLineEdit()
+
+
+
+        price_layout = QHBoxLayout()
+        self.price_unit = QLabel()
+        self.price_unit.setText(self.ocean_id_name[0][0])
+
+        price_layout.addWidget(QLabel("Price"))
+        price_layout.addWidget(self.ocean_target_asset_price_input)
+        price_layout.addWidget(self.price_unit)
+        price_widget = QWidget()
+        price_widget.setLayout(price_layout)
+
+        amount_layout = QHBoxLayout()
+        amount_layout.addWidget(QLabel("Amount"))
+        amount_layout.addWidget(self.ocean_target_asset_amount_input)
+
+        self.amount_unit = QLabel()
+        amount_layout.addWidget(self.amount_unit)
+        self.amount_unit.setText(self.ocean_target_id_name[0][1])
+
+        amount_widget = QWidget()
+        amount_widget.setLayout(amount_layout)
+
+        buy_btn = QPushButton("Buy")
+        sell_btn = QPushButton("Sell")
+        action_btn_layout = QHBoxLayout()
+        action_btn_layout.addWidget(buy_btn)
+        action_btn_layout.addWidget(sell_btn)
+        action_btn_widget = QWidget()
+        action_btn_widget.setLayout(action_btn_layout)
+
+        make_order_layout.addWidget(price_widget)
+        make_order_layout.addWidget(amount_widget)
+
+        make_order_layout.addWidget(action_btn_widget)
+        make_order_widget = QWidget()
+        make_order_widget.setLayout(make_order_layout)
+
+        operation_detail = QWidget() 
+        operation_detail.setLayout(operation_this_layout)
+
+        right_side_layout = QVBoxLayout()
+        right_side_layout.addWidget(operation_detail)
+        right_side_layout.addWidget(make_order_widget)
+        right_side_widget = QWidget()
+        right_side_widget.setLayout(right_side_layout)
+
+
+
         order_book_layout = QVBoxLayout()
         order_book_layout.addWidget(self.ocean_order_ask_book_widget)
         order_book_layout.addWidget(self.ocean_order_bid_book_widget)
-        operation_detail = QWidget() 
-        operation_detail.setLayout(operation_this_layout)
         order_book_widget = QWidget()
         order_book_widget.setLayout(order_book_layout)
         final_widget = QWidget()
@@ -1450,7 +1506,7 @@ class MainWindow(QMainWindow):
         final_widget.setLayout(final_layout)
 
         final_layout.addWidget(order_book_widget)
-        final_layout.addWidget(operation_detail)
+        final_layout.addWidget(right_side_widget)
         return final_widget
 
 
