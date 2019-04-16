@@ -1364,9 +1364,12 @@ class MainWindow(QMainWindow):
 
     def ocean_base_asset_change(self, indexActived):
         self.ocean_base_asset_selection_asset_id = self.ocean_id_name[indexActived][1]
+        self.fetchOceanPrice()
+
     def ocean_target_asset_change(self, indexActived):
         print("indexActived%d"%indexActived)
         self.ocean_target_asset_selection_asset_id = self.ocean_target_id_name[indexActived]
+        self.fetchOceanPrice()
 
     def received_asset_balance(self, asset):
         if asset.is_success:
