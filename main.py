@@ -1423,12 +1423,16 @@ class MainWindow(QMainWindow):
         self.ocean_target_asset_id_input = QLineEdit()
 
         operation_this_layout = QVBoxLayout()
+        quote_layout = QHBoxLayout()
+        quote_layout.addWidget(QLabel("quote"))
+        quote_layout.addWidget(quote_asset_selection)
+        quote_layout.addWidget(QLabel("target"))
+        quote_layout.addWidget(quote_target_asset_selection)
 
-        operation_this_layout.addWidget(QLabel("quote asset"))
-        operation_this_layout.addWidget(quote_asset_selection)
+        quote_widget = QWidget()
+        quote_widget.setLayout(quote_layout)
 
-        operation_this_layout.addWidget(QLabel("target asset"))
-        operation_this_layout.addWidget(quote_target_asset_selection)
+        operation_this_layout.addWidget(quote_widget)
         operation_this_layout.addWidget(self.ocean_target_asset_id_input)
 
         fetchOceanPriceBtn = QPushButton("Get price")
