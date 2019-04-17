@@ -1365,6 +1365,8 @@ class MainWindow(QMainWindow):
     def ocean_base_asset_change(self, indexActived):
         self.ocean_base_asset_selection_asset_id = self.ocean_id_name[indexActived][1]
         self.price_unit.setText(self.ocean_id_name[indexActived][0])
+        self.order_funds_unit.setText(self.ocean_id_name[indexActived][0])
+
         self.fetchOceanPrice()
 
     def ocean_target_asset_change(self, indexActived):
@@ -1395,6 +1397,24 @@ class MainWindow(QMainWindow):
                 self.threadPool.start(update_asset_name_worker)
         return know_asset_id_name_groups
 
+    def ocean_price_changed(self, changedText):
+        print(changedText)
+        try:
+            price  = float(changedText)
+            amount = float(self.ocean_target_asset_amount_input.text())
+            if amount > 0 and price > 0:
+                self.order_funds_label.setText(str(amount*price))
+        except ValueError:
+            return
+
+    def ocean_amount_change(self, changedText):
+        try:
+            amount = float(changedText)
+            price = float(self.ocean_target_asset_price_input.text())
+            if amount > 0 and price > 0:
+                self.order_funds_label.setText(str(amount*price))
+        except ValueError:
+            return
     def create_ocean_exchange_widget(self):
         self.ocean_order_ask_book_widget = QTableView()
         self.ocean_order_bid_book_widget = QTableView()
@@ -1428,8 +1448,8 @@ class MainWindow(QMainWindow):
         quote_layout = QHBoxLayout()
         quote_layout.addWidget(QLabel("quote"))
         quote_layout.addWidget(quote_asset_selection)
-        quote_layout.addWidget(QLabel("target"))
         quote_layout.addWidget(quote_target_asset_selection)
+        quote_layout.addWidget(QLabel("target"))
 
         quote_widget = QWidget()
         quote_widget.setLayout(quote_layout)
@@ -1445,7 +1465,9 @@ class MainWindow(QMainWindow):
 
         make_order_layout = QVBoxLayout()
         self.ocean_target_asset_amount_input = QLineEdit()
+        self.ocean_target_asset_amount_input.textChanged.connect(self.ocean_amount_change)
         self.ocean_target_asset_price_input = QLineEdit()
+        self.ocean_target_asset_price_input.textChanged.connect(self.ocean_price_changed)
 
 
 
@@ -1466,7 +1488,6 @@ class MainWindow(QMainWindow):
         self.amount_unit = QLabel()
         amount_layout.addWidget(self.amount_unit)
         self.amount_unit.setText(self.ocean_target_id_name[0][1])
-
         amount_widget = QWidget()
         amount_widget.setLayout(amount_layout)
 
@@ -1480,7 +1501,17 @@ class MainWindow(QMainWindow):
 
         make_order_layout.addWidget(price_widget)
         make_order_layout.addWidget(amount_widget)
+        self.order_funds_unit = QLabel("")
+        self.order_funds_label = QLabel("")
 
+        self.order_funds_unit.setText(self.ocean_id_name[0][0])
+        funds_unit_layout = QHBoxLayout()
+        funds_unit_layout.addWidget(self.order_funds_label)
+        funds_unit_layout.addWidget(self.order_funds_unit)
+        funds_unit_widget = QWidget()
+        funds_unit_widget.setLayout(funds_unit_layout)
+
+        make_order_layout.addWidget(funds_unit_widget)
         make_order_layout.addWidget(action_btn_widget)
         make_order_widget = QWidget()
         make_order_widget.setLayout(make_order_layout)
