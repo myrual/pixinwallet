@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 import uuid
 import time
+import os
 import traceback, sys
 import wallet_api
 import mixin_asset_id_collection
@@ -1706,6 +1707,16 @@ class MainWindow(QMainWindow):
 
         final_layout.addWidget(order_book_widget)
         final_layout.addWidget(right_side_widget)
+
+
+        if os.path.isfile(self.file_name+".oceanonekey"):
+            with open(self.file_name+".oceanonekey") as oceanonekeyfile:
+                self.oceanone_key = oceanonekeyfile.read()
+                print(self.oceanone_key)
+        else:
+            with open(self.file_name+".oceanonekey", "wb") as oceanonekeyfile:
+                self.oceanone_key = oceanone_api.generateECDSAKey_inPEM()
+                oceanonekeyfile.write(self.oceanone_key)
         return final_widget
 
 

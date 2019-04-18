@@ -3,6 +3,9 @@ import uuid
 import base64
 import umsgpack
 import binascii
+from ecdsa import SigningKey, NIST256p
+import hashlib
+
 
 OCEANONE_UUID = "aaff5bef-42fb-4c9f-90e0-29f69176b7d4"
 
@@ -54,6 +57,37 @@ def oceanone_can_explain_snapshot(input_snapshot):
     if result != False:
         return {"opponent_name":"OceanOne Exchange", "memo":str(memo_is_pay_to_ocean(input_snapshot))}
     return False
+
+
+def generateECDSAKey_inPEM():
+    sk = SigningKey.generate(curve=NIST256p)
+    return sk.to_pem()
+
+def generateSig(method, uri, body):
+    hashresult = hashlib.sha256((method + uri+body).encode('utf-8')).hexdigest()
+    return hashresult
+
+def genGETPOSTSig(methodstring, uristring, bodystring):
+    jwtSig = generateSig(methodstring, uristring, bodystring)
+
+def genGETSig(uristring, bodystring):
+    return genGETPOSTSig("GET", uristring, bodystring)
+
+def genJwtToken(uristring, bodystring, signKey_in_PEM, mixin_user_id, jti):
+        jwtSig = genGETSig(uristring, bodystring)
+        iat = datetime.datetime.utcnow()
+        exp = datetime.datetime.utcnow() + datetime.timedelta(seconds=200)
+        encoded = jwt.encode({'uid':mixin_user_id, 'iat':iat,'exp': exp, 'jti':jti,'sig':jwtSig}, signKey_in_PEM, algorithm='ES256')
+        return encoded
+
+def load_my_order(mixin_user_id, signKey_in_PEM):
+    url = "https://events.ocean.one/orders"
+    token = genJwtToken(url, "", signKey_in_PEM, mixin_user_id, str(uuid.uuid4()))
+    auth_token = token.decode('utf8')
+
+    r = requests.get(url, headers={"Authorization": "Bearer " + auth_token})
+    result_obj = r.json()
+    return result_obj
 
 
 
