@@ -1151,8 +1151,16 @@ class MainWindow(QMainWindow):
         self.exin_price_selected_row = index.row()
         self.selected_exin_result = self.exin_result[self.exin_price_selected_row]
         self.update_exin_detail()
+    def update_cancel_order_btn_title(self):
+        this_trade = self.ocean_history_list[self.ocean_history_selected_row]
+        self.ocean_cancel_order_btn.setText("Pay 0.00000001 %s to Cancel order %s: %s price to buy %s"%(self.asset_to_cancel_ocean_order.symbol, this_trade.order_id, this_trade.price, this_trade.asset_id))
+
     def ocean_list_record_selected(self, index):
         self.ocean_history_selected_row = index.row()
+        self.update_cancel_order_btn_title()
+    def ocean_cancel_order_asset_changed(self, indexActived):
+        self.asset_to_cancel_ocean_order = self.non_zero_asset_list[indexActived]
+        self.update_cancel_order_btn_title()
 
     def balance_list_record_selected(self, index):
         self.balance_selected_row = index.row()
@@ -1462,15 +1470,77 @@ class MainWindow(QMainWindow):
                 self.order_funds_label.setText("Total %s %s"%(str(amount*price), self.order_funds_unit))
         except ValueError:
             return
+    def ocean_cancel_order_btn_pressed(self):
+
+        current_input_pin    = self.ocean_cancel_order_pin.text()
+        this_trade = self.ocean_history_list[self.ocean_history_selected_row].order_id
+        asset_id_for_cancel = self.asset_to_cancel_ocean_order.asset_id
+        print([current_input_pin, this_trade, asset_id_for_cancel])
+        return
+        tranfer_result = self.selected_wallet_record.transfer_to(oceanone_api.OCEANONE_UUID, asset_id_for_cancel, "0.00000001", memo_to_ocean, "", current_input_pin)
+        if tranfer_result.is_success:
+            new_ocean_trade = mixin_sqlalchemy_type.Ocean_trade_record()
+            new_ocean_trade.pay_asset_id = asset_id_for_cancel
+            new_ocean_trade.pay_asset_amount   = "0.00000001"
+            new_ocean_trade.asset_id     = ""
+            new_ocean_trade.price        ="" 
+            new_ocean_trade.operation_type = ""
+            new_ocean_trade.side           = ""
+            new_ocean_trade.order_id       = ""
+            self.session.add(new_ocean_trade)
+            self.session.commit()
+
+            self.update_balance()
+            congratulations_msg = QMessageBox()
+            congratulations_msg.setText("Your payment to ocean is successful, verify it on blockchain explorer on https://mixin.one/snapshots/%s" % tranfer_result.data.snapshot_id)
+            congratulations_msg.setTextInteractionFlags(Qt.TextSelectableByMouse)
+            congratulations_msg.exec_()
+        else:
+            congratulations_msg = QMessageBox()
+            congratulations_msg.setText("Failed to pay, reason %s" % str(tranfer_result))
+            congratulations_msg.exec_()
+
+
     def ocean_open_history(self):
         self.ocean_history_list = self.session.query(mixin_sqlalchemy_type.Ocean_trade_record).all()
         this_table_model = OceanHistoryTableModel(None, self.ocean_history_list, ["Pay Asset", "Pay amount", "Target asset", "Price", "Operation", "Side", "Order_id"])
-        self.ocean_history_table = QTableView()
-        self.ocean_history_table.setModel(this_table_model)
-        self.ocean_history_table.show()
-        self.ocean_history_table.clicked.connect(self.ocean_list_record_selected)
-        self.ocean_history_table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.ocean_cancel_order_btn = QPushButton("Cancel")
+        self.ocean_cancel_order_btn.pressed.connect(self.ocean_cancel_order_btn_pressed)
 
+        self.ocean_cancel_order_pin = QLineEdit()
+        self.ocean_cancel_order_pin.setPlaceholderText("Asset pin")
+
+        ocean_history_table = QTableView()
+        ocean_history_table.setModel(this_table_model)
+        ocean_history_table.clicked.connect(self.ocean_list_record_selected)
+        ocean_history_table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        if len(self.ocean_history_list) > 0:
+            ocean_history_table.selectRow(0)
+        self.ocean_history_selected_row = 0
+
+        self.non_zero_asset_list = []
+
+        ocean_history_layout = QVBoxLayout()
+        for each in self.account_balance:
+            if each.balance != "0":
+                self.non_zero_asset_list.append(each)
+        if len(self.non_zero_asset_list) > 0:
+            cancel_order_pay_asset_combo = QComboBox()
+            cancel_order_pay_asset_combo.currentIndexChanged.connect(self.ocean_cancel_order_asset_changed)
+            self.asset_to_cancel_ocean_order = self.non_zero_asset_list[0]
+            i = 0
+            for each in self.non_zero_asset_list:
+                cancel_order_pay_asset_combo.addItem(each.symbol)
+
+            ocean_history_layout.addWidget(cancel_order_pay_asset_combo)
+        ocean_history_layout.addWidget(self.ocean_cancel_order_pin)
+        ocean_history_layout.addWidget(self.ocean_cancel_order_btn)
+
+        ocean_history_layout.addWidget(ocean_history_table)
+        self.ocean_history_widget = QWidget()
+        self.ocean_history_widget.setLayout(ocean_history_layout)
+        self.ocean_history_widget.show()
+        
     def ocean_make_buy_order(self):
         current_base_asset   = self.ocean_base_asset_selection_asset_id
         current_target_asset = self.ocean_target_asset_selection_asset_id

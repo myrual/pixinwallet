@@ -55,7 +55,7 @@ def oceanone_can_explain_snapshot(input_snapshot):
 
 
 def gen_memo_ocean_cancel_order(order_uuid):
-    result = {"O":order_uuid}
+    result = {"O":uuid.UUID("{" + order_uuid+ "}").bytes}
     return base64.b64encode(umsgpack.packb(result)).decode("utf-8")
 
 def gen_memo_ocean_create_order(asset_id_string, price_string, operation_type, side_operation, order_uuid):
