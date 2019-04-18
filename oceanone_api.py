@@ -5,6 +5,9 @@ import umsgpack
 import binascii
 from ecdsa import SigningKey, NIST256p
 import hashlib
+import datetime
+import jwt
+
 
 
 OCEANONE_UUID = "aaff5bef-42fb-4c9f-90e0-29f69176b7d4"
@@ -59,12 +62,26 @@ def oceanone_can_explain_snapshot(input_snapshot):
     return False
 
 
-def generateECDSAKey_inPEM():
+def key_to_string(key):
+    return key.to_string()
+def key_to_pem(key):
+    return key.to_pem()
+
+def generateECDSAKey():
     sk = SigningKey.generate(curve=NIST256p)
-    return sk.to_pem()
+    return sk
+
+def loadECDSAKey_fromString(oceanone_priv_key):
+    sk = SigningKey.from_string(oceanone_priv_key, NIST256p)
+    return sk
+def export_pubKey_fromPrivateKey(ecdsa_signing_key):
+    vk = ecdsa_signing_key.get_verifying_key()
+    return vk
 
 def generateSig(method, uri, body):
     hashresult = hashlib.sha256((method + uri+body).encode('utf-8')).hexdigest()
+    print("hash")
+    print(hashresult)
     return hashresult
 
 def genGETPOSTSig(methodstring, uristring, bodystring):
@@ -77,18 +94,25 @@ def genJwtToken(uristring, bodystring, signKey_in_PEM, mixin_user_id, jti):
         jwtSig = genGETSig(uristring, bodystring)
         iat = datetime.datetime.utcnow()
         exp = datetime.datetime.utcnow() + datetime.timedelta(seconds=200)
-        encoded = jwt.encode({'uid':mixin_user_id, 'iat':iat,'exp': exp, 'jti':jti,'sig':jwtSig}, signKey_in_PEM, algorithm='ES256')
+        encoded = jwt.encode({'uid':mixin_user_id, 'sid':mixin_user_id, 'iat':iat,'exp': exp, 'jti':jti,'sig':jwtSig}, signKey_in_PEM, algorithm='ES256')
         return encoded
 
 def load_my_order(mixin_user_id, signKey_in_PEM):
     url = "https://events.ocean.one/orders"
     token = genJwtToken(url, "", signKey_in_PEM, mixin_user_id, str(uuid.uuid4()))
     auth_token = token.decode('utf8')
+    print("load my order token")
+    print(auth_token)
 
     r = requests.get(url, headers={"Authorization": "Bearer " + auth_token})
     result_obj = r.json()
     return result_obj
 
+
+
+def gen_memo_ocean_reg_key(key_in_bytes):
+    result = {"U":key_in_bytes}
+    return base64.b64encode(umsgpack.packb(result)).decode("utf-8")
 
 
 def gen_memo_ocean_cancel_order(order_uuid):

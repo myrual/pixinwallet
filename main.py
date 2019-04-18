@@ -11,6 +11,7 @@ import sqlalchemy
 import mixin_sqlalchemy_type
 import exincore_api
 import oceanone_api
+import base64
 
 
 class WorkerSignals(QObject):
@@ -1156,12 +1157,19 @@ class MainWindow(QMainWindow):
         this_trade = self.ocean_history_list[self.ocean_history_selected_row]
         self.ocean_cancel_order_btn.setText("Pay 0.00000001 %s to Cancel order %s: %s price to buy %s"%(self.asset_to_cancel_ocean_order.symbol, this_trade.order_id, this_trade.price, this_trade.asset_id))
 
+    def update_reg_key_order_btn_title(self):
+        self.ocean_reg_key_btn.setText("Pay 0.00000001 %s to register key"%(self.asset_to_reg_key.symbol))
+
+
     def ocean_list_record_selected(self, index):
         self.ocean_history_selected_row = index.row()
         self.update_cancel_order_btn_title()
     def ocean_cancel_order_asset_changed(self, indexActived):
         self.asset_to_cancel_ocean_order = self.non_zero_asset_list[indexActived]
         self.update_cancel_order_btn_title()
+    def ocean_reg_key_asset_changed(self, indexActived):
+        self.asset_to_reg_key = self.non_zero_asset_list[indexActived]
+        self.update_reg_key_order_btn_title()
 
     def balance_list_record_selected(self, index):
         self.balance_selected_row = index.row()
@@ -1471,6 +1479,31 @@ class MainWindow(QMainWindow):
                 self.order_funds_label.setText("Total %s %s"%(str(amount*price), self.order_funds_unit))
         except ValueError:
             return
+    def ocean_reg_key_btn_pressed(self):
+
+        current_input_pin    = self.ocean_reg_key_pin.text()
+        asset_id_for_regkey = self.asset_to_reg_key.asset_id
+        sk = oceanone_api.generateECDSAKey()
+        vk = oceanone_api.export_pubKey_fromPrivateKey(sk)
+        vk_in_string = oceanone_api.key_to_string(vk)
+        memo_to_ocean = oceanone_api.gen_memo_ocean_reg_key(vk_in_string)
+        print([current_input_pin, asset_id_for_regkey, memo_to_ocean])
+        tranfer_result = self.selected_wallet_record.transfer_to(oceanone_api.OCEANONE_UUID, asset_id_for_regkey, "0.00001", memo_to_ocean, "", current_input_pin)
+        if tranfer_result.is_success:
+            self.update_balance()
+            with open(self.file_name+".oceanonekey", "wb") as oceanonekeyfile:
+                oceanonekeyfile.write(base64.b64encode(oceanone_api.key_to_string(sk)))
+
+            congratulations_msg = QMessageBox()
+            congratulations_msg.setText("Your payment to ocean is successful, verify it on blockchain explorer on https://mixin.one/snapshots/%s" % tranfer_result.data.snapshot_id)
+            congratulations_msg.setTextInteractionFlags(Qt.TextSelectableByMouse)
+            congratulations_msg.exec_()
+        else:
+            congratulations_msg = QMessageBox()
+            congratulations_msg.setText("Failed to pay, reason %s" % str(tranfer_result))
+            congratulations_msg.exec_()
+
+
     def ocean_cancel_order_btn_pressed(self):
 
         current_input_pin    = self.ocean_cancel_order_pin.text()
@@ -1501,6 +1534,38 @@ class MainWindow(QMainWindow):
             congratulations_msg.setText("Failed to pay, reason %s" % str(tranfer_result))
             congratulations_msg.exec_()
 
+
+    def register_key_to_oceanone(self):
+        self.ocean_reg_key_btn = QPushButton("Pay 0.00000001 to register your local key" + self.file_name + ".oceanonekey")
+        self.ocean_reg_key_btn.pressed.connect(self.ocean_reg_key_btn_pressed)
+
+        self.ocean_reg_key_pin = QLineEdit()
+        self.ocean_reg_key_pin.setPlaceholderText("Asset pin")
+
+        self.non_zero_asset_list = []
+
+        ocean_reg_key_layout = QVBoxLayout()
+        for each in self.account_balance:
+            if each.balance != "0":
+                self.non_zero_asset_list.append(each)
+        if len(self.non_zero_asset_list) > 0:
+            reg_key_pay_asset_combo = QComboBox()
+            reg_key_pay_asset_combo.currentIndexChanged.connect(self.ocean_reg_key_asset_changed)
+            self.asset_to_reg_key= self.non_zero_asset_list[0]
+            i = 0
+            for each in self.non_zero_asset_list:
+                reg_key_pay_asset_combo.addItem(each.symbol)
+
+            ocean_reg_key_layout.addWidget(reg_key_pay_asset_combo)
+        ocean_reg_key_layout.addWidget(self.ocean_reg_key_pin)
+        ocean_reg_key_layout.addWidget(self.ocean_reg_key_btn)
+
+        self.ocean_reg_key_widget = QWidget()
+        self.ocean_reg_key_widget.setLayout(ocean_reg_key_layout)
+        self.ocean_reg_key_widget.show()
+ 
+    def ocean_open_cloud_history(self):
+        print(oceanone_api.load_my_order(self.selected_wallet_record.userid, self.oceanone_key_in_pem))
 
     def ocean_open_history(self):
         self.ocean_history_list = self.session.query(mixin_sqlalchemy_type.Ocean_trade_record).all()
@@ -1660,8 +1725,11 @@ class MainWindow(QMainWindow):
         buy_btn.pressed.connect(self.ocean_make_buy_order)
         sell_btn = QPushButton("Sell")
 
-        history_btn = QPushButton("Ocean history")
+        history_btn = QPushButton("Ocean history in local wallet")
         history_btn.pressed.connect(self.ocean_open_history)
+
+
+
         action_btn_layout = QHBoxLayout()
         action_btn_layout.addWidget(buy_btn)
         action_btn_layout.addWidget(sell_btn)
@@ -1681,7 +1749,23 @@ class MainWindow(QMainWindow):
         make_order_layout.addWidget(funds_unit_widget)
         make_order_layout.addWidget(self.ocean_pin_input)
         make_order_layout.addWidget(action_btn_widget)
+
         make_order_layout.addWidget(history_btn)
+        if os.path.isfile(self.file_name+".oceanonekey"):
+            with open(self.file_name+".oceanonekey") as oceanonekeyfile:
+                oceanone_key_in_string = base64.b64decode(oceanonekeyfile.read())
+                sk = oceanone_api.loadECDSAKey_fromString(oceanone_key_in_string)
+                self.oceanone_key_in_pem = sk.to_pem().decode('utf8')
+                print(self.oceanone_key_in_pem)
+                print("oceanone private key in pem:" + self.oceanone_key_in_pem)
+                registered_btn = QPushButton("Load my order from OceanOne server")
+                registered_btn.pressed.connect(self.ocean_open_cloud_history)
+                make_order_layout.addWidget(registered_btn)
+
+        else:
+            registered_btn = QPushButton("Register a key to OceanOne to find your order")
+            registered_btn.pressed.connect(self.register_key_to_oceanone)
+            make_order_layout.addWidget(registered_btn)
         make_order_widget = QWidget()
         make_order_widget.setLayout(make_order_layout)
 
@@ -1708,15 +1792,6 @@ class MainWindow(QMainWindow):
         final_layout.addWidget(order_book_widget)
         final_layout.addWidget(right_side_widget)
 
-
-        if os.path.isfile(self.file_name+".oceanonekey"):
-            with open(self.file_name+".oceanonekey") as oceanonekeyfile:
-                self.oceanone_key = oceanonekeyfile.read()
-                print(self.oceanone_key)
-        else:
-            with open(self.file_name+".oceanonekey", "wb") as oceanonekeyfile:
-                self.oceanone_key = oceanone_api.generateECDSAKey_inPEM()
-                oceanonekeyfile.write(self.oceanone_key)
         return final_widget
 
 

@@ -269,7 +269,6 @@ class MIXIN_API:
             result_obj = r.json()
             return result_obj
         if (r.status_code == 500):
-            print("path: %s, body:%s"%(path, body_in_json))
             return {"httpfailed":r.status_code}
         return (r.json())
     """
