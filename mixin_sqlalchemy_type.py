@@ -53,3 +53,20 @@ class Mixin_asset_record(Base):
     def __repr__(self):
         return "<Asset (id='%s', symbol ='%s', name ='%s')>" % (
                                 self.asset_id, self.asset_symbol, self.asset_name)
+class Ocean_trade_record(Base):
+    __tablename__ = 'ocean_trade_record_list'
+    # Here we define columns for the table person
+    # Notice that each column is also a normal Python instance attribute.
+    id = Column(Integer, primary_key=True)
+    pay_asset_id = Column(String(64))
+    pay_asset_amount = Column(String(64))
+    asset_id = Column(String(64))
+    price = Column(String(64))
+    operation_type = Column(String(256))
+    side = Column(String(64))
+    order_id = Column(String(64))
+
+    def __repr__(self):
+        return "<Asset (id='%s', symbol ='%s', name ='%s')>" % (
+                                self.asset_id, self.asset_symbol, self.asset_name)
+

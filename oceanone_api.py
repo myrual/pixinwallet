@@ -5,6 +5,20 @@ import umsgpack
 import binascii
 
 
+def gen_memo_ocean_cancel_order(order_uuid):
+    result = {"O":order_uuid}
+    return base64.b64encode(umsgpack.packb(result)).decode("utf-8")
+
+def gen_memo_ocean_create_order(asset_id_string, price_string, operation_type, side_operation, order_uuid):
+    result = {"S":side_operation, "A":uuid.UUID("{" + asset_id_string + "}").bytes, "P":price_string, "T":operation_type, "O":order_uuid}
+    return base64.b64encode(umsgpack.packb(result)).decode("utf-8")
+
+def gen_memo_ocean_bid(asset_id_string, price_string, order_uuid):
+    return gen_memo_ocean_create_order(asset_id_string, price_string, "L", "B", order_uuid)
+def gen_memo_ocean_ask(asset_id_string, price_string, order_uuid):
+    return gen_memo_ocean_create_order(asset_id_string, price_string, "L", "A", order_uuid)
+
+
 class ocean_order():
     def __init__(self, asset_order):
         self.amount = asset_order.get("amount")

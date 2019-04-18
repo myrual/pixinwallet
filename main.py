@@ -1,7 +1,7 @@
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
-
+import uuid
 import time
 import traceback, sys
 import wallet_api
@@ -394,6 +394,50 @@ def plugin_can_explain_snapshot(input_snapshot):
             return result
     return False
 
+
+class OceanHistoryTableModel(QAbstractTableModel):
+    """
+    keep the method names
+    they are an integral part of the model
+    """
+    def __init__(self, parent, oceanhistory_list, header, *args):
+        QAbstractTableModel.__init__(self, parent, *args)
+        finalData = []
+        for eachSqlRecord in oceanhistory_list:
+            thisRecord = []
+            thisRecord.append(eachSqlRecord.pay_asset_id)
+            thisRecord.append(eachSqlRecord.pay_asset_amount)
+            thisRecord.append(eachSqlRecord.asset_id)
+            thisRecord.append(eachSqlRecord.price)
+            thisRecord.append(eachSqlRecord.operation_type)
+            thisRecord.append(eachSqlRecord.side)
+            thisRecord.append(eachSqlRecord.order_id)
+            finalData.append(thisRecord)
+
+        self.mylist = finalData
+        self.header = header 
+
+    def rowCount(self, parent):
+        return len(self.mylist)
+
+    def columnCount(self, parent):
+        if len(self.mylist) > 0:
+            return len(self.mylist[0])
+        return 0
+        
+    def data(self, index, role):
+        if not index.isValid():
+            return None
+        value = self.mylist[index.row()][index.column()]
+        if role == Qt.EditRole:
+            return value
+        elif role == Qt.DisplayRole:
+            return value
+
+    def headerData(self, col, orientation, role):
+        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+            return self.header[col]
+        return None
 
 class TransactionHistoryTableModel(QAbstractTableModel):
     """
@@ -1107,6 +1151,9 @@ class MainWindow(QMainWindow):
         self.exin_price_selected_row = index.row()
         self.selected_exin_result = self.exin_result[self.exin_price_selected_row]
         self.update_exin_detail()
+    def ocean_list_record_selected(self, index):
+        self.ocean_history_selected_row = index.row()
+
     def balance_list_record_selected(self, index):
         self.balance_selected_row = index.row()
         self.asset_instance_in_item = self.account_balance[self.balance_selected_row]
@@ -1365,7 +1412,7 @@ class MainWindow(QMainWindow):
     def ocean_base_asset_change(self, indexActived):
         self.ocean_base_asset_selection_asset_id = self.ocean_id_name[indexActived][1]
         self.price_unit.setText(self.ocean_id_name[indexActived][0])
-        self.order_funds_unit.setText(self.ocean_id_name[indexActived][0])
+        self.order_funds_unit = self.ocean_id_name[indexActived][0]
 
         self.fetchOceanPrice()
 
@@ -1403,7 +1450,7 @@ class MainWindow(QMainWindow):
             price  = float(changedText)
             amount = float(self.ocean_target_asset_amount_input.text())
             if amount > 0 and price > 0:
-                self.order_funds_label.setText(str(amount*price))
+                self.order_funds_label.setText("Total %s %s"%(str(amount*price), self.order_funds_unit))
         except ValueError:
             return
 
@@ -1412,9 +1459,36 @@ class MainWindow(QMainWindow):
             amount = float(changedText)
             price = float(self.ocean_target_asset_price_input.text())
             if amount > 0 and price > 0:
-                self.order_funds_label.setText(str(amount*price))
+                self.order_funds_label.setText("Total %s %s"%(str(amount*price), self.order_funds_unit))
         except ValueError:
             return
+    def ocean_open_history(self):
+        self.ocean_history_list = self.session.query(mixin_sqlalchemy_type.Ocean_trade_record).all()
+        this_table_model = OceanHistoryTableModel(None, self.ocean_history_list, ["Pay Asset", "Pay amount", "Target asset", "Price", "Operation", "Side", "Order_id"])
+        self.ocean_history_table = QTableView()
+        self.ocean_history_table.setModel(this_table_model)
+        self.ocean_history_table.show()
+        self.ocean_history_table.clicked.connect(self.ocean_list_record_selected)
+        self.ocean_history_table.setSelectionBehavior(QAbstractItemView.SelectRows)
+
+    def ocean_make_buy_order(self):
+        current_base_asset   = self.ocean_base_asset_selection_asset_id
+        current_target_asset = self.ocean_target_asset_selection_asset_id
+        current_amount       = self.ocean_target_asset_amount_input.text()
+        current_price        = self.ocean_target_asset_price_input.text()
+        current_input_pin    = self.ocean_pin_input.text()
+        current_uuid         = str(uuid.uuid1())
+        print([current_base_asset, current_target_asset, current_amount,current_price, current_input_pin, current_uuid])
+        new_ocean_trade = mixin_sqlalchemy_type.Ocean_trade_record()
+        new_ocean_trade.pay_asset_id = current_base_asset
+        new_ocean_trade.pay_asset_amount   = current_amount
+        new_ocean_trade.asset_id     = current_target_asset
+        new_ocean_trade.price        = current_price
+        new_ocean_trade.operation_type = "L"
+        new_ocean_trade.side           = "B"
+        new_ocean_trade.order_id       = current_uuid
+        self.session.add(new_ocean_trade)
+        self.session.commit()
     def create_ocean_exchange_widget(self):
         self.ocean_order_ask_book_widget = QTableView()
         self.ocean_order_bid_book_widget = QTableView()
@@ -1469,6 +1543,11 @@ class MainWindow(QMainWindow):
         self.ocean_target_asset_price_input = QLineEdit()
         self.ocean_target_asset_price_input.textChanged.connect(self.ocean_price_changed)
 
+        self.ocean_pin_input = QLineEdit()
+        self.ocean_pin_input.setPlaceholderText("Asset pin")
+        self.ocean_pin_input.setEchoMode(QLineEdit.Password)
+        self.ocean_pin_input.setMaxLength(6)
+
 
 
         price_layout = QHBoxLayout()
@@ -1492,7 +1571,11 @@ class MainWindow(QMainWindow):
         amount_widget.setLayout(amount_layout)
 
         buy_btn = QPushButton("Buy")
+        buy_btn.pressed.connect(self.ocean_make_buy_order)
         sell_btn = QPushButton("Sell")
+
+        history_btn = QPushButton("Ocean history")
+        history_btn.pressed.connect(self.ocean_open_history)
         action_btn_layout = QHBoxLayout()
         action_btn_layout.addWidget(buy_btn)
         action_btn_layout.addWidget(sell_btn)
@@ -1501,18 +1584,18 @@ class MainWindow(QMainWindow):
 
         make_order_layout.addWidget(price_widget)
         make_order_layout.addWidget(amount_widget)
-        self.order_funds_unit = QLabel("")
         self.order_funds_label = QLabel("")
 
-        self.order_funds_unit.setText(self.ocean_id_name[0][0])
+        self.order_funds_unit = self.ocean_id_name[0][0]
         funds_unit_layout = QHBoxLayout()
         funds_unit_layout.addWidget(self.order_funds_label)
-        funds_unit_layout.addWidget(self.order_funds_unit)
         funds_unit_widget = QWidget()
         funds_unit_widget.setLayout(funds_unit_layout)
 
         make_order_layout.addWidget(funds_unit_widget)
+        make_order_layout.addWidget(self.ocean_pin_input)
         make_order_layout.addWidget(action_btn_widget)
+        make_order_layout.addWidget(history_btn)
         make_order_widget = QWidget()
         make_order_widget.setLayout(make_order_layout)
 
