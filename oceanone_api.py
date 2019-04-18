@@ -27,8 +27,11 @@ def memo_is_pay_to_ocean(input_snapshot):
     try:
         exin_order = umsgpack.unpackb(base64.b64decode(memo_at_snap))
 
-        if type(exin_order) == type({}) and "O"in exin_order:
+        if type(exin_order) == type({}) and "A"in exin_order:
             result = "exchange %s at price %s with order %s"%(str(uuid.UUID(bytes = exin_order.get("A"))), exin_order.get("P"), str(uuid.UUID(bytes = exin_order.get("O"))))
+            return result
+        elif type(exin_order) == type({}) and (not "A"in exin_order)and ("O"in exin_order):
+            result = "cancel order %s"%(str(uuid.UUID(bytes = exin_order.get("O"))))
             return result
         else:
             return False

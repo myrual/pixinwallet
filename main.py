@@ -1475,8 +1475,8 @@ class MainWindow(QMainWindow):
         current_input_pin    = self.ocean_cancel_order_pin.text()
         this_trade = self.ocean_history_list[self.ocean_history_selected_row].order_id
         asset_id_for_cancel = self.asset_to_cancel_ocean_order.asset_id
-        print([current_input_pin, this_trade, asset_id_for_cancel])
-        return
+        memo_to_ocean = oceanone_api.gen_memo_ocean_cancel_order(this_trade)
+        print([current_input_pin, this_trade, asset_id_for_cancel, memo_to_ocean])
         tranfer_result = self.selected_wallet_record.transfer_to(oceanone_api.OCEANONE_UUID, asset_id_for_cancel, "0.00000001", memo_to_ocean, "", current_input_pin)
         if tranfer_result.is_success:
             new_ocean_trade = mixin_sqlalchemy_type.Ocean_trade_record()
