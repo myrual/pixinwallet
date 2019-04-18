@@ -366,7 +366,7 @@ class ExinPrice_TableModel(QAbstractTableModel):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             return self.header[col]
         return None
-plugins_func_list = [exincore_api.exincore_can_explain_snapshot]
+plugins_func_list = [exincore_api.exincore_can_explain_snapshot, oceanone_api.oceanone_can_explain_snapshot]
 def Snapshot_fromSql(transaction_record_in_item):
     singleSnapShot                  = wallet_api.Snapshot()
     singleSnapShot.snapshot_id      = transaction_record_in_item.snap_snapshot_id
@@ -1479,16 +1479,31 @@ class MainWindow(QMainWindow):
         current_input_pin    = self.ocean_pin_input.text()
         current_uuid         = str(uuid.uuid1())
         print([current_base_asset, current_target_asset, current_amount,current_price, current_input_pin, current_uuid])
-        new_ocean_trade = mixin_sqlalchemy_type.Ocean_trade_record()
-        new_ocean_trade.pay_asset_id = current_base_asset
-        new_ocean_trade.pay_asset_amount   = current_amount
-        new_ocean_trade.asset_id     = current_target_asset
-        new_ocean_trade.price        = current_price
-        new_ocean_trade.operation_type = "L"
-        new_ocean_trade.side           = "B"
-        new_ocean_trade.order_id       = current_uuid
-        self.session.add(new_ocean_trade)
-        self.session.commit()
+        memo_to_ocean = oceanone_api.gen_memo_ocean_bid(current_target_asset, current_price, current_uuid)
+        tranfer_result = self.selected_wallet_record.transfer_to(oceanone_api.OCEANONE_UUID, current_base_asset, current_amount, memo_to_ocean, current_uuid, current_input_pin)
+        if tranfer_result.is_success:
+            new_ocean_trade = mixin_sqlalchemy_type.Ocean_trade_record()
+            new_ocean_trade.pay_asset_id = current_base_asset
+            new_ocean_trade.pay_asset_amount   = current_amount
+            new_ocean_trade.asset_id     = current_target_asset
+            new_ocean_trade.price        = current_price
+            new_ocean_trade.operation_type = "L"
+            new_ocean_trade.side           = "B"
+            new_ocean_trade.order_id       = current_uuid
+            self.session.add(new_ocean_trade)
+            self.session.commit()
+
+            self.update_balance()
+            congratulations_msg = QMessageBox()
+            congratulations_msg.setText("Your payment to ocean is successful, verify it on blockchain explorer on https://mixin.one/snapshots/%s" % tranfer_result.data.snapshot_id)
+            congratulations_msg.setTextInteractionFlags(Qt.TextSelectableByMouse)
+            congratulations_msg.exec_()
+        else:
+            congratulations_msg = QMessageBox()
+            congratulations_msg.setText("Failed to pay, reason %s" % str(tranfer_result))
+            congratulations_msg.exec_()
+
+
     def create_ocean_exchange_widget(self):
         self.ocean_order_ask_book_widget = QTableView()
         self.ocean_order_bid_book_widget = QTableView()

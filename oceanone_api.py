@@ -4,13 +4,62 @@ import base64
 import umsgpack
 import binascii
 
+OCEANONE_UUID = "aaff5bef-42fb-4c9f-90e0-29f69176b7d4"
+
+def memo_is_pay_from_oceanone(input_snapshot):
+    memo_at_snap = input_snapshot.memo
+    if input_snapshot.opponent_id != OCEANONE_UUID or float(input_snapshot.amount) < 0:
+        return False
+    try:
+        exin_order = umsgpack.unpackb(base64.b64decode(memo_at_snap))
+        return str(exin_order)
+    except umsgpack.InsufficientDataException:
+        return False
+    except binascii.Error:
+        return False
+    except umsgpack.InvalidStringException:
+        return False
+
+def memo_is_pay_to_ocean(input_snapshot):
+    memo_at_snap = input_snapshot.memo
+    if input_snapshot.opponent_id != OCEANONE_UUID:
+        return False
+    try:
+        exin_order = umsgpack.unpackb(base64.b64decode(memo_at_snap))
+
+        if type(exin_order) == type({}) and "O"in exin_order:
+            result = "exchange %s at price %s with order %s"%(str(uuid.UUID(bytes = exin_order.get("A"))), exin_order.get("P"), str(uuid.UUID(bytes = exin_order.get("O"))))
+            return result
+        else:
+            return False
+    except umsgpack.InsufficientDataException:
+        return False
+    except umsgpack.InvalidStringException:
+        return False
+    except binascii.Error:
+        return False
+    except ValueError:
+        return False
+
+
+def oceanone_can_explain_snapshot(input_snapshot):
+
+    result = memo_is_pay_from_oceanone(input_snapshot)
+    if result != False:
+        return {"opponent_name":"OceanOne Exchange", "memo":str(memo_is_pay_from_oceanone(input_snapshot))}
+    result = memo_is_pay_to_ocean(input_snapshot)
+    if result != False:
+        return {"opponent_name":"OceanOne Exchange", "memo":str(memo_is_pay_to_ocean(input_snapshot))}
+    return False
+
+
 
 def gen_memo_ocean_cancel_order(order_uuid):
     result = {"O":order_uuid}
     return base64.b64encode(umsgpack.packb(result)).decode("utf-8")
 
 def gen_memo_ocean_create_order(asset_id_string, price_string, operation_type, side_operation, order_uuid):
-    result = {"S":side_operation, "A":uuid.UUID("{" + asset_id_string + "}").bytes, "P":price_string, "T":operation_type, "O":order_uuid}
+    result = {"S":side_operation, "A":uuid.UUID("{" + asset_id_string + "}").bytes, "P":price_string, "T":operation_type, "O":uuid.UUID("{" + order_uuid + "}").bytes}
     return base64.b64encode(umsgpack.packb(result)).decode("utf-8")
 
 def gen_memo_ocean_bid(asset_id_string, price_string, order_uuid):
