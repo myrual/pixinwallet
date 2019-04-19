@@ -1447,7 +1447,6 @@ class MainWindow(QMainWindow):
         self.ocean_target_asset_selection_asset = self.ocean_target_id_name[indexActived]
         self.price_unit.setText(self.ocean_target_asset_selection_asset.asset_symbol + " per " + self.ocean_base_asset_selection_asset[0])
         self.order_funds_unit = self.ocean_target_asset_selection_asset.asset_symbol
-        self.amount_sell_unit.setText(self.ocean_target_asset_selection_asset.asset_symbol)
         self.ocean_buy_btn.setText("Buy "+ self.ocean_target_asset_selection_asset.asset_symbol)
         self.ocean_sell_btn.setText("Sell "+ self.ocean_target_asset_selection_asset.asset_symbol)
         self.ocean_target_asset_sell_amount_input.setPlaceholderText("%s amount"%self.ocean_target_asset_selection_asset.asset_symbol)
@@ -1748,11 +1747,8 @@ class MainWindow(QMainWindow):
         amount_sell_layout.addWidget(self.ocean_target_asset_sell_amount_input)
 
         self.ocean_target_asset_amount_input.setPlaceholderText("%s amount"%self.ocean_id_name[0][0])
+        self.ocean_target_asset_sell_amount_input.setPlaceholderText("%s amount"%self.ocean_target_id_name[0].asset_symbol)
 
-        self.amount_sell_unit = QLabel()
-        self.amount_sell_unit.setText(self.ocean_target_id_name[0].asset_symbol)
-
-        amount_sell_layout.addWidget(self.amount_sell_unit)
         amount_widget = QWidget()
         amount_widget.setLayout(amount_layout)
         amount_sell_widget = QWidget()
