@@ -1429,23 +1429,23 @@ class MainWindow(QMainWindow):
             self.threadPool.start(update_asset_name_worker)
 
         else:
-            ocean_worker = Ocean_Thread(self.ocean_base_asset_selection_asset[1], self.ocean_target_asset_selection_asset_id)
+            ocean_worker = Ocean_Thread(self.ocean_base_asset_selection_asset[1], self.ocean_target_asset_selection_asset.asset_id)
         ocean_worker.signals.result.connect(self.received_ocean_result)
         #ocean_worker.signals.finished.connect(self.thread_complete)
         self.threadPool.start(ocean_worker)
 
     def ocean_base_asset_change(self, indexActived):
         self.ocean_base_asset_selection_asset = self.ocean_id_name[indexActived]
-        self.price_unit.setText("per " + self.ocean_base_asset_selection_asset[0])
+        self.price_unit.setText(self.ocean_target_id_name[indexActived].asset_symbol + " per " + self.ocean_base_asset_selection_asset[0])
         self.amount_unit.setText(self.ocean_base_asset_selection_asset[0])
 
         self.fetchOceanPrice()
 
     def ocean_target_asset_change(self, indexActived):
         print("indexActived%d"%indexActived)
-        self.ocean_target_asset_selection_asset_id = self.ocean_target_id_name[indexActived][0]
-        self.price_unit.setText(self.ocean_target_id_name[indexActived][1] + " per")
-        self.order_funds_unit = self.ocean_target_id_name[indexActived][1]
+        self.ocean_target_asset_selection_asset = self.ocean_target_id_name[indexActived]
+        self.price_unit.setText(self.ocean_target_id_name[indexActived].asset_symbol + "/" + self.ocean_base_asset_selection_asset[0])
+        self.order_funds_unit = self.ocean_target_id_name[indexActived].asset_symbol
         self.fetchOceanPrice()
 
     def received_asset_balance(self, asset):
@@ -1618,7 +1618,7 @@ class MainWindow(QMainWindow):
         
     def ocean_make_buy_order(self):
         current_base_asset   = self.ocean_base_asset_selection_asset[1]
-        current_target_asset = self.ocean_target_asset_selection_asset_id
+        current_target_asset = self.ocean_target_asset_selection_asset.asset_id
         current_amount       = self.ocean_target_asset_amount_input.text()
         current_price        = self.ocean_target_asset_price_input.text()
         current_input_pin    = self.ocean_pin_input.text()
@@ -1669,11 +1669,11 @@ class MainWindow(QMainWindow):
         self.ocean_target_id_name = []
         for each in known_asset_list:
             quote_target_asset_selection.insertItem(i, each.asset_symbol, each.asset_id)
-            self.ocean_target_id_name.append((each.asset_id, each.asset_symbol))
+            self.ocean_target_id_name.append(each)
             i += 1
 
         quote_target_asset_selection.currentIndexChanged.connect(self.ocean_target_asset_change)
-        self.ocean_target_asset_selection_asset_id = self.ocean_target_id_name[0][0]
+        self.ocean_target_asset_selection_asset = self.ocean_target_id_name[0]
 
 
         self.ocean_target_asset_id_input = QLineEdit()
@@ -1712,14 +1712,11 @@ class MainWindow(QMainWindow):
 
         price_layout = QHBoxLayout()
         self.price_unit = QLabel()
-        self.price_unit.setText(self.ocean_target_id_name[0][0])
-        self.price_unit_base = QLabel()
-        self.price_unit_base.setText(self.ocean_id_name[0][0])
+        self.price_unit.setText(self.ocean_target_id_name[0].asset_symbol + " per " + self.ocean_base_asset_selection_asset[0])
 
         price_layout.addWidget(QLabel("Price"))
         price_layout.addWidget(self.ocean_target_asset_price_input)
         price_layout.addWidget(self.price_unit)
-        price_layout.addWidget(self.price_unit_base)
         price_widget = QWidget()
         price_widget.setLayout(price_layout)
 
@@ -1729,7 +1726,7 @@ class MainWindow(QMainWindow):
 
         self.amount_unit = QLabel()
         amount_layout.addWidget(self.amount_unit)
-        self.amount_unit.setText(self.ocean_target_id_name[0][1])
+        self.amount_unit.setText(self.ocean_target_id_name[0].asset_symbol)
         amount_widget = QWidget()
         amount_widget.setLayout(amount_layout)
 
