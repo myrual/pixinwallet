@@ -1623,7 +1623,7 @@ class MainWindow(QMainWindow):
         current_input_pin    = self.ocean_pin_input.text()
         current_uuid         = str(uuid.uuid1())
         print([current_base_asset, current_target_asset, current_amount,current_price, current_input_pin, current_uuid])
-        memo_to_ocean = oceanone_api.gen_memo_ocean_bid(current_target_asset, current_price, current_uuid)
+        memo_to_ocean = oceanone_api.gen_memo_ocean_bid(current_target_asset, current_price)
         tranfer_result = self.selected_wallet_record.transfer_to(oceanone_api.OCEANONE_UUID, current_base_asset, current_amount, memo_to_ocean, current_uuid, current_input_pin)
         if tranfer_result.is_success:
             new_ocean_trade = mixin_sqlalchemy_type.Ocean_trade_record()
@@ -1900,6 +1900,7 @@ class MainWindow(QMainWindow):
 
     def open_selected_wallet(self):
         if (hasattr(self, "selected_wallet_record")):
+            print("self.selected_wallet_record.userid is %s"%self.selected_wallet_record.userid)
             worker = Balance_Thread(self.selected_wallet_record)
             worker.signals.result.connect(self.received_balance_result)
             worker.signals.finished.connect(self.balance_load_thread_complete)
@@ -1936,7 +1937,7 @@ class MainWindow(QMainWindow):
             self.account_tab_widget.addTab(self.widget_balance_widget, "Balance")
             self.account_tab_widget.addTab(self.account_transaction_history_widget, "Transactions")
             self.account_tab_widget.addTab(self.exin_title_trade_list_detail, "Instant Exin Exchange")
-            #self.account_tab_widget.addTab(self.oceanone_title_trade_list_detail, "CNB exchange")
+            self.account_tab_widget.addTab(self.oceanone_title_trade_list_detail, "CNB exchange")
             self.account_tab_widget.show()
             self.account_tab_widget.currentChanged.connect(self.tab_is_selected)
 
@@ -1946,9 +1947,11 @@ class MainWindow(QMainWindow):
 
             self.threadPool.start(exin_worker)
 
-            #ocean_worker = Ocean_Thread(mixin_asset_id_collection.USDT_ASSET_ID, mixin_asset_id_collection.BTC_ASSET_ID)
+            ocean_worker = Ocean_Thread(mixin_asset_id_collection.USDT_ASSET_ID, mixin_asset_id_collection.BTC_ASSET_ID)
+            #ocean_worker.signals.result.connect(self.received_exin_result)
+            #ocean_worker.signals.finished.connect(self.thread_complete)
 
-            #self.threadPool.start(ocean_worker)
+            self.threadPool.start(ocean_worker)
 
         else:
             return

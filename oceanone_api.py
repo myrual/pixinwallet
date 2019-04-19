@@ -33,7 +33,7 @@ def memo_is_pay_to_ocean(input_snapshot):
         exin_order = umsgpack.unpackb(base64.b64decode(memo_at_snap), allow_invalid_utf8=True)
 
         if type(exin_order) == type({}) and "A"in exin_order:
-            result = "exchange %s at price %s with order %s"%(str(uuid.UUID(bytes = exin_order.get("A"))), exin_order.get("P"), str(uuid.UUID(bytes = exin_order.get("O"))))
+            result = "exchange %s at price %s "%(str(uuid.UUID(bytes = exin_order.get("A"))), exin_order.get("P"))
             return result
         elif type(exin_order) == type({}) and (not "A"in exin_order)and ("O"in exin_order):
             result = "cancel order %s"%(str(uuid.UUID(bytes = exin_order.get("O"))))
@@ -132,14 +132,14 @@ def gen_memo_ocean_cancel_order(order_uuid):
     result = {"O":uuid.UUID("{" + order_uuid+ "}").bytes}
     return base64.b64encode(umsgpack.packb(result)).decode("utf-8")
 
-def gen_memo_ocean_create_order(asset_id_string, price_string, operation_type, side_operation, order_uuid):
-    result = {"S":side_operation, "A":uuid.UUID("{" + asset_id_string + "}").bytes, "P":price_string, "T":operation_type, "O":uuid.UUID("{" + order_uuid + "}").bytes}
+def gen_memo_ocean_create_order(asset_id_string, price_string, operation_type, side_operation):
+    result = {"S":side_operation, "A":uuid.UUID("{" + asset_id_string + "}").bytes, "P":price_string, "T":operation_type}
     return base64.b64encode(umsgpack.packb(result)).decode("utf-8")
 
-def gen_memo_ocean_bid(asset_id_string, price_string, order_uuid):
-    return gen_memo_ocean_create_order(asset_id_string, price_string, "L", "B", order_uuid)
-def gen_memo_ocean_ask(asset_id_string, price_string, order_uuid):
-    return gen_memo_ocean_create_order(asset_id_string, price_string, "L", "A", order_uuid)
+def gen_memo_ocean_bid(asset_id_string, price_string):
+    return gen_memo_ocean_create_order(asset_id_string, price_string, "L", "B")
+def gen_memo_ocean_ask(asset_id_string, price_string):
+    return gen_memo_ocean_create_order(asset_id_string, price_string, "L", "A")
 
 
 class ocean_order():
