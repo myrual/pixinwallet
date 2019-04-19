@@ -1633,6 +1633,38 @@ class MainWindow(QMainWindow):
         self.ocean_history_widget.setLayout(ocean_history_layout)
         self.ocean_history_widget.show()
         
+    def ocean_make_sell_order(self):
+        current_base_asset   = self.ocean_base_asset_selection_asset[1]
+        current_target_asset = self.ocean_target_asset_selection_asset.asset_id
+        current_amount       = self.ocean_target_asset_sell_amount_input.text()
+        current_price        = self.ocean_target_asset_price_input.text()
+        current_input_pin    = self.ocean_pin_input.text()
+        current_uuid         = str(uuid.uuid1())
+        memo_to_ocean = oceanone_api.gen_memo_ocean_ask(current_base_asset, current_price)
+        tranfer_result = self.selected_wallet_record.transfer_to(oceanone_api.OCEANONE_UUID, current_target_asset, current_amount, memo_to_ocean, current_uuid, current_input_pin)
+        if tranfer_result.is_success:
+            new_ocean_trade = mixin_sqlalchemy_type.Ocean_trade_record()
+            new_ocean_trade.pay_asset_id = current_base_asset
+            new_ocean_trade.pay_asset_amount   = current_amount
+            new_ocean_trade.asset_id     = current_target_asset
+            new_ocean_trade.price        = current_price
+            new_ocean_trade.operation_type = "L"
+            new_ocean_trade.side           = "B"
+            new_ocean_trade.order_id       = current_uuid
+            self.session.add(new_ocean_trade)
+            self.session.commit()
+
+            self.update_balance()
+            congratulations_msg = QMessageBox()
+            congratulations_msg.setText("Your payment to ocean is successful, verify it on blockchain explorer on https://mixin.one/snapshots/%s" % tranfer_result.data.snapshot_id)
+            congratulations_msg.setTextInteractionFlags(Qt.TextSelectableByMouse)
+            congratulations_msg.exec_()
+        else:
+            congratulations_msg = QMessageBox()
+            congratulations_msg.setText("Failed to pay, reason %s" % str(tranfer_result))
+            congratulations_msg.exec_()
+
+
     def ocean_make_buy_order(self):
         current_base_asset   = self.ocean_base_asset_selection_asset[1]
         current_target_asset = self.ocean_target_asset_selection_asset.asset_id
@@ -1640,7 +1672,6 @@ class MainWindow(QMainWindow):
         current_price        = self.ocean_target_asset_price_input.text()
         current_input_pin    = self.ocean_pin_input.text()
         current_uuid         = str(uuid.uuid1())
-        print([current_base_asset, current_target_asset, current_amount,current_price, current_input_pin, current_uuid])
         memo_to_ocean = oceanone_api.gen_memo_ocean_bid(current_target_asset, current_price)
         tranfer_result = self.selected_wallet_record.transfer_to(oceanone_api.OCEANONE_UUID, current_base_asset, current_amount, memo_to_ocean, current_uuid, current_input_pin)
         if tranfer_result.is_success:
@@ -1758,6 +1789,7 @@ class MainWindow(QMainWindow):
         self.ocean_buy_btn = QPushButton("Buy "+ self.ocean_target_id_name[0].asset_symbol)
         self.ocean_buy_btn.pressed.connect(self.ocean_make_buy_order)
         self.ocean_sell_btn = QPushButton("Sell " + self.ocean_target_id_name[0].asset_symbol)
+        self.ocean_sell_btn.pressed.connect(self.ocean_make_sell_order)
 
         history_btn = QPushButton("Ocean history in local wallet")
         history_btn.pressed.connect(self.ocean_open_history)
