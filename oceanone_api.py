@@ -3,6 +3,7 @@ import uuid
 import base64
 import umsgpack
 import binascii
+import ecdsa
 from ecdsa import SigningKey, NIST256p
 import hashlib
 import datetime
@@ -17,21 +18,20 @@ def memo_is_pay_from_oceanone(input_snapshot):
     if input_snapshot.opponent_id != OCEANONE_UUID or float(input_snapshot.amount) < 0:
         return False
     try:
-        exin_order = umsgpack.unpackb(base64.b64decode(memo_at_snap))
+        exin_order = umsgpack.unpackb(base64.b64decode(memo_at_snap), allow_invalid_utf8=True)
         return str(exin_order)
     except umsgpack.InsufficientDataException:
         return False
     except binascii.Error:
-        return False
-    except umsgpack.InvalidStringException:
         return False
 
 def memo_is_pay_to_ocean(input_snapshot):
     memo_at_snap = input_snapshot.memo
     if input_snapshot.opponent_id != OCEANONE_UUID:
         return False
+    print("pay to ocean with %s"%memo_at_snap)
     try:
-        exin_order = umsgpack.unpackb(base64.b64decode(memo_at_snap))
+        exin_order = umsgpack.unpackb(base64.b64decode(memo_at_snap), allow_invalid_utf8=True)
 
         if type(exin_order) == type({}) and "A"in exin_order:
             result = "exchange %s at price %s with order %s"%(str(uuid.UUID(bytes = exin_order.get("A"))), exin_order.get("P"), str(uuid.UUID(bytes = exin_order.get("O"))))
@@ -39,16 +39,18 @@ def memo_is_pay_to_ocean(input_snapshot):
         elif type(exin_order) == type({}) and (not "A"in exin_order)and ("O"in exin_order):
             result = "cancel order %s"%(str(uuid.UUID(bytes = exin_order.get("O"))))
             return result
+        elif type(exin_order) == type({}) and (not "A"in exin_order)and ("U"in exin_order):
+            result = "register public key %s"%(str(exin_order.get("O")))
+            return result
         else:
-            return False
+            return "Failed to explain"
+
     except umsgpack.InsufficientDataException:
-        return False
-    except umsgpack.InvalidStringException:
-        return False
+        return input_snapshot.memo
     except binascii.Error:
-        return False
+        return input_snapshot.memo
     except ValueError:
-        return False
+        return input_snapshot.memo
 
 
 def oceanone_can_explain_snapshot(input_snapshot):
@@ -86,16 +88,28 @@ def generateSig(method, uri, body):
 
 def genGETPOSTSig(methodstring, uristring, bodystring):
     jwtSig = generateSig(methodstring, uristring, bodystring)
+    return jwtSig
 
 def genGETSig(uristring, bodystring):
     return genGETPOSTSig("GET", uristring, bodystring)
 
 def genJwtToken(uristring, bodystring, signKey_in_PEM, mixin_user_id, jti):
-        jwtSig = genGETSig(uristring, bodystring)
-        iat = datetime.datetime.utcnow()
-        exp = datetime.datetime.utcnow() + datetime.timedelta(seconds=200)
-        encoded = jwt.encode({'uid':mixin_user_id, 'sid':mixin_user_id, 'iat':iat,'exp': exp, 'jti':jti,'sig':jwtSig}, signKey_in_PEM, algorithm='ES256')
-        return encoded
+    jwtSig = genGETSig(uristring, bodystring)
+    print("genJwtToken")
+    print(jwtSig)
+    iat = datetime.datetime.utcnow()
+    exp = datetime.datetime.utcnow() + datetime.timedelta(seconds=200)
+    payload = {'uid':mixin_user_id, 'sid':mixin_user_id, 'iat':iat,'exp': exp, 'jti':jti,'sig':jwtSig}
+    print(signKey_in_PEM)
+    encoded = jwt.encode(payload , signKey_in_PEM, algorithm='ES256')
+    sk = ecdsa.SigningKey.from_pem(signKey_in_PEM)
+    vk = sk.get_verifying_key()
+    vk_in_PEM = vk.to_pem().decode('utf8')
+    print(vk_in_PEM)
+    decoded = jwt.decode(encoded, vk_in_PEM)
+    print("result of decode is" + str(decoded))
+
+    return encoded
 
 def load_my_order(mixin_user_id, signKey_in_PEM):
     url = "https://events.ocean.one/orders"

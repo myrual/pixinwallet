@@ -1751,13 +1751,12 @@ class MainWindow(QMainWindow):
         make_order_layout.addWidget(action_btn_widget)
 
         make_order_layout.addWidget(history_btn)
+        """
         if os.path.isfile(self.file_name+".oceanonekey"):
             with open(self.file_name+".oceanonekey") as oceanonekeyfile:
                 oceanone_key_in_string = base64.b64decode(oceanonekeyfile.read())
                 sk = oceanone_api.loadECDSAKey_fromString(oceanone_key_in_string)
                 self.oceanone_key_in_pem = sk.to_pem().decode('utf8')
-                print(self.oceanone_key_in_pem)
-                print("oceanone private key in pem:" + self.oceanone_key_in_pem)
                 registered_btn = QPushButton("Load my order from OceanOne server")
                 registered_btn.pressed.connect(self.ocean_open_cloud_history)
                 make_order_layout.addWidget(registered_btn)
@@ -1766,6 +1765,7 @@ class MainWindow(QMainWindow):
             registered_btn = QPushButton("Register a key to OceanOne to find your order")
             registered_btn.pressed.connect(self.register_key_to_oceanone)
             make_order_layout.addWidget(registered_btn)
+        """
         make_order_widget = QWidget()
         make_order_widget.setLayout(make_order_layout)
 
