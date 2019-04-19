@@ -1423,21 +1423,21 @@ class MainWindow(QMainWindow):
     def fetchOceanPrice(self):
         print("pressed")
         if self.ocean_target_asset_id_input.text() != "":
-            ocean_worker = Ocean_Thread(self.ocean_base_asset_selection_asset_id, self.ocean_target_asset_id_input.text())
+            ocean_worker = Ocean_Thread(self.ocean_base_asset_selection_asset[1], self.ocean_target_asset_id_input.text())
             update_asset_name_worker = ReadAsset_Info_Thread(self.selected_wallet_record, self.ocean_target_asset_id_input.text())
             update_asset_name_worker.signals.result.connect(self.received_asset_balance)
             self.threadPool.start(update_asset_name_worker)
 
         else:
-            ocean_worker = Ocean_Thread(self.ocean_base_asset_selection_asset_id, self.ocean_target_asset_selection_asset_id)
+            ocean_worker = Ocean_Thread(self.ocean_base_asset_selection_asset[1], self.ocean_target_asset_selection_asset_id)
         ocean_worker.signals.result.connect(self.received_ocean_result)
         #ocean_worker.signals.finished.connect(self.thread_complete)
         self.threadPool.start(ocean_worker)
 
     def ocean_base_asset_change(self, indexActived):
-        self.ocean_base_asset_selection_asset_id = self.ocean_id_name[indexActived][1]
-        self.price_unit.setText("per " + self.ocean_id_name[indexActived][0])
-        self.amount_unit.setText(self.ocean_id_name[indexActived][0])
+        self.ocean_base_asset_selection_asset = self.ocean_id_name[indexActived]
+        self.price_unit.setText("per " + self.ocean_base_asset_selection_asset[0])
+        self.amount_unit.setText(self.ocean_base_asset_selection_asset[0])
 
         self.fetchOceanPrice()
 
@@ -1617,7 +1617,7 @@ class MainWindow(QMainWindow):
         self.ocean_history_widget.show()
         
     def ocean_make_buy_order(self):
-        current_base_asset   = self.ocean_base_asset_selection_asset_id
+        current_base_asset   = self.ocean_base_asset_selection_asset[1]
         current_target_asset = self.ocean_target_asset_selection_asset_id
         current_amount       = self.ocean_target_asset_amount_input.text()
         current_price        = self.ocean_target_asset_price_input.text()
@@ -1661,7 +1661,7 @@ class MainWindow(QMainWindow):
         quote_asset_selection.insertItem(2, "BTC", mixin_asset_id_collection.BTC_ASSET_ID)
         quote_asset_selection.currentIndexChanged.connect(self.ocean_base_asset_change)
 
-        self.ocean_base_asset_selection_asset_id = self.ocean_id_name[0][1]
+        self.ocean_base_asset_selection_asset= self.ocean_id_name[0]
 
         quote_target_asset_selection = QComboBox()
         known_asset_list = self.known_assets()
@@ -1712,11 +1712,14 @@ class MainWindow(QMainWindow):
 
         price_layout = QHBoxLayout()
         self.price_unit = QLabel()
-        self.price_unit.setText(self.ocean_id_name[0][0])
+        self.price_unit.setText(self.ocean_target_id_name[0][0])
+        self.price_unit_base = QLabel()
+        self.price_unit_base.setText(self.ocean_id_name[0][0])
 
         price_layout.addWidget(QLabel("Price"))
         price_layout.addWidget(self.ocean_target_asset_price_input)
         price_layout.addWidget(self.price_unit)
+        price_layout.addWidget(self.price_unit_base)
         price_widget = QWidget()
         price_widget.setLayout(price_layout)
 
