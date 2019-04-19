@@ -1444,8 +1444,9 @@ class MainWindow(QMainWindow):
     def ocean_target_asset_change(self, indexActived):
         print("indexActived%d"%indexActived)
         self.ocean_target_asset_selection_asset = self.ocean_target_id_name[indexActived]
-        self.price_unit.setText(self.ocean_target_id_name[indexActived].asset_symbol + "/" + self.ocean_base_asset_selection_asset[0])
-        self.order_funds_unit = self.ocean_target_id_name[indexActived].asset_symbol
+        self.price_unit.setText(self.ocean_target_asset_selection_asset.asset_symbol + " per " + self.ocean_base_asset_selection_asset[0])
+        self.order_funds_unit = self.ocean_target_asset_selection_asset.asset_symbol
+        self.amount_sell_unit.setText(self.ocean_target_asset_selection_asset.asset_symbol)
         self.fetchOceanPrice()
 
     def received_asset_balance(self, asset):
@@ -1476,7 +1477,10 @@ class MainWindow(QMainWindow):
             price  = float(changedText)
             amount = float(self.ocean_target_asset_amount_input.text())
             if amount > 0 and price > 0:
-                self.order_funds_label.setText("Total %s %s"%(str(amount/price), self.order_funds_unit))
+                self.order_funds_label.setText("%s %s"%(str(amount/price), self.ocean_target_asset_selection_asset.asset_symbol))
+            amount = float(self.ocean_target_asset_sell_amount_input.text())
+            if amount > 0 and price > 0:
+                self.order_funds_sell_label.setText("%s %s"%(str(amount/price), self.ocean_base_asset_selection_asset[0]))
         except ValueError:
             return
 
@@ -1485,9 +1489,19 @@ class MainWindow(QMainWindow):
             amount = float(changedText)
             price = float(self.ocean_target_asset_price_input.text())
             if amount > 0 and price > 0:
-                self.order_funds_label.setText("Total %s %s"%(str(amount/price), self.order_funds_unit))
+                self.order_funds_label.setText("%s %s"%(str(amount/price), self.ocean_target_asset_selection_asset.asset_symbol))
         except ValueError:
             return
+    def ocean_sell_amount_change(self, changedText):
+        try:
+            amount = float(changedText)
+            price = float(self.ocean_target_asset_price_input.text())
+            if amount > 0 and price > 0:
+                self.order_funds_sell_label.setText("%s %s"%(str(amount/price), self.ocean_base_asset_selection_asset[0]))
+
+        except ValueError:
+            return
+
     def ocean_reg_key_btn_pressed(self):
 
         current_input_pin    = self.ocean_reg_key_pin.text()
@@ -1700,6 +1714,9 @@ class MainWindow(QMainWindow):
         make_order_layout = QVBoxLayout()
         self.ocean_target_asset_amount_input = QLineEdit()
         self.ocean_target_asset_amount_input.textChanged.connect(self.ocean_amount_change)
+        self.ocean_target_asset_sell_amount_input = QLineEdit()
+        self.ocean_target_asset_sell_amount_input.textChanged.connect(self.ocean_sell_amount_change)
+
         self.ocean_target_asset_price_input = QLineEdit()
         self.ocean_target_asset_price_input.textChanged.connect(self.ocean_price_changed)
 
@@ -1721,43 +1738,61 @@ class MainWindow(QMainWindow):
         price_widget.setLayout(price_layout)
 
         amount_layout = QHBoxLayout()
-        amount_layout.addWidget(QLabel("Amount"))
         amount_layout.addWidget(self.ocean_target_asset_amount_input)
 
+        amount_sell_layout = QHBoxLayout()
+        amount_sell_layout.addWidget(self.ocean_target_asset_sell_amount_input)
+
         self.amount_unit = QLabel()
+        self.amount_unit.setText(self.ocean_id_name[0][0])
+        self.amount_sell_unit = QLabel()
+        self.amount_sell_unit.setText(self.ocean_target_id_name[0].asset_symbol)
+
         amount_layout.addWidget(self.amount_unit)
-        self.amount_unit.setText(self.ocean_target_id_name[0].asset_symbol)
+        amount_sell_layout.addWidget(self.amount_sell_unit)
         amount_widget = QWidget()
         amount_widget.setLayout(amount_layout)
+        amount_sell_widget = QWidget()
+        amount_sell_widget.setLayout(amount_sell_layout)
 
-        buy_btn = QPushButton("Buy")
-        buy_btn.pressed.connect(self.ocean_make_buy_order)
-        sell_btn = QPushButton("Sell")
+
+        self.ocean_buy_btn = QPushButton("Buy")
+        self.ocean_buy_btn.pressed.connect(self.ocean_make_buy_order)
+        self.ocean_sell_btn = QPushButton("Sell")
 
         history_btn = QPushButton("Ocean history in local wallet")
         history_btn.pressed.connect(self.ocean_open_history)
 
 
 
-        action_btn_layout = QHBoxLayout()
-        action_btn_layout.addWidget(buy_btn)
-        action_btn_layout.addWidget(sell_btn)
-        action_btn_widget = QWidget()
-        action_btn_widget.setLayout(action_btn_layout)
-
-        make_order_layout.addWidget(price_widget)
-        make_order_layout.addWidget(amount_widget)
         self.order_funds_label = QLabel("")
 
         self.order_funds_unit = self.ocean_id_name[0][0]
-        funds_unit_layout = QHBoxLayout()
-        funds_unit_layout.addWidget(self.order_funds_label)
-        funds_unit_widget = QWidget()
-        funds_unit_widget.setLayout(funds_unit_layout)
+        self.order_funds_sell_label = QLabel("")
 
-        make_order_layout.addWidget(funds_unit_widget)
+        buy_operation_layout = QVBoxLayout()
+        buy_operation_layout.addWidget(amount_widget)
+        buy_operation_layout.addWidget(self.order_funds_label)
+        buy_operation_layout.addWidget(self.ocean_buy_btn)
+        buy_operation_widget = QWidget()
+        buy_operation_widget.setLayout(buy_operation_layout)
+        sell_operation_layout = QVBoxLayout()
+        sell_operation_layout.addWidget(amount_sell_widget)
+        sell_operation_layout.addWidget(self.order_funds_sell_label)
+        sell_operation_layout.addWidget(self.ocean_sell_btn)
+        sell_operation_widget = QWidget()
+        sell_operation_widget.setLayout(sell_operation_layout)
+
+
+        action_btn_tab_widget = QTabWidget()
+        action_btn_tab_widget.addTab(buy_operation_widget, "Bid")
+        action_btn_tab_widget.addTab(sell_operation_widget, "Ask")
+
+        make_order_layout.addWidget(price_widget)
+
+
         make_order_layout.addWidget(self.ocean_pin_input)
-        make_order_layout.addWidget(action_btn_widget)
+        make_order_layout.addWidget(action_btn_tab_widget)
 
         make_order_layout.addWidget(history_btn)
         """
