@@ -1437,7 +1437,8 @@ class MainWindow(QMainWindow):
     def ocean_base_asset_change(self, indexActived):
         self.ocean_base_asset_selection_asset = self.ocean_id_name[indexActived]
         self.price_unit.setText(self.ocean_target_id_name[indexActived].asset_symbol + " per " + self.ocean_base_asset_selection_asset[0])
-        self.amount_unit.setText(self.ocean_base_asset_selection_asset[0])
+        self.ocean_target_asset_amount_input.setPlaceholderText("%s amount"%self.ocean_base_asset_selection_asset[0])
+
 
         self.fetchOceanPrice()
 
@@ -1447,6 +1448,9 @@ class MainWindow(QMainWindow):
         self.price_unit.setText(self.ocean_target_asset_selection_asset.asset_symbol + " per " + self.ocean_base_asset_selection_asset[0])
         self.order_funds_unit = self.ocean_target_asset_selection_asset.asset_symbol
         self.amount_sell_unit.setText(self.ocean_target_asset_selection_asset.asset_symbol)
+        self.ocean_buy_btn.setText("Buy "+ self.ocean_target_asset_selection_asset.asset_symbol)
+        self.ocean_sell_btn.setText("Sell "+ self.ocean_target_asset_selection_asset.asset_symbol)
+        self.ocean_target_asset_sell_amount_input.setPlaceholderText("%s amount"%self.ocean_target_asset_selection_asset.asset_symbol)
         self.fetchOceanPrice()
 
     def received_asset_balance(self, asset):
@@ -1743,12 +1747,11 @@ class MainWindow(QMainWindow):
         amount_sell_layout = QHBoxLayout()
         amount_sell_layout.addWidget(self.ocean_target_asset_sell_amount_input)
 
-        self.amount_unit = QLabel()
-        self.amount_unit.setText(self.ocean_id_name[0][0])
+        self.ocean_target_asset_amount_input.setPlaceholderText("%s amount"%self.ocean_id_name[0][0])
+
         self.amount_sell_unit = QLabel()
         self.amount_sell_unit.setText(self.ocean_target_id_name[0].asset_symbol)
 
-        amount_layout.addWidget(self.amount_unit)
         amount_sell_layout.addWidget(self.amount_sell_unit)
         amount_widget = QWidget()
         amount_widget.setLayout(amount_layout)
@@ -1756,9 +1759,9 @@ class MainWindow(QMainWindow):
         amount_sell_widget.setLayout(amount_sell_layout)
 
 
-        self.ocean_buy_btn = QPushButton("Buy")
+        self.ocean_buy_btn = QPushButton("Buy "+ self.ocean_target_id_name[0].asset_symbol)
         self.ocean_buy_btn.pressed.connect(self.ocean_make_buy_order)
-        self.ocean_sell_btn = QPushButton("Sell")
+        self.ocean_sell_btn = QPushButton("Sell " + self.ocean_target_id_name[0].asset_symbol)
 
         history_btn = QPushButton("Ocean history in local wallet")
         history_btn.pressed.connect(self.ocean_open_history)
@@ -1785,8 +1788,8 @@ class MainWindow(QMainWindow):
 
 
         action_btn_tab_widget = QTabWidget()
-        action_btn_tab_widget.addTab(buy_operation_widget, "Bid")
-        action_btn_tab_widget.addTab(sell_operation_widget, "Ask")
+        action_btn_tab_widget.addTab(buy_operation_widget, "Buy")
+        action_btn_tab_widget.addTab(sell_operation_widget, "Sell")
 
         make_order_layout.addWidget(price_widget)
 
