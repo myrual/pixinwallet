@@ -1055,8 +1055,8 @@ class MainWindow(QMainWindow):
 
 
         delay_seconds = 0
-        if len(searched_snapshots_result.data) < 500:
-            delay_seconds = 120
+        if len(searched_snapshots_result.data) < 100:
+            delay_seconds = 90 
         mysnapshots_worker = AccountsSnapshots_Thread(self.selected_wallet_record, the_last_snapshots_time, delay_seconds)
         mysnapshots_worker.signals.result.connect(self.received_snapshot)
         #mysnapshots_worker.signals.finished.connect(self.snap_thread_complete)
@@ -1704,9 +1704,9 @@ class MainWindow(QMainWindow):
         self.ocean_id_name = [("XIN", mixin_asset_id_collection.XIN_ASSET_ID), ("USDT", mixin_asset_id_collection.USDT_ASSET_ID), ("BTC", mixin_asset_id_collection.BTC_ASSET_ID)] 
 
         quote_asset_selection = QComboBox()
-        quote_asset_selection.insertItem(0, "XIN", mixin_asset_id_collection.XIN_ASSET_ID)
-        quote_asset_selection.insertItem(1, "USDT", mixin_asset_id_collection.USDT_ASSET_ID)
-        quote_asset_selection.insertItem(2, "BTC", mixin_asset_id_collection.BTC_ASSET_ID)
+        quote_asset_selection.insertItem(0, "XIN Market", mixin_asset_id_collection.XIN_ASSET_ID)
+        quote_asset_selection.insertItem(1, "USDT Market", mixin_asset_id_collection.USDT_ASSET_ID)
+        quote_asset_selection.insertItem(2, "BTC Market", mixin_asset_id_collection.BTC_ASSET_ID)
         quote_asset_selection.currentIndexChanged.connect(self.ocean_base_asset_change)
 
         self.ocean_base_asset_selection_asset= self.ocean_id_name[0]
@@ -1716,7 +1716,7 @@ class MainWindow(QMainWindow):
         i = 0
         self.ocean_target_id_name = []
         for each in known_asset_list:
-            quote_target_asset_selection.insertItem(i, each.asset_symbol, each.asset_id)
+            quote_target_asset_selection.insertItem(i, each.asset_symbol + " asset", each.asset_id)
             self.ocean_target_id_name.append(each)
             i += 1
 
@@ -1728,10 +1728,8 @@ class MainWindow(QMainWindow):
         self.ocean_target_asset_id_input.setPlaceholderText("Asset id")
 
         quote_layout = QHBoxLayout()
-        quote_layout.addWidget(QLabel("quote"))
         quote_layout.addWidget(quote_asset_selection)
         quote_layout.addWidget(quote_target_asset_selection)
-        quote_layout.addWidget(QLabel("target"))
 
         quote_widget = QWidget()
         quote_widget.setLayout(quote_layout)
@@ -1752,6 +1750,7 @@ class MainWindow(QMainWindow):
         self.ocean_target_asset_sell_amount_input.textChanged.connect(self.ocean_sell_amount_change)
 
         self.ocean_target_asset_price_input = QLineEdit()
+        self.ocean_target_asset_price_input.setPlaceholderText("Price")
         self.ocean_target_asset_price_input.textChanged.connect(self.ocean_price_changed)
 
         self.ocean_pin_input = QLineEdit()
@@ -1763,9 +1762,8 @@ class MainWindow(QMainWindow):
 
         price_layout = QHBoxLayout()
         self.price_unit = QLabel()
-        self.price_unit.setText(self.ocean_target_id_name[0].asset_symbol + " per " + self.ocean_base_asset_selection_asset[0])
+        self.price_unit.setText(self.ocean_target_asset_selection_asset.asset_symbol + " per " + self.ocean_base_asset_selection_asset[0])
 
-        price_layout.addWidget(QLabel("Price"))
         price_layout.addWidget(self.ocean_target_asset_price_input)
         price_layout.addWidget(self.price_unit)
         price_widget = QWidget()
