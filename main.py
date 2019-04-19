@@ -550,9 +550,17 @@ class MainWindow(QMainWindow):
         self.widget_transaction_list_detail = self.create_transaction_history(asset_transaction_history_list)
         self.widget_transaction_list_detail.show()
 
+
+    def update_transaction_history(self):
+        all_transaction_history_list = self.session.query(mixin_sqlalchemy_type.MySnapshot).order_by(mixin_sqlalchemy_type.MySnapshot.id.desc()).all()
+        header = ["Amount", "Asset", "Created at", "opponent", "Type"]
+        this_tableModel = TransactionHistoryTableModel(self, all_transaction_history_list, header)
+        self.account_transaction_history_widget.setModel(this_tableModel)
+        self.account_transaction_history_widget.update()
+
     def open_transaction_history(self):
-            all_transaction_history_list = self.session.query(mixin_sqlalchemy_type.MySnapshot).order_by(mixin_sqlalchemy_type.MySnapshot.id.desc()).all()
-            return self.create_transaction_history(all_transaction_history_list)
+        all_transaction_history_list = self.session.query(mixin_sqlalchemy_type.MySnapshot).order_by(mixin_sqlalchemy_type.MySnapshot.id.desc()).all()
+        return self.create_transaction_history(all_transaction_history_list)
 
     def execute_this_fn(self):
         for i in range(0, 5):
@@ -1565,7 +1573,7 @@ class MainWindow(QMainWindow):
         self.ocean_reg_key_widget.show()
  
     def ocean_open_cloud_history(self):
-        print(oceanone_api.load_my_order(self.selected_wallet_record.userid, self.oceanone_key_in_pem))
+        print(oceanone_api.load_my_order(self.selected_wallet_record.userid, self.selected_wallet_record.session_id, self.oceanone_key_in_pem))
 
     def ocean_open_history(self):
         self.ocean_history_list = self.session.query(mixin_sqlalchemy_type.Ocean_trade_record).all()
@@ -1751,7 +1759,6 @@ class MainWindow(QMainWindow):
         make_order_layout.addWidget(action_btn_widget)
 
         make_order_layout.addWidget(history_btn)
-        """
         if os.path.isfile(self.file_name+".oceanonekey"):
             with open(self.file_name+".oceanonekey") as oceanonekeyfile:
                 oceanone_key_in_string = base64.b64decode(oceanonekeyfile.read())
@@ -1765,7 +1772,6 @@ class MainWindow(QMainWindow):
             registered_btn = QPushButton("Register a key to OceanOne to find your order")
             registered_btn.pressed.connect(self.register_key_to_oceanone)
             make_order_layout.addWidget(registered_btn)
-        """
         make_order_widget = QWidget()
         make_order_widget.setLayout(make_order_layout)
 
@@ -1882,6 +1888,10 @@ class MainWindow(QMainWindow):
 
     def tab_is_selected(self, index):
         print("tab is changed" + str(index))
+        if index == 0:
+            self.update_balance()
+        if index == 1:
+            self.update_transaction_history()
     def update_balance(self):
         worker = Balance_Thread(self.selected_wallet_record)
         worker.signals.result.connect(self.received_balance_result)

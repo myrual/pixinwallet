@@ -50,7 +50,7 @@ def memo_is_pay_to_ocean(input_snapshot):
     except binascii.Error:
         return input_snapshot.memo
     except ValueError:
-        return input_snapshot.memo
+        return exin_order
 
 
 def oceanone_can_explain_snapshot(input_snapshot):
@@ -93,13 +93,13 @@ def genGETPOSTSig(methodstring, uristring, bodystring):
 def genGETSig(uristring, bodystring):
     return genGETPOSTSig("GET", uristring, bodystring)
 
-def genJwtToken(uristring, bodystring, signKey_in_PEM, mixin_user_id, jti):
+def genJwtToken(uristring, bodystring, signKey_in_PEM, mixin_user_id, mixin_user_session_id, jti):
     jwtSig = genGETSig(uristring, bodystring)
     print("genJwtToken")
     print(jwtSig)
     iat = datetime.datetime.utcnow()
     exp = datetime.datetime.utcnow() + datetime.timedelta(seconds=200)
-    payload = {'uid':mixin_user_id, 'sid':mixin_user_id, 'iat':iat,'exp': exp, 'jti':jti,'sig':jwtSig}
+    payload = {'uid':mixin_user_id, 'iat':iat,'exp': exp, 'jti':jti,'sig':jwtSig}
     print(signKey_in_PEM)
     encoded = jwt.encode(payload , signKey_in_PEM, algorithm='ES256')
     sk = ecdsa.SigningKey.from_pem(signKey_in_PEM)
@@ -111,9 +111,9 @@ def genJwtToken(uristring, bodystring, signKey_in_PEM, mixin_user_id, jti):
 
     return encoded
 
-def load_my_order(mixin_user_id, signKey_in_PEM):
+def load_my_order(mixin_user_id, mixin_user_session_id, signKey_in_PEM):
     url = "https://events.ocean.one/orders"
-    token = genJwtToken(url, "", signKey_in_PEM, mixin_user_id, str(uuid.uuid4()))
+    token = genJwtToken(url, "", signKey_in_PEM, mixin_user_id, mixin_user_session_id, str(uuid.uuid4()))
     auth_token = token.decode('utf8')
     print("load my order token")
     print(auth_token)
