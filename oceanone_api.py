@@ -29,7 +29,6 @@ def memo_is_pay_to_ocean(input_snapshot):
     memo_at_snap = input_snapshot.memo
     if input_snapshot.opponent_id != OCEANONE_UUID:
         return False
-    print("pay to ocean with %s"%memo_at_snap)
     try:
         exin_order = umsgpack.unpackb(base64.b64decode(memo_at_snap), allow_invalid_utf8=True)
 

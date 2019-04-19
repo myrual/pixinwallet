@@ -1936,7 +1936,7 @@ class MainWindow(QMainWindow):
             self.account_tab_widget.addTab(self.widget_balance_widget, "Balance")
             self.account_tab_widget.addTab(self.account_transaction_history_widget, "Transactions")
             self.account_tab_widget.addTab(self.exin_title_trade_list_detail, "Instant Exin Exchange")
-            self.account_tab_widget.addTab(self.oceanone_title_trade_list_detail, "CNB exchange")
+            #self.account_tab_widget.addTab(self.oceanone_title_trade_list_detail, "CNB exchange")
             self.account_tab_widget.show()
             self.account_tab_widget.currentChanged.connect(self.tab_is_selected)
 
@@ -1946,11 +1946,9 @@ class MainWindow(QMainWindow):
 
             self.threadPool.start(exin_worker)
 
-            ocean_worker = Ocean_Thread(mixin_asset_id_collection.USDT_ASSET_ID, mixin_asset_id_collection.BTC_ASSET_ID)
-            #ocean_worker.signals.result.connect(self.received_exin_result)
-            #ocean_worker.signals.finished.connect(self.thread_complete)
+            #ocean_worker = Ocean_Thread(mixin_asset_id_collection.USDT_ASSET_ID, mixin_asset_id_collection.BTC_ASSET_ID)
 
-            self.threadPool.start(ocean_worker)
+            #self.threadPool.start(ocean_worker)
 
         else:
             return
