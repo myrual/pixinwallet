@@ -1436,15 +1436,16 @@ class MainWindow(QMainWindow):
 
     def ocean_base_asset_change(self, indexActived):
         self.ocean_base_asset_selection_asset_id = self.ocean_id_name[indexActived][1]
-        self.price_unit.setText(self.ocean_id_name[indexActived][0])
-        self.order_funds_unit = self.ocean_id_name[indexActived][0]
+        self.price_unit.setText("per " + self.ocean_id_name[indexActived][0])
+        self.amount_unit.setText(self.ocean_id_name[indexActived][0])
 
         self.fetchOceanPrice()
 
     def ocean_target_asset_change(self, indexActived):
         print("indexActived%d"%indexActived)
         self.ocean_target_asset_selection_asset_id = self.ocean_target_id_name[indexActived][0]
-        self.amount_unit.setText(self.ocean_target_id_name[indexActived][1])
+        self.price_unit.setText(self.ocean_target_id_name[indexActived][1] + " per")
+        self.order_funds_unit = self.ocean_target_id_name[indexActived][1]
         self.fetchOceanPrice()
 
     def received_asset_balance(self, asset):
@@ -1475,7 +1476,7 @@ class MainWindow(QMainWindow):
             price  = float(changedText)
             amount = float(self.ocean_target_asset_amount_input.text())
             if amount > 0 and price > 0:
-                self.order_funds_label.setText("Total %s %s"%(str(amount*price), self.order_funds_unit))
+                self.order_funds_label.setText("Total %s %s"%(str(amount/price), self.order_funds_unit))
         except ValueError:
             return
 
@@ -1484,7 +1485,7 @@ class MainWindow(QMainWindow):
             amount = float(changedText)
             price = float(self.ocean_target_asset_price_input.text())
             if amount > 0 and price > 0:
-                self.order_funds_label.setText("Total %s %s"%(str(amount*price), self.order_funds_unit))
+                self.order_funds_label.setText("Total %s %s"%(str(amount/price), self.order_funds_unit))
         except ValueError:
             return
     def ocean_reg_key_btn_pressed(self):
@@ -1759,6 +1760,7 @@ class MainWindow(QMainWindow):
         make_order_layout.addWidget(action_btn_widget)
 
         make_order_layout.addWidget(history_btn)
+        """
         if os.path.isfile(self.file_name+".oceanonekey"):
             with open(self.file_name+".oceanonekey") as oceanonekeyfile:
                 oceanone_key_in_string = base64.b64decode(oceanonekeyfile.read())
@@ -1772,6 +1774,7 @@ class MainWindow(QMainWindow):
             registered_btn = QPushButton("Register a key to OceanOne to find your order")
             registered_btn.pressed.connect(self.register_key_to_oceanone)
             make_order_layout.addWidget(registered_btn)
+        """
         make_order_widget = QWidget()
         make_order_widget.setLayout(make_order_layout)
 
