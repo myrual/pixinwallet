@@ -228,10 +228,27 @@ class CreateAccount_Thread(QRunnable):
  
                     self.signals.progress.emit("Failed to create pin. Update pin later")
                 self.signals.progress.emit("Generating deposit address")
+                engine = sqlalchemy.create_engine('sqlite:///' + self.user_input_file + '.snapshot.db')
+                # Create all tables in the engine. This is equivalent to "Create Table"
+                # statements in raw SQL.
+                mixin_sqlalchemy_type.Base.metadata.create_all(engine)
+                mixin_sqlalchemy_type.Base.metadata.bind = engine
+ 
+                DBSession = sqlalchemy.orm.sessionmaker(bind=engine)
+                self.session = DBSession()
+
+
                 for eachAssetID in mixin_asset_id_collection.MIXIN_DEFAULT_CHAIN_GROUP:
                     this_balance = new_wallet.get_singleasset_balance(eachAssetID)
                     if(this_balance.is_success):
                         self.signals.progress.emit("Generated deposit address for " + this_balance.data.name)
+                        this_asset_cache = mixin_sqlalchemy_type.Mixin_asset_record()
+                        this_asset_cache.asset_id = this_balance.data.asset_id
+                        this_asset_cache.asset_name = this_balance.data.name
+                        this_asset_cache.asset_symbol = this_balance.data.symbol
+                        self.session.add(this_asset_cache)
+                        self.session.commit()
+
                 self.signals.result.emit(True)
             else:
                 self.signals.progress.emit("Failed to create wallet")
