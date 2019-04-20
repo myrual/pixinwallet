@@ -1180,7 +1180,8 @@ class MainWindow(QMainWindow):
         self.update_exin_detail()
     def update_cancel_order_btn_title(self):
         this_trade = self.ocean_history_list[self.ocean_history_selected_row]
-        self.ocean_cancel_order_btn.setText("Pay 0.00000001 %s to Cancel order %s: %s price to buy %s"%(self.asset_to_cancel_ocean_order.symbol, this_trade.order_id, this_trade.price, this_trade.asset_id))
+        self.ocean_cancel_order_btn.setText("Pay 0.00000001 %s to Cancel"%(self.asset_to_cancel_ocean_order.symbol))
+        self.ocean_cancel_order_label.setText("order %s: %s price to buy %s"%(this_trade.order_id, this_trade.price, this_trade.asset_id))
 
     def update_reg_key_order_btn_title(self):
         self.ocean_reg_key_btn.setText("Pay 0.00000001 %s to register key"%(self.asset_to_reg_key.symbol))
@@ -1616,6 +1617,8 @@ class MainWindow(QMainWindow):
         self.ocean_cancel_order_btn = QPushButton("Cancel")
         self.ocean_cancel_order_btn.pressed.connect(self.ocean_cancel_order_btn_pressed)
 
+        self.ocean_cancel_order_label = QLabel()
+
         self.ocean_cancel_order_pin = QLineEdit()
         self.ocean_cancel_order_pin.setPlaceholderText("Asset pin")
         self.ocean_cancel_order_pin.setMaxLength(6)
@@ -1655,6 +1658,8 @@ class MainWindow(QMainWindow):
 
             ocean_history_layout.addWidget(cancel_order_pay_asset_combo)
         ocean_history_layout.addWidget(self.ocean_cancel_order_pin)
+
+        ocean_history_layout.addWidget(self.ocean_cancel_order_label)
         ocean_history_layout.addWidget(self.ocean_cancel_order_btn)
 
         ocean_history_layout.addWidget(ocean_history_table)
