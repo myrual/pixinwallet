@@ -571,8 +571,9 @@ class MainWindow(QMainWindow):
         self.widget_transaction_list_detail.clicked.connect(self.asset_transaction_record_selected)
         self.widget_transaction_list_detail.setSelectionBehavior(QAbstractItemView.SelectRows)
 
-        self.asset_transaction_explain_label = QLabel("asset")
+        self.asset_transaction_explain_label = QLabel("")
         asset_transaction_layout = QVBoxLayout()
+        asset_transaction_layout.addWidget(QLabel("History of " + self.asset_instance_in_item.name))
         asset_transaction_layout.addWidget(self.asset_transaction_explain_label)
         asset_transaction_layout.addWidget(self.widget_transaction_list_detail)
         self.asset_transaction_widget = QWidget()
