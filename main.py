@@ -1179,9 +1179,21 @@ class MainWindow(QMainWindow):
         self.selected_exin_result = self.exin_result[self.exin_price_selected_row]
         self.update_exin_detail()
     def update_cancel_order_btn_title(self):
-        this_trade = self.ocean_history_list[self.ocean_history_selected_row]
+        this_trade         = self.ocean_history_list[self.ocean_history_selected_row]
         self.ocean_cancel_order_btn.setText("Pay 0.00000001 %s to Cancel"%(self.asset_to_cancel_ocean_order.symbol))
-        self.ocean_cancel_order_label.setText("order %s: %s price to buy %s"%(this_trade.order_id, this_trade.price, this_trade.asset_id))
+        if this_trade.operation_type == "L":
+            operation_string   = "Limit price "
+        elif this_trade.operation_type == "M":
+            operation_string = "market price "
+        else:
+            operation_string = "Cancel"
+        if this_trade.side == "B":
+            side_string = "buy"
+        elif this_trade.side == "A":
+            side_string = "sell"
+        else:
+            side_string = "None"
+        self.ocean_cancel_order_label.setText("%s order %s: \n%s price \n%s %s"%(operation_string, this_trade.order_id, this_trade.price, side_string, this_trade.asset_id))
 
     def update_reg_key_order_btn_title(self):
         self.ocean_reg_key_btn.setText("Pay 0.00000001 %s to register key"%(self.asset_to_reg_key.symbol))
