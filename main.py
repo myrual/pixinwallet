@@ -1193,7 +1193,12 @@ class MainWindow(QMainWindow):
             side_string = "sell"
         else:
             side_string = "None"
-        self.ocean_cancel_order_label.setText("%s order %s: \n%s price \n%s %s"%(operation_string, this_trade.order_id, this_trade.price, side_string, this_trade.asset_id))
+        asset_symbol = self.fetch_asset_symbol_from_asset_id(this_trade.asset_id)
+        if asset_symbol != None:
+            asset_string = asset_symbol
+        else:
+            asset_string = this_trade.asset_id
+        self.ocean_cancel_order_label.setText("%s order %s\nprice %s\n%s %s"%(operation_string, this_trade.order_id, this_trade.price, side_string, this_trade.asset_id))
 
     def update_reg_key_order_btn_title(self):
         self.ocean_reg_key_btn.setText("Pay 0.00000001 %s to register key"%(self.asset_to_reg_key.symbol))
@@ -1492,6 +1497,15 @@ class MainWindow(QMainWindow):
                 this_asset_cache.asset_symbol = asset.data.symbol
                 self.session.add(this_asset_cache)
                 self.session.commit()
+    def fetch_asset_symbol_from_asset_id(self, asset_id_string):
+        known_assets = self.session.query(mixin_sqlalchemy_type.Mixin_asset_record).filter_by(asset_id = asset_id_string).all()
+        if len(known_assets) == 0:
+            #fetch asset by thread
+            return None
+        else:
+            #found asset
+            return known_assets[0].asset_name
+
     def known_assets(self):
         know_asset_id_name_groups = self.session.query(mixin_sqlalchemy_type.Mixin_asset_record).order_by(mixin_sqlalchemy_type.Mixin_asset_record.id.desc()).all()
         know_id_groups = []
