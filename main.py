@@ -560,6 +560,14 @@ class MainWindow(QMainWindow):
     def open_asset_transaction_history(self):
         self.asset_transaction_history_list = self.session.query(mixin_sqlalchemy_type.MySnapshot).filter_by(snap_asset_asset_id = self.asset_instance_in_item.asset_id).order_by(mixin_sqlalchemy_type.MySnapshot.id.desc()).all()
         self.widget_transaction_list_detail = self.create_transaction_history(self.asset_transaction_history_list)
+        header = self.widget_transaction_list_detail.horizontalHeader()       
+        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(4, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(5, QHeaderView.ResizeToContents)
+
         self.widget_transaction_list_detail.clicked.connect(self.asset_transaction_record_selected)
         self.widget_transaction_list_detail.setSelectionBehavior(QAbstractItemView.SelectRows)
 
