@@ -475,13 +475,8 @@ class TransactionHistoryTableModel(QAbstractTableModel):
 
  
             thisSnapshot = Snapshot_fromSql(eachSqlRecord)
-            result = plugin_can_explain_snapshot(thisSnapshot)
-            if result != False:
-                thisRecord.append(result.get("opponent_name"))
-                thisRecord.append(result.get("memo"))
-            else:
-                thisRecord.append(eachSqlRecord.snap_opponent_id)
-                thisRecord.append(eachSqlRecord.snap_memo)
+            thisRecord.append(eachSqlRecord.snap_opponent_id)
+            thisRecord.append(eachSqlRecord.snap_memo)
             finalData.append(thisRecord)
 
         self.mylist = finalData
@@ -554,7 +549,7 @@ class MainWindow(QMainWindow):
     def create_transaction_history(self, all_transaction_history_list):
 
         header = ["Amount", "Asset", "Created at", "opponent", "Type"]
-        this_tableModel = TransactionHistoryTableModel(self, all_transaction_history_list, header)
+        this_tableModel = TransactionHistoryTableModel(None, all_transaction_history_list, header)
 
         transaction_table_view = QTableView()
         transaction_table_view.setModel(this_tableModel)
@@ -569,15 +564,15 @@ class MainWindow(QMainWindow):
 
 
     def update_transaction_history(self):
-        all_transaction_history_list = self.session.query(mixin_sqlalchemy_type.MySnapshot).order_by(mixin_sqlalchemy_type.MySnapshot.id.desc()).all()
+        self.all_transaction_history_list = self.session.query(mixin_sqlalchemy_type.MySnapshot).order_by(mixin_sqlalchemy_type.MySnapshot.id.desc()).all()
         header = ["Amount", "Asset", "Created at", "opponent", "Type"]
-        this_tableModel = TransactionHistoryTableModel(self, all_transaction_history_list, header)
+        this_tableModel = TransactionHistoryTableModel(None, self.all_transaction_history_list, header)
         self.account_transaction_history_widget.setModel(this_tableModel)
         self.account_transaction_history_widget.update()
 
     def open_transaction_history(self):
-        all_transaction_history_list = self.session.query(mixin_sqlalchemy_type.MySnapshot).order_by(mixin_sqlalchemy_type.MySnapshot.id.desc()).all()
-        return self.create_transaction_history(all_transaction_history_list)
+        self.all_transaction_history_list = self.session.query(mixin_sqlalchemy_type.MySnapshot).order_by(mixin_sqlalchemy_type.MySnapshot.id.desc()).all()
+        return self.create_transaction_history(self.all_transaction_history_list)
 
     def execute_this_fn(self):
         for i in range(0, 5):
@@ -588,7 +583,7 @@ class MainWindow(QMainWindow):
     def snap_thread_complete(self):
         header = ["Amount", "Asset", "Created at", "opponent", "Type"]
         all_transaction_history_list = self.session.query(mixin_sqlalchemy_type.MySnapshot).order_by(mixin_sqlalchemy_type.MySnapshot.id.desc()).all()
-        this_tableModel = TransactionHistoryTableModel(self, all_transaction_history_list, header)
+        this_tableModel = TransactionHistoryTableModel(None , all_transaction_history_list, header)
         self.account_transaction_history_widget.setModel(this_tableModel)
         self.account_transaction_history_widget.update()
 
@@ -1203,6 +1198,20 @@ class MainWindow(QMainWindow):
     def update_reg_key_order_btn_title(self):
         self.ocean_reg_key_btn.setText("Pay 0.00000001 %s to register key"%(self.asset_to_reg_key.symbol))
 
+
+    def transaction_record_selected(self, index):
+        transaction_history_selected_row = index.row()
+        this_transaction         = self.all_transaction_history_list[transaction_history_selected_row]
+        thisSnapshot = Snapshot_fromSql(this_transaction)
+        result = plugin_can_explain_snapshot(thisSnapshot)
+        if result != False:
+            if float(thisSnapshot.amount) > 0:
+                direction = "from "
+            else:
+                direction = "to "
+            self.transaction_explain_label.setText("%s %s\n%s"%(direction, result.get("opponent_name"), result.get("memo")))
+        else:
+            self.transaction_explain_label.setText("")
 
     def ocean_list_record_selected(self, index):
         self.ocean_history_selected_row = index.row()
@@ -2049,6 +2058,9 @@ class MainWindow(QMainWindow):
 
             self.widget_balance_widget = self.create_balance_widget()
             self.account_transaction_history_widget = self.open_transaction_history()
+            self.account_transaction_history_widget.clicked.connect(self.transaction_record_selected)
+            self.account_transaction_history_widget.setSelectionBehavior(QAbstractItemView.SelectRows)
+
             header = self.account_transaction_history_widget.horizontalHeader()       
             header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
             header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
@@ -2057,14 +2069,21 @@ class MainWindow(QMainWindow):
             header.setSectionResizeMode(4, QHeaderView.ResizeToContents)
             header.setSectionResizeMode(5, QHeaderView.ResizeToContents)
 
+            self.transaction_explain_label = QLabel()
+            transaction_layout = QVBoxLayout()
+            transaction_layout.addWidget(self.transaction_explain_label)
+            transaction_layout.addWidget(self.account_transaction_history_widget)
+            transaction_widget = QWidget()
+            transaction_widget.setLayout(transaction_layout)
+
             self.exin_title_trade_list_detail = self.create_exin_exchange_widget()
             self.oceanone_title_trade_list_detail = self.create_ocean_exchange_widget()
 
             self.account_tab_widget = QTabWidget()
             self.account_tab_widget.addTab(self.widget_balance_widget, "Balance")
-            self.account_tab_widget.addTab(self.account_transaction_history_widget, "Transactions")
             self.account_tab_widget.addTab(self.exin_title_trade_list_detail, "Instant Exin Exchange")
             self.account_tab_widget.addTab(self.oceanone_title_trade_list_detail, "OceanOne exchange")
+            self.account_tab_widget.addTab(transaction_widget, "Transactions")
             self.account_tab_widget.show()
             self.account_tab_widget.currentChanged.connect(self.tab_is_selected)
 
