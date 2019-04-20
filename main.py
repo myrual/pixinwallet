@@ -558,9 +558,19 @@ class MainWindow(QMainWindow):
 
 
     def open_asset_transaction_history(self):
-        asset_transaction_history_list = self.session.query(mixin_sqlalchemy_type.MySnapshot).filter_by(snap_asset_asset_id = self.asset_instance_in_item.asset_id).order_by(mixin_sqlalchemy_type.MySnapshot.id.desc()).all()
-        self.widget_transaction_list_detail = self.create_transaction_history(asset_transaction_history_list)
-        self.widget_transaction_list_detail.show()
+        self.asset_transaction_history_list = self.session.query(mixin_sqlalchemy_type.MySnapshot).filter_by(snap_asset_asset_id = self.asset_instance_in_item.asset_id).order_by(mixin_sqlalchemy_type.MySnapshot.id.desc()).all()
+        self.widget_transaction_list_detail = self.create_transaction_history(self.asset_transaction_history_list)
+        self.widget_transaction_list_detail.clicked.connect(self.asset_transaction_record_selected)
+        self.widget_transaction_list_detail.setSelectionBehavior(QAbstractItemView.SelectRows)
+
+        self.asset_transaction_explain_label = QLabel("asset")
+        asset_transaction_layout = QVBoxLayout()
+        asset_transaction_layout.addWidget(self.asset_transaction_explain_label)
+        asset_transaction_layout.addWidget(self.widget_transaction_list_detail)
+        self.asset_transaction_widget = QWidget()
+        self.asset_transaction_widget.setLayout(asset_transaction_layout)
+        self.asset_transaction_widget.show()
+
 
 
     def update_transaction_history(self):
@@ -1197,6 +1207,21 @@ class MainWindow(QMainWindow):
 
     def update_reg_key_order_btn_title(self):
         self.ocean_reg_key_btn.setText("Pay 0.00000001 %s to register key"%(self.asset_to_reg_key.symbol))
+
+
+    def asset_transaction_record_selected(self, index):
+        transaction_history_selected_row = index.row()
+        this_transaction         = self.asset_transaction_history_list[transaction_history_selected_row]
+        thisSnapshot = Snapshot_fromSql(this_transaction)
+        result = plugin_can_explain_snapshot(thisSnapshot)
+        if result != False:
+            if float(thisSnapshot.amount) > 0:
+                direction = "from "
+            else:
+                direction = "to "
+            self.asset_transaction_explain_label.setText("%s %s\n%s"%(direction, result.get("opponent_name"), result.get("memo")))
+        else:
+            self.asset_transaction_explain_label.setText("")
 
 
     def transaction_record_selected(self, index):
