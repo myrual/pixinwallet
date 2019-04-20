@@ -1198,7 +1198,7 @@ class MainWindow(QMainWindow):
             asset_string = asset_symbol
         else:
             asset_string = this_trade.asset_id
-        self.ocean_cancel_order_label.setText("%s order %s\nprice %s\n%s %s"%(operation_string, this_trade.order_id, this_trade.price, side_string, this_trade.asset_id))
+        self.ocean_cancel_order_label.setText("%s order %s\nprice %s\n%s %s"%(operation_string, this_trade.order_id, this_trade.price, side_string, asset_string))
 
     def update_reg_key_order_btn_title(self):
         self.ocean_reg_key_btn.setText("Pay 0.00000001 %s to register key"%(self.asset_to_reg_key.symbol))
