@@ -1618,11 +1618,23 @@ class MainWindow(QMainWindow):
 
         self.ocean_cancel_order_pin = QLineEdit()
         self.ocean_cancel_order_pin.setPlaceholderText("Asset pin")
+        self.ocean_cancel_order_pin.setMaxLength(6)
+        self.ocean_cancel_order_pin.setEchoMode(QLineEdit.Password)
 
         ocean_history_table = QTableView()
         ocean_history_table.setModel(this_table_model)
         ocean_history_table.clicked.connect(self.ocean_list_record_selected)
         ocean_history_table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        header = ocean_history_table.horizontalHeader()       
+        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(4, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(5, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(6, QHeaderView.ResizeToContents)
+
+
         if len(self.ocean_history_list) > 0:
             ocean_history_table.selectRow(0)
         self.ocean_history_selected_row = 0
@@ -2021,7 +2033,7 @@ class MainWindow(QMainWindow):
             self.account_tab_widget.addTab(self.widget_balance_widget, "Balance")
             self.account_tab_widget.addTab(self.account_transaction_history_widget, "Transactions")
             self.account_tab_widget.addTab(self.exin_title_trade_list_detail, "Instant Exin Exchange")
-            self.account_tab_widget.addTab(self.oceanone_title_trade_list_detail, "CNB exchange")
+            self.account_tab_widget.addTab(self.oceanone_title_trade_list_detail, "OceanOne exchange")
             self.account_tab_widget.show()
             self.account_tab_widget.currentChanged.connect(self.tab_is_selected)
 
