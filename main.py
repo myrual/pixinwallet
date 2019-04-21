@@ -249,7 +249,7 @@ class CreateAccount_Thread(QRunnable):
                         self.session.add(this_asset_cache)
                         self.session.commit()
 
-                self.signals.result.emit(True)
+                self.signals.result.emit(self.user_input_file)
             else:
                 self.signals.progress.emit("Failed to create wallet")
         except:
@@ -690,17 +690,22 @@ class MainWindow(QMainWindow):
         self.create_account_layout.addWidget(QLabel(obj))
     def create_account_button_pressed(self):
         self.create_account_widget.close()
+        self.file_name = self.user_input_file
+        self.selected_wallet_record = wallet_api.load_wallet_from_clear_base64_file(self.user_input_file)
+        self.open_selected_wallet()
+        self.user_input_file = None
+
     def create_account_finished_callback(self):
-        Successful_created_account_button = QPushButton("Done")
+        Successful_created_account_button = QPushButton("Open wallet")
         Successful_created_account_button.pressed.connect(self.create_account_button_pressed)
         self.create_account_layout.addWidget(Successful_created_account_button)
 
     def create_account_pressed(self):
         user_input_pin  = self.pin_selected_edit.text()
-        user_input_file = self.file_selected_edit.text()
+        self.user_input_file = self.file_selected_edit.text()
         #self.create_wallet_confirm_chosen_block(wallet_api.randomString(), user_input_pin, user_input_file)
 
-        worker = CreateAccount_Thread(wallet_api.randomString(), user_input_pin, user_input_file)
+        worker = CreateAccount_Thread(wallet_api.randomString(), user_input_pin, self.user_input_file)
         worker.signals.progress.connect(self.create_wallet_progress_update)
         worker.signals.finished.connect(self.create_account_finished_callback)
         self.threadPool.start(worker)
