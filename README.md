@@ -1,7 +1,11 @@
 # Pixin wallet: Bitcoin, altcoin Wallet written in PyQt
+A Bitcoin and altcoin wallet written in python and qt. The wallet use [Mixin Network](https://mixin.one) to hold many cryptocurrency and keep Mixin Network account key file on your PC intead of cloud. 
 
-A Bitcoin, altcoin wallet written in python and qt. Cryptocurrency management is based on [python cli wallet](https://github.com/myrual/bitcoin-cli-wallet-python) of [Mixin Network](https://mixin.one).
-
+## Try to be "Batteries Included" 
+### Having an instant cryptocurrency exchange
+[ExinCore](https://github.com/ExinOne/ExinCore) is a secure and instant cryptocurrency exchange build on Mixin Network. Just pay to ExinCore, Exin will send asset to your wallet in 2 seconds.
+### Having an decentralized exchange to list ANY asset
+[OceanOne](http://github.com/mixinnetwork/oceanone) is a decentralized exchange build on Mixin Network. Pay to OceanOne to sell your asset, OceanOne will send asset to your wallet after matched your order.
 
 ## Clone repo to computer
 ```bash
@@ -35,5 +39,7 @@ Open wallet file
 Show balance
 ![](https://github.com/myrual/pixinwallet/blob/master/balance_screen.png)
 
-Instant trade api
+Instant trade on ExinCore
 ![](https://github.com/myrual/pixinwallet/blob/master/exin_exchange_screen.png)
+Trade asset on OceanOne
+![]()
