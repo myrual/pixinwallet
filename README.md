@@ -42,4 +42,4 @@ Show balance
 Instant trade on ExinCore
 ![](https://github.com/myrual/pixinwallet/blob/master/exin_exchange_screen.png)
 Trade asset on OceanOne
-![]()
+![](https://github.com/myrual/pixinwallet/raw/master/OceanOne_Screen.png)
