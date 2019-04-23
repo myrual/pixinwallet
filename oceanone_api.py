@@ -112,9 +112,7 @@ class Ocean_pair_price():
 
 def fetchTradePrice(quote_asset_id, target_asset_id):
     url = "https://events.ocean.one/markets/" + target_asset_id + "-" + quote_asset_id+ "/book"
-    print(url)
     result_fetchPrice = requests.get(url)
     ocean_response = result_fetchPrice.json()
-    print(ocean_response)
     this_ocean_pair = Ocean_pair_price(ocean_response)
     return this_ocean_pair

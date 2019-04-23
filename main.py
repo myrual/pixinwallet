@@ -115,7 +115,7 @@ class Ocean_Thread(QRunnable):
             self.signals.result.emit(result)
         finally:
             self.signals.finished.emit()
-        print("ExinPrice Thread")
+        print("Ocean Thread")
 
 
 class ExinPrice_Thread(QRunnable):
@@ -1041,8 +1041,9 @@ class MainWindow(QMainWindow):
         return
 
     def received_snapshot(self, searched_snapshots_result):
-        the_last_snapshots_time = searched_snapshots_result.data[-1].created_at
-        print(the_last_snapshots_time)
+        self.the_last_snapshots_time = searched_snapshots_result.data[-1].created_at
+        print(self.the_last_snapshots_time)
+        self.transaction_statusBar.showMessage("Loaded account history until :" + self.the_last_snapshots_time)
         for eachsnapshots in searched_snapshots_result.data:
             if (eachsnapshots.is_my_snap()):
                 found_snapshot_quantity = len(self.session.query(mixin_sqlalchemy_type.MySnapshot).filter_by(snap_snapshot_id = eachsnapshots.snapshot_id).all())
@@ -1093,7 +1094,7 @@ class MainWindow(QMainWindow):
         delay_seconds = 0
         if len(searched_snapshots_result.data) < 100:
             delay_seconds = 90 
-        mysnapshots_worker = AccountsSnapshots_Thread(self.selected_wallet_record, the_last_snapshots_time, delay_seconds)
+        mysnapshots_worker = AccountsSnapshots_Thread(self.selected_wallet_record, self.the_last_snapshots_time, delay_seconds)
         mysnapshots_worker.signals.result.connect(self.received_snapshot)
         #mysnapshots_worker.signals.finished.connect(self.snap_thread_complete)
         self.threadPool.start(mysnapshots_worker)
@@ -2064,6 +2065,8 @@ class MainWindow(QMainWindow):
             self.update_balance()
         if index == 1:
             self.update_transaction_history()
+        if index == 3:
+            self.transaction_statusBar.showMessage("Loaded account history until :" + self.the_last_snapshots_time)
     def update_balance(self):
         worker = Balance_Thread(self.selected_wallet_record)
         worker.signals.result.connect(self.received_balance_result)
@@ -2106,9 +2109,12 @@ class MainWindow(QMainWindow):
             header.setSectionResizeMode(5, QHeaderView.ResizeToContents)
 
             self.transaction_explain_label = QLabel()
+            self.transaction_statusBar = QStatusBar()
+            self.the_last_snapshots_time = ""
             transaction_layout = QVBoxLayout()
             transaction_layout.addWidget(self.transaction_explain_label)
             transaction_layout.addWidget(self.account_transaction_history_widget)
+            transaction_layout.addWidget(self.transaction_statusBar)
             transaction_widget = QWidget()
             transaction_widget.setLayout(transaction_layout)
 
@@ -2130,8 +2136,7 @@ class MainWindow(QMainWindow):
             self.threadPool.start(exin_worker)
 
             ocean_worker = Ocean_Thread(mixin_asset_id_collection.USDT_ASSET_ID, mixin_asset_id_collection.BTC_ASSET_ID)
-            #ocean_worker.signals.result.connect(self.received_exin_result)
-            #ocean_worker.signals.finished.connect(self.thread_complete)
+            ocean_worker.signals.result.connect(self.received_ocean_result)
 
             self.threadPool.start(ocean_worker)
 
