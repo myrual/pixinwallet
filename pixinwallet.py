@@ -2097,7 +2097,7 @@ class MainWindow(QMainWindow):
             self.update_balance()
         if index == 3:
             self.update_transaction_history()
-            self.transaction_statusBar.showMessage("Loaded account history until :" + self.the_last_snapshots_time)
+
     def update_balance(self):
         worker = Balance_Thread(self.selected_wallet_record)
         worker.signals.result.connect(self.received_balance_result)
