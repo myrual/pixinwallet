@@ -355,7 +355,7 @@ class ExinPrice_TableModel(QAbstractTableModel):
         for eachAsset in exintrade_price_list:
             thisRecord = []
             thisRecord.append(eachAsset.price)
-            thisRecord.append(eachAsset.exchange_asset_symbol + "/" + eachAsset.base_asset_symbol)
+            thisRecord.append(eachAsset.exchange_asset_symbol )
             thisRecord.append(eachAsset.minimum_amount)
             thisRecord.append(eachAsset.maximum_amount)
 
@@ -1115,7 +1115,7 @@ class MainWindow(QMainWindow):
  
     def received_exin_result(self, exin_result):
         self.exin_result = exin_result
-        this_model = ExinPrice_TableModel(self, exin_result, ["price", "trade", "min pay", "max pay"])
+        this_model = ExinPrice_TableModel(self, exin_result, ["price in USDT", "Asset", "Min amount", "Max amount"])
         self.exin_tradelist_widget.setModel(this_model)
         self.exin_tradelist_widget.update()
         if hasattr(self, "exin_price_selected_row"):
@@ -1481,15 +1481,11 @@ class MainWindow(QMainWindow):
 
     def received_ocean_result(self, oceanResult):
         if hasattr(oceanResult, "timestamp"):
-            print(oceanResult.timestamp)
-
-            print("total ask order is %d"%len(oceanResult.ask_order_list))
-            ask_order_model = OceanOrder_TableModel(None, reversed(oceanResult.ask_order_list), ["Ask price", "Amount", "Funds"])
+            ask_order_model = OceanOrder_TableModel(None, reversed(oceanResult.ask_order_list), ["Ask price in " + self.ocean_base_asset_selection_asset[0], "Ask " + self.ocean_target_asset_selection_asset.asset_symbol + " amount", "Funds in " + self.ocean_base_asset_selection_asset[0]])
             self.ocean_order_ask_book_widget.setModel(ask_order_model)
             self.ocean_order_ask_book_widget.update()
             self.ocean_order_ask_book_widget.selectRow(len(oceanResult.ask_order_list) - 1)
 
-            print("total bid order is %d"%len(oceanResult.bid_order_list))
             bid_order_model = OceanOrder_TableModel(None, oceanResult.bid_order_list, ["Bid price", "Amount", "Funds"])
             self.ocean_order_bid_book_widget.setModel(bid_order_model)
             self.ocean_order_bid_book_widget.update()
@@ -1504,7 +1500,6 @@ class MainWindow(QMainWindow):
             self.ocean_order_bid_book_widget.update()
 
     def fetchOceanPrice(self):
-        print("pressed")
         if self.ocean_target_asset_id_input.text() != "":
             ocean_worker = Ocean_Thread(self.ocean_base_asset_selection_asset[1], self.ocean_target_asset_id_input.text())
             update_asset_name_worker = ReadAsset_Info_Thread(self.selected_wallet_record, self.ocean_target_asset_id_input.text())
@@ -1519,8 +1514,9 @@ class MainWindow(QMainWindow):
 
     def ocean_base_asset_change(self, indexActived):
         self.ocean_base_asset_selection_asset = self.ocean_id_name[indexActived]
-        self.price_unit.setText(self.ocean_target_id_name[indexActived].asset_symbol + "/" + self.ocean_base_asset_selection_asset[0])
+        self.price_unit.setText(self.ocean_base_asset_selection_asset[0] + " per " + self.ocean_target_id_name[indexActived].asset_symbol)
         self.ocean_target_asset_amount_input.setPlaceholderText("%s amount"%self.ocean_base_asset_selection_asset[0])
+        self.ocean_target_asset_price_input.setPlaceholderText("Mininum price " + self.ocean_base_asset_selection_asset[2])
 
 
         self.fetchOceanPrice()
@@ -1528,8 +1524,7 @@ class MainWindow(QMainWindow):
     def ocean_target_asset_change(self, indexActived):
         print("indexActived%d"%indexActived)
         self.ocean_target_asset_selection_asset = self.ocean_target_id_name[indexActived]
-        self.price_unit.setText(self.ocean_target_asset_selection_asset.asset_symbol + "/" + self.ocean_base_asset_selection_asset[0])
-        self.order_funds_unit = self.ocean_target_asset_selection_asset.asset_symbol
+        self.price_unit.setText(self.ocean_base_asset_selection_asset[0] + " per " + self.ocean_target_asset_selection_asset.asset_symbol)
         self.ocean_buy_btn.setText("Buy "+ self.ocean_target_asset_selection_asset.asset_symbol)
         self.ocean_sell_btn.setText("Sell "+ self.ocean_target_asset_selection_asset.asset_symbol)
         self.ocean_target_asset_sell_amount_input.setPlaceholderText("%s amount"%self.ocean_target_asset_selection_asset.asset_symbol)
@@ -1592,7 +1587,7 @@ class MainWindow(QMainWindow):
             amount = float(changedText)
             price = float(self.ocean_target_asset_price_input.text())
             if amount > 0 and price > 0:
-                self.order_funds_sell_label.setText("%s %s"%(str(amount/price), self.ocean_base_asset_selection_asset[0]))
+                self.order_funds_sell_label.setText("%s %s"%(str(amount*price), self.ocean_base_asset_selection_asset[0]))
 
         except ValueError:
             return
@@ -1809,7 +1804,7 @@ class MainWindow(QMainWindow):
         self.ocean_order_ask_book_widget = QTableView()
         self.ocean_order_bid_book_widget = QTableView()
 
-        self.ocean_id_name = [("USDT", mixin_asset_id_collection.USDT_ASSET_ID), ("XIN", mixin_asset_id_collection.XIN_ASSET_ID), ("BTC", mixin_asset_id_collection.BTC_ASSET_ID)] 
+        self.ocean_id_name = [("USDT", mixin_asset_id_collection.USDT_ASSET_ID, "0.0001"), ("XIN", mixin_asset_id_collection.XIN_ASSET_ID, "0.00000001"), ("BTC", mixin_asset_id_collection.BTC_ASSET_ID, "0.00000001")] 
 
         quote_asset_selection = QComboBox()
 
@@ -1862,6 +1857,7 @@ class MainWindow(QMainWindow):
         self.ocean_target_asset_price_input = QLineEdit()
         self.ocean_target_asset_price_input.setPlaceholderText("Price")
         self.ocean_target_asset_price_input.textChanged.connect(self.ocean_price_changed)
+        self.ocean_target_asset_price_input.setPlaceholderText("Mininum price " + self.ocean_id_name[0][2])
 
         self.ocean_pin_input = QLineEdit()
         self.ocean_pin_input.setPlaceholderText("Asset pin")
@@ -1872,7 +1868,7 @@ class MainWindow(QMainWindow):
 
         price_layout = QHBoxLayout()
         self.price_unit = QLabel()
-        self.price_unit.setText(self.ocean_target_asset_selection_asset.asset_symbol + "/" + self.ocean_base_asset_selection_asset[0])
+        self.price_unit.setText(self.ocean_base_asset_selection_asset[0] + " per " + self.ocean_target_asset_selection_asset.asset_symbol)
 
         price_layout.addWidget(self.ocean_target_asset_price_input)
         price_layout.addWidget(self.price_unit)
@@ -1906,7 +1902,6 @@ class MainWindow(QMainWindow):
 
         self.order_funds_label = QLabel("")
 
-        self.order_funds_unit = self.ocean_id_name[0][0]
         self.order_funds_sell_label = QLabel("")
 
         buy_operation_layout = QVBoxLayout()
