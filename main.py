@@ -355,7 +355,7 @@ class ExinPrice_TableModel(QAbstractTableModel):
         for eachAsset in exintrade_price_list:
             thisRecord = []
             thisRecord.append(eachAsset.price)
-            thisRecord.append(eachAsset.base_asset_symbol + "/" + eachAsset.exchange_asset_symbol)
+            thisRecord.append(eachAsset.exchange_asset_symbol + "/" + eachAsset.base_asset_symbol)
             thisRecord.append(eachAsset.minimum_amount)
             thisRecord.append(eachAsset.maximum_amount)
 
