@@ -947,7 +947,7 @@ class MainWindow(QMainWindow):
         file_selection_layout = QHBoxLayout()
         file_title_widget = QLabel("Wallet file name:")
         self.file_selected_edit     = QLineEdit()
-        file_browser_btn  = QPushButton("Browse")
+        file_browser_btn  = QPushButton("Select wallet file name")
         file_browser_btn.pressed.connect(self.select_file_for_create_wallet)
         file_selection_layout.addWidget(file_title_widget)
         file_selection_layout.addWidget(self.file_selected_edit)
