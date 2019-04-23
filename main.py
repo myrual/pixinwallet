@@ -1519,7 +1519,7 @@ class MainWindow(QMainWindow):
 
     def ocean_base_asset_change(self, indexActived):
         self.ocean_base_asset_selection_asset = self.ocean_id_name[indexActived]
-        self.price_unit.setText(self.ocean_target_id_name[indexActived].asset_symbol + " per " + self.ocean_base_asset_selection_asset[0])
+        self.price_unit.setText(self.ocean_target_id_name[indexActived].asset_symbol + "/" + self.ocean_base_asset_selection_asset[0])
         self.ocean_target_asset_amount_input.setPlaceholderText("%s amount"%self.ocean_base_asset_selection_asset[0])
 
 
@@ -1528,7 +1528,7 @@ class MainWindow(QMainWindow):
     def ocean_target_asset_change(self, indexActived):
         print("indexActived%d"%indexActived)
         self.ocean_target_asset_selection_asset = self.ocean_target_id_name[indexActived]
-        self.price_unit.setText(self.ocean_target_asset_selection_asset.asset_symbol + " per " + self.ocean_base_asset_selection_asset[0])
+        self.price_unit.setText(self.ocean_target_asset_selection_asset.asset_symbol + "/" + self.ocean_base_asset_selection_asset[0])
         self.order_funds_unit = self.ocean_target_asset_selection_asset.asset_symbol
         self.ocean_buy_btn.setText("Buy "+ self.ocean_target_asset_selection_asset.asset_symbol)
         self.ocean_sell_btn.setText("Sell "+ self.ocean_target_asset_selection_asset.asset_symbol)
@@ -1872,7 +1872,7 @@ class MainWindow(QMainWindow):
 
         price_layout = QHBoxLayout()
         self.price_unit = QLabel()
-        self.price_unit.setText(self.ocean_target_asset_selection_asset.asset_symbol + " per " + self.ocean_base_asset_selection_asset[0])
+        self.price_unit.setText(self.ocean_target_asset_selection_asset.asset_symbol + "/" + self.ocean_base_asset_selection_asset[0])
 
         price_layout.addWidget(self.ocean_target_asset_price_input)
         price_layout.addWidget(self.price_unit)
