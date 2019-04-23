@@ -120,6 +120,10 @@ class Asset(Static_Asset):
         self.public_key   = jsonInput.get("public_key")
         self.account_name = jsonInput.get("account_name")
         self.account_tag  = jsonInput.get("account_tag")
+        self.asset_key = jsonInput.get("asset_key")
+        self.price_usd = jsonInput.get("price_usd")
+        self.confirmations = jsonInput.get("confirmations")
+
     def deposit_address(self):
         result_desposit = []
         if(self.public_key != ""):

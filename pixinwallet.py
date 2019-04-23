@@ -2080,7 +2080,6 @@ class MainWindow(QMainWindow):
 
         self.balance_list_tableview = QTableView()
         self.balance_list_tableview.clicked.connect(self.balance_list_record_selected)
-        self.balance_list_tableview.setSelectionBehavior(QAbstractItemView.SelectRows)
 
         self.widget_balance_detail = QWidget()
         self.widget_balance_detail.setLayout(self.Balance_detail_layout)
