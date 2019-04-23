@@ -1809,12 +1809,14 @@ class MainWindow(QMainWindow):
         self.ocean_order_ask_book_widget = QTableView()
         self.ocean_order_bid_book_widget = QTableView()
 
-        self.ocean_id_name = [("XIN", mixin_asset_id_collection.XIN_ASSET_ID), ("USDT", mixin_asset_id_collection.USDT_ASSET_ID), ("BTC", mixin_asset_id_collection.BTC_ASSET_ID)] 
+        self.ocean_id_name = [("USDT", mixin_asset_id_collection.USDT_ASSET_ID), ("XIN", mixin_asset_id_collection.XIN_ASSET_ID), ("BTC", mixin_asset_id_collection.BTC_ASSET_ID)] 
 
         quote_asset_selection = QComboBox()
-        quote_asset_selection.insertItem(0, "XIN Market", mixin_asset_id_collection.XIN_ASSET_ID)
-        quote_asset_selection.insertItem(1, "USDT Market", mixin_asset_id_collection.USDT_ASSET_ID)
-        quote_asset_selection.insertItem(2, "BTC Market", mixin_asset_id_collection.BTC_ASSET_ID)
+
+        i = 0
+        for each in self.ocean_id_name:
+            quote_asset_selection.insertItem(i, each[0] + " Market", each[0])
+            i += 1
         quote_asset_selection.currentIndexChanged.connect(self.ocean_base_asset_change)
 
         self.ocean_base_asset_selection_asset= self.ocean_id_name[0]
