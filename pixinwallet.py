@@ -262,6 +262,14 @@ class CreateAccount_Thread(QRunnable):
             self.signals.finished.emit()
 
 
+def asset_is_main_chain_token(asset):
+    return asset.chain_id == asset.asset_id 
+
+def foundMainChainName(chain_id, balance_result_list):
+    for eachAssetPublicChain in balance_result_list:
+        if asset_is_main_chain_token(eachAssetPublicChain) and eachAssetPublicChain.chain_id == chain_id:
+            return eachAssetPublicChain.name
+    return False
 class Balance_TableModel(QAbstractTableModel):
     """
     keep the method names
@@ -274,6 +282,31 @@ class Balance_TableModel(QAbstractTableModel):
             thisRecord = []
             thisRecord.append(eachAsset.name)
             thisRecord.append(eachAsset.balance)
+            thisRecord.append(eachAsset.price_usd)
+            chain_name = foundMainChainName(eachAsset.chain_id, balance_result_list)
+            if chain_name != False:
+                thisRecord.append(chain_name)
+                if asset_is_main_chain_token(eachAsset):
+                    thisRecord.append("")
+                elif eachAsset.chain_id == mixin_asset_id_collection.ETH_ASSET_ID:
+                    thisRecord.append("ERC20 contract : " + eachAsset.asset_key)
+                elif eachAsset.chain_id == mixin_asset_id_collection.EOS_ASSET_ID:
+                    thisRecord.append("EOS contract : " + eachAsset.asset_key)
+                else:
+                    thisRecord.append("")
+
+            else:
+                thisRecord.append("")
+                thisRecord.append("")
+            if eachAsset.chain_id in mixin_asset_id_collection.Block_interval:
+                pending_seconds = mixin_asset_id_collection.Block_interval[eachAsset.chain_id] * eachAsset.confirmations
+                if pending_seconds < 60:
+                    thisRecord.append(str(pending_seconds) + " seconds")
+                else:
+                    pending_minutes = pending_seconds/60
+                    thisRecord.append(str(int(pending_minutes)) + " minutes")
+            else:
+                thisRecord.append("NA")
             finalData.append(thisRecord)
 
         self.mylist = finalData
@@ -1134,7 +1167,7 @@ class MainWindow(QMainWindow):
                     asset_balance_result = self.selected_wallet_record.get_singleasset_balance(default_id)
                     if asset_balance_result.is_success:
                         final_balance_result.append(asset_balance_result.data)
-            this_balance_model = Balance_TableModel(self, final_balance_result, ["Asset name", "Amount"])
+            this_balance_model = Balance_TableModel(self, final_balance_result, ["Asset name", "Amount", "Price in USD", "Main chain", "Contract address", "Pending duration before deposit is confirmed"])
             self.balance_list_tableview.setModel(this_balance_model)
             self.balance_list_tableview.update()
             if hasattr(self, "balance_selected_row"):
@@ -1270,9 +1303,9 @@ class MainWindow(QMainWindow):
         self.selected_asset_send.setText("Send " + self.asset_instance_in_item.name)
         self.selected_asset_manageasset.setDisabled(False)
         self.selected_asset_show_history.setDisabled(False)
-        self.selected_asset_show_history.setText("History of " + self.asset_instance_in_item.name)
+        self.selected_asset_show_history.setText("Open history of " + self.asset_instance_in_item.name)
         self.show_deposit_address_btn.setDisabled(False)
-        self.show_deposit_address_btn.setText("Deposit address of " + self.asset_instance_in_item.name)
+        self.show_deposit_address_btn.setText("Show deposit address of " + self.asset_instance_in_item.name)
 
     def update_asset_address_detail(self, this_withdraw_address, label_widget):
         stringForAddress = ""
@@ -2036,14 +2069,14 @@ class MainWindow(QMainWindow):
         self.selected_asset_show_history = QPushButton("History")
         self.selected_asset_show_history.pressed.connect(self.open_asset_transaction_history)
         self.selected_asset_show_history.setDisabled(True)
-        self.show_deposit_address_btn = QPushButton("Deposit address")
+        self.show_deposit_address_btn = QPushButton("Show deposit address")
         self.show_deposit_address_btn.pressed.connect(self.pop_deposit_addess_of_asset)
         self.show_deposit_address_btn.setDisabled(True)
 
         self.Balance_detail_layout.addWidget(self.selected_asset_send)
-        self.Balance_detail_layout.addWidget(self.selected_asset_show_history)
-        self.Balance_detail_layout.addWidget(self.selected_asset_manageasset)
         self.Balance_detail_layout.addWidget(self.show_deposit_address_btn)
+        self.Balance_detail_layout.addWidget(self.selected_asset_manageasset)
+        self.Balance_detail_layout.addWidget(self.selected_asset_show_history)
 
         self.balance_list_tableview = QTableView()
         self.balance_list_tableview.clicked.connect(self.balance_list_record_selected)
