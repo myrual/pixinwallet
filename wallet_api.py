@@ -376,7 +376,11 @@ def find_snapshot_of(client_id, in_snapshots):
         if (singleSnapShot.user_id == client_id):
             mysnapshots_result.append(singleSnapShot)
     return mysnapshots_result
-
+def snapshot_time_difference_now(snap_shopt):
+    diff = time.time() - iso8601.parse_date(snap_shopt.created_at).timestamp()
+    if diff > 0:
+        return "%s seconds remain"%(int(diff))
+    return "synced"
 def append_wallet_into_csv_file(this_wallet, file_name):
     with open(file_name, 'a', newline='') as csvfile:
         csvwriter = csv.writer(csvfile)

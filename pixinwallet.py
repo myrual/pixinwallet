@@ -1076,7 +1076,7 @@ class MainWindow(QMainWindow):
     def received_snapshot(self, searched_snapshots_result):
         self.the_last_snapshots_time = searched_snapshots_result.data[-1].created_at
         print(self.the_last_snapshots_time)
-        self.transaction_statusBar.showMessage("Loaded account history until :" + self.the_last_snapshots_time)
+        self.transaction_statusBar.showMessage(wallet_api.snapshot_time_difference_now(searched_snapshots_result.data[-1]))
         for eachsnapshots in searched_snapshots_result.data:
             if (eachsnapshots.is_my_snap()):
                 found_snapshot_quantity = len(self.session.query(mixin_sqlalchemy_type.MySnapshot).filter_by(snap_snapshot_id = eachsnapshots.snapshot_id).all())
