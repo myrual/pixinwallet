@@ -1015,7 +1015,7 @@ class MainWindow(QMainWindow):
                     self.send_address_selection_widget.insertItem(i, eachAsset.label, userData = eachAsset)
                 else:
                     self.send_address_selection_widget.insertItem(i, eachAsset.account_tag, userData = eachAsset)
-                i += 0
+                i += 1
         return
 
 
