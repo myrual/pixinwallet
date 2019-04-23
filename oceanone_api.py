@@ -4,7 +4,6 @@ import base64
 import umsgpack
 import binascii
 import ecdsa
-from ecdsa import SigningKey, NIST256p
 import hashlib
 import datetime
 import jwt
@@ -63,64 +62,6 @@ def oceanone_can_explain_snapshot(input_snapshot):
     return False
 
 
-def key_to_string(key):
-    return key.to_string()
-def key_to_pem(key):
-    return key.to_pem()
-
-def generateECDSAKey():
-    sk = SigningKey.generate(curve=NIST256p)
-    return sk
-
-def loadECDSAKey_fromString(oceanone_priv_key):
-    sk = SigningKey.from_string(oceanone_priv_key, NIST256p)
-    return sk
-def export_pubKey_fromPrivateKey(ecdsa_signing_key):
-    vk = ecdsa_signing_key.get_verifying_key()
-    return vk
-
-def generateSig(method, uri, body):
-    hashresult = hashlib.sha256((method + uri+body).encode('utf-8')).hexdigest()
-    print("hash")
-    print(hashresult)
-    return hashresult
-
-def genGETPOSTSig(methodstring, uristring, bodystring):
-    jwtSig = generateSig(methodstring, uristring, bodystring)
-    return jwtSig
-
-def genGETSig(uristring, bodystring):
-    return genGETPOSTSig("GET", uristring, bodystring)
-
-def genJwtToken(uristring, bodystring, signKey_in_PEM, mixin_user_id, mixin_user_session_id, jti):
-    jwtSig = genGETSig(uristring, bodystring)
-    print("genJwtToken")
-    print(jwtSig)
-    iat = datetime.datetime.utcnow()
-    exp = datetime.datetime.utcnow() + datetime.timedelta(seconds=200)
-    payload = {'uid':mixin_user_id, 'iat':iat,'exp': exp, 'jti':jti,'sig':jwtSig}
-    print(signKey_in_PEM)
-    encoded = jwt.encode(payload , signKey_in_PEM, algorithm='ES256')
-    sk = ecdsa.SigningKey.from_pem(signKey_in_PEM)
-    vk = sk.get_verifying_key()
-    vk_in_PEM = vk.to_pem().decode('utf8')
-    print(vk_in_PEM)
-    decoded = jwt.decode(encoded, vk_in_PEM)
-    print("result of decode is" + str(decoded))
-
-    return encoded
-
-def load_my_order(mixin_user_id, mixin_user_session_id, signKey_in_PEM):
-    url = "https://events.ocean.one/orders"
-    token = genJwtToken(url, "", signKey_in_PEM, mixin_user_id, mixin_user_session_id, str(uuid.uuid4()))
-    auth_token = token.decode('utf8')
-    print("load my order token")
-    print(auth_token)
-
-    r = requests.get(url, headers={"Authorization": "Bearer " + auth_token})
-    result_obj = r.json()
-    return result_obj
-
 
 
 def gen_memo_ocean_reg_key(key_in_bytes):
@@ -175,5 +116,6 @@ def fetchTradePrice(quote_asset_id, target_asset_id):
     print(url)
     result_fetchPrice = requests.get(url)
     ocean_response = result_fetchPrice.json()
+    print(ocean_response)
     this_ocean_pair = Ocean_pair_price(ocean_response)
     return this_ocean_pair
