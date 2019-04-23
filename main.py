@@ -2134,12 +2134,6 @@ class MainWindow(QMainWindow):
             exin_worker.signals.finished.connect(self.exin_thread_complete)
 
             self.threadPool.start(exin_worker)
-
-            ocean_worker = Ocean_Thread(mixin_asset_id_collection.USDT_ASSET_ID, mixin_asset_id_collection.BTC_ASSET_ID)
-            ocean_worker.signals.result.connect(self.received_ocean_result)
-
-            self.threadPool.start(ocean_worker)
-
         else:
             return
 
