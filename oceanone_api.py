@@ -3,7 +3,6 @@ import uuid
 import base64
 import umsgpack
 import binascii
-import ecdsa
 import hashlib
 import datetime
 import jwt
