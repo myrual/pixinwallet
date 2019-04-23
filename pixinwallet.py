@@ -2063,9 +2063,8 @@ class MainWindow(QMainWindow):
         print("tab is changed" + str(index))
         if index == 0:
             self.update_balance()
-        if index == 1:
-            self.update_transaction_history()
         if index == 3:
+            self.update_transaction_history()
             self.transaction_statusBar.showMessage("Loaded account history until :" + self.the_last_snapshots_time)
     def update_balance(self):
         worker = Balance_Thread(self.selected_wallet_record)
@@ -2099,14 +2098,6 @@ class MainWindow(QMainWindow):
             self.account_transaction_history_widget = self.open_transaction_history()
             self.account_transaction_history_widget.clicked.connect(self.transaction_record_selected)
             self.account_transaction_history_widget.setSelectionBehavior(QAbstractItemView.SelectRows)
-
-            header = self.account_transaction_history_widget.horizontalHeader()       
-            header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
-            header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
-            header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
-            header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
-            header.setSectionResizeMode(4, QHeaderView.ResizeToContents)
-            header.setSectionResizeMode(5, QHeaderView.ResizeToContents)
 
             self.transaction_explain_label = QLabel()
             self.transaction_statusBar = QStatusBar()

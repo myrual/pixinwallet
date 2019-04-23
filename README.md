@@ -53,3 +53,17 @@ Instant trade on ExinCore
 ![](https://github.com/myrual/pixinwallet/blob/master/exin_exchange_screen.png)
 Trade asset on OceanOne
 ![](https://github.com/myrual/pixinwallet/raw/master/OceanOne_Screen.png)
+
+
+### Generate standalone macOS app by pyinstaller
+Install pyinstaller
+```bash
+pip install pyinstaller
+```
+Edit pixinwallet.spec version number
+
+and generate standalone app in dist folder
+```bash
+pyinstaller --onefile --windowed pixinwallet.spec
+```
+

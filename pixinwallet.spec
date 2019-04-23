@@ -3,7 +3,7 @@
 block_cipher = None
 
 
-a = Analysis(['main.py'],
+a = Analysis(['pixinwallet.py'],
              pathex=['/Users/linli/Dev/github.com/myrual/pixinwallet'],
              binaries=[],
              datas=[],
@@ -23,7 +23,7 @@ exe = EXE(pyz,
           a.zipfiles,
           a.datas,
           [],
-          name='main',
+          name='pixinwallet',
           debug=False,
           bootloader_ignore_signals=False,
           strip=False,
@@ -31,9 +31,9 @@ exe = EXE(pyz,
           runtime_tmpdir=None,
           console=False )
 app = BUNDLE(exe,
-             name='pixin wallet.app',
+             name='pixinwallet.app',
              icon=None,
-             bundle_identifier='me.myrual.pixinwallet',
+             bundle_identifier=None,
              info_plist={
-               'NSHighResolutionCapable':True,
-	       'CFBundleShortVersionString':'0.0.2'},)
+                'NSHighResolutionCapable': 'True','CFBundleShortVersionString':'0.0.3'
+             })
