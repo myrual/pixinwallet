@@ -1143,7 +1143,7 @@ class MainWindow(QMainWindow):
         return
     def withdraw_address_list_record_selection_actived(self,itemCurr, itemPre):
         if itemCurr == None:
-            self.clear_asset_address_detail()
+            self.withdraw_address_of_asset_detail_label.setText("")
             return
         self.withdraw_address_instance_in_item = itemCurr.data(0x0100)
         self.update_asset_address_detail(self.withdraw_address_instance_in_item, self.withdraw_address_of_asset_detail_label)
