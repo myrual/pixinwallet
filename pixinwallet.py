@@ -1380,6 +1380,7 @@ class MainWindow(QMainWindow):
         print("index changed %d"%indexActived)
         self.selected_withdraw_address = self.withdraw_address_of_asset_list[indexActived]
         self.update_asset_address_detail(self.selected_withdraw_address, self.send_address_title_widget)
+        self.send_asset_to_withdraw_address_btn.setDisabled(False)
 
     def pay_to_exin_pressed(self, base_asset, echange_asset):
         self.trade_exin_widget.close()
@@ -1475,8 +1476,9 @@ class MainWindow(QMainWindow):
 
             self.send_address_selection_widget = QComboBox()
             self.send_address_selection_widget.currentIndexChanged.connect(self.send_withdrawaddress_list_record_indexChanged)
-            send_asset_to_withdraw_address_btn = QPushButton("Send")
-            send_asset_to_withdraw_address_btn.pressed.connect(self.send_asset_to_withdraw_address_pressed)
+            self.send_asset_to_withdraw_address_btn = QPushButton("Send")
+            self.send_asset_to_withdraw_address_btn.pressed.connect(self.send_asset_to_withdraw_address_pressed)
+            self.send_asset_to_withdraw_address_btn.setDisabled(True)
 
             send_asset_layout = QVBoxLayout()
             send_asset_layout.addWidget(send_asset_title_label_widget)
@@ -1489,7 +1491,7 @@ class MainWindow(QMainWindow):
             send_asset_layout.addWidget(send_pin_title_widget)
             send_asset_layout.addWidget(self.send_pin_edit_Label_widget)
 
-            send_asset_layout.addWidget(send_asset_to_withdraw_address_btn)
+            send_asset_layout.addWidget(self.send_asset_to_withdraw_address_btn)
             self.send_asset_widget = QWidget()
             self.send_asset_widget.setLayout(send_asset_layout)
             self.send_asset_widget.show()
