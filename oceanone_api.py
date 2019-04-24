@@ -34,8 +34,8 @@ class Ocean_execute_request_register_pubkey():
         self.pubkey = msgpack_value.get("U")
 
     def explain(self):
-        header = ["registger pubkey", "pay amount", "pay asset"]
-        data   = [self.pubkey, self.pay_amount, self.pay_asset.symbol]
+        header = ["opponent", "action", "pubkey", "pay amount", "pay asset"]
+        data   = ["OceanOne", "register key", self.pubkey, self.pay_amount, self.pay_asset.symbol]
         return (header, data)
 
     def __str__(self):
@@ -52,8 +52,8 @@ class Ocean_execute_request_cancel():
 
 
     def explain(self):
-        header = ["Ocean order to be cancelled"]
-        data   = [self.to_cancel_order]
+        header = ["Opponent", "Action", "order be cancelled"]
+        data   = ["OceanOne", "Cancel Order", self.to_cancel_order]
         return (header, data)
 
     def __str__(self):
@@ -71,8 +71,8 @@ class Ocean_execute_request_market():
         self.order          = input_snapshot.trace_id
         self.side_type      = msgpack_value.get("S")
     def explain(self):
-        header = ["market price order", "pay amount", "pay asset", "to exchange asset id"]
-        data   = [self.order, self.pay_amount, self.pay_asset.symbol, self.request_asset]
+        header = ["opponent", "action", "order id", "pay amount", "pay asset", "to exchange asset id"]
+        data   = ["OceanOne", "list market order", self.order, self.pay_amount, self.pay_asset.symbol, self.request_asset]
         return (header, data)
 
     def __str__(self):
@@ -82,18 +82,26 @@ class Ocean_execute_request_market():
 
 class Ocean_response():
     def __init__(self, input_snapshot, msgpack_value):
-        self.pay_amount     = abs(float(input_snapshot.amount))
         asset_uuid_raw      = msgpack_value.get("A")
-        self.asset_id       = asset_uuid_raw
+        try:
+            self.asset_id   = str(uuid.UUID(bytes = asset_uuid_raw))
+        except:
+            self.asset_id   = str(asset_uuid_raw)
         bid_uuid_raw        = msgpack_value.get("B")
-        self.bid_id         = bid_uuid_raw
+        try:
+            self.bid_id     = str(uuid.UUID(bytes = bid_uuid_raw))
+        except:
+            self.bid_id     = str(bid_uuid_raw)
         order_uuid_raw      = msgpack_value.get("O")
-        self.order_id       = order_uuid_raw
+        try:
+            self.order_id       = str(uuid.UUID(bytes = order_uuid_raw))
+        except:
+            self.order_id       = str(order_uuid_raw)
         self.status         = msgpack_value.get("S")
         self.pay_asset      = input_snapshot.asset
     def explain(self):
         header = ["Asset", "Bid", "Order", "Status"]
-        data   = [self.pay_asset.symbol, self.bid_id, self.order_id, self.status]
+        data   = [self.asset_id, self.bid_id, self.order_id, self.status]
         return (header, data)
 
     def __str__(self):
@@ -112,8 +120,8 @@ class Ocean_execute_request_limited():
         self.side_type      = msgpack_value.get("S")
         self.price          = msgpack_value.get("P")
     def explain(self):
-        header = ["order", "pay amount", "pay asset", "to exchange asset id", "price"]
-        data   = [self.order, self.pay_amount, self.pay_asset.symbol, self.request_asset, self.price]
+        header = ["opponent", "action", "order", "pay amount", "pay asset", "to exchange asset id", "price"]
+        data   = ["OceanOne", "list limited price order", self.order, self.pay_amount, self.pay_asset.symbol, self.request_asset, self.price]
         return (header, data)
 
     def __str__(self):

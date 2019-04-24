@@ -270,6 +270,35 @@ def foundMainChainName(chain_id, balance_result_list):
         if asset_is_main_chain_token(eachAssetPublicChain) and eachAssetPublicChain.chain_id == chain_id:
             return eachAssetPublicChain.name
     return False
+class SnapExplain_TableModel(QAbstractTableModel):
+    """
+    keep the method names
+    they are an integral part of the model
+    """
+    def __init__(self, parent, data, header,  *args):
+        QAbstractTableModel.__init__(self, parent, *args)
+        self.mylist = data
+        self.header = header
+    def rowCount(self, parent):
+        return len(self.mylist)
+    def columnCount(self, parent):
+        return 1       
+    def data(self, index, role):
+        if not index.isValid():
+            return None
+
+        value = self.mylist[index.row()]
+        if role == Qt.EditRole:
+            return value
+        elif role == Qt.DisplayRole:
+            return value
+
+    def headerData(self, col, orientation, role):
+        if orientation == Qt.Vertical and role == Qt.DisplayRole:
+            return self.header[col]
+        return None
+
+
 class AssetDetail_TableModel(QAbstractTableModel):
     """
     keep the method names
@@ -1323,7 +1352,7 @@ class MainWindow(QMainWindow):
                 direction = "from "
             else:
                 direction = "to "
-            self.asset_transaction_explain_label.setText("%s %s\n%s"%(direction, result.get("opponent_name"), result.get("memo")))
+            self.asset_transaction_explain_label.setText("%s %s"%(direction, result))
         else:
             self.asset_transaction_explain_label.setText("")
 
@@ -1334,13 +1363,18 @@ class MainWindow(QMainWindow):
         thisSnapshot = Snapshot_fromSql(this_transaction)
         result = plugin_can_explain_snapshot(thisSnapshot)
         if result != False:
-            if float(thisSnapshot.amount) > 0:
-                direction = "from "
-            else:
-                direction = "to "
-            self.transaction_explain_label.setText("%s"%(result))
+            explain_array = result.explain()
+            self.transaction_record_explain_table.setModel(SnapExplain_TableModel(None, explain_array[1], explain_array[0]))
+            self.transaction_record_explain_table.update()
+            header = self.transaction_record_explain_table.verticalHeader()       
+            header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
+
+            header = self.transaction_record_explain_table.horizontalHeader()       
+            header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
         else:
-            self.transaction_explain_label.setText("")
+            self.transaction_record_explain_table.setModel(SnapExplain_TableModel(None, [], []))
+            self.transaction_record_explain_table.update()
+
 
     def ocean_list_record_selected(self, index):
         self.ocean_history_selected_row = index.row()
@@ -2235,11 +2269,9 @@ class MainWindow(QMainWindow):
             self.account_transaction_history_widget.clicked.connect(self.transaction_record_selected)
             self.account_transaction_history_widget.setSelectionBehavior(QAbstractItemView.SelectRows)
 
-            self.transaction_explain_label = QLabel()
             self.transaction_statusBar = QStatusBar()
             self.the_last_snapshots_time = ""
             transaction_layout = QVBoxLayout()
-            transaction_layout.addWidget(self.transaction_explain_label)
             transaction_layout.addWidget(self.account_transaction_history_widget)
             transaction_layout.addWidget(self.transaction_statusBar)
             transaction_widget = QWidget()
