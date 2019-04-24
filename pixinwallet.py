@@ -282,7 +282,9 @@ class Balance_TableModel(QAbstractTableModel):
             thisRecord = []
             thisRecord.append(eachAsset.name)
             thisRecord.append(eachAsset.balance)
-            thisRecord.append(eachAsset.price_usd)
+            this_asset_value_in_usd_in_float =  float(eachAsset.balance) * float(eachAsset.price_usd)
+            usd_value_with_twodigi_after_dot = int(100 * this_asset_value_in_usd_in_float)/100
+            thisRecord.append(str(usd_value_with_twodigi_after_dot) + " usd")
             chain_name = foundMainChainName(eachAsset.chain_id, balance_result_list)
             if chain_name != False:
                 thisRecord.append(chain_name)
@@ -1167,7 +1169,7 @@ class MainWindow(QMainWindow):
                     asset_balance_result = self.selected_wallet_record.get_singleasset_balance(default_id)
                     if asset_balance_result.is_success:
                         final_balance_result.append(asset_balance_result.data)
-            this_balance_model = Balance_TableModel(self, final_balance_result, ["Asset name", "Amount", "Price in USD", "Main chain", "Contract address", "Pending duration before deposit is confirmed"])
+            this_balance_model = Balance_TableModel(self, final_balance_result, ["Asset name", "Amount", "Market value", "Main chain", "Contract address", "Pending duration before deposit is confirmed"])
             self.balance_list_tableview.setModel(this_balance_model)
             self.balance_list_tableview.update()
             if hasattr(self, "balance_selected_row"):
