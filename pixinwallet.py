@@ -634,10 +634,9 @@ class MainWindow(QMainWindow):
         layout.addWidget(new_wallet_btn)
 
 
-        w = QWidget()
-        w.setLayout(layout)
-        self.setCentralWidget(w)
-        self.show()
+        self.w = QWidget()
+        self.w.setLayout(layout)
+        self.w.show()
         self.timer = QTimer()
         self.timer.setInterval(1000)
 
@@ -788,6 +787,7 @@ class MainWindow(QMainWindow):
             self.file_name = file_name
             self.selected_wallet_record = wallet_api.load_wallet_from_clear_base64_file(file_name)
             self.open_selected_wallet()
+            self.w.close()
     def select_file_for_create_wallet(self):
         file_name_selected = QFileDialog.getSaveFileName(self, "QFileDialog.getOpenFileName()", "","mixinkey Files (*.mixinkey);;All Files (*)")
         file_name = file_name_selected[0]
@@ -807,6 +807,7 @@ class MainWindow(QMainWindow):
         self.selected_wallet_record = wallet_api.load_wallet_from_clear_base64_file(self.user_input_file)
         self.open_selected_wallet()
         self.user_input_file = None
+        self.w.close()
 
     def create_account_finished_callback(self):
         Successful_created_account_button = QPushButton("Open wallet")
