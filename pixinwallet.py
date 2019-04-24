@@ -242,12 +242,14 @@ class CreateAccount_Thread(QRunnable):
                     this_balance = new_wallet.get_singleasset_balance(eachAssetID)
                     if(this_balance.is_success):
                         self.signals.progress.emit("Generated deposit address for " + this_balance.data.name)
-                        this_asset_cache = mixin_sqlalchemy_type.Mixin_asset_record()
-                        this_asset_cache.asset_id = this_balance.data.asset_id
-                        this_asset_cache.asset_name = this_balance.data.name
-                        this_asset_cache.asset_symbol = this_balance.data.symbol
-                        self.session.add(this_asset_cache)
-                        self.session.commit()
+                        len_of_known_asset_id = len(self.session.query(mixin_sqlalchemy_type.Mixin_asset_record).filter_by(asset_id = eachAssetID).all())
+                        if len_of_known_asset_id == 0:
+                            this_asset_cache = mixin_sqlalchemy_type.Mixin_asset_record()
+                            this_asset_cache.asset_id = this_balance.data.asset_id
+                            this_asset_cache.asset_name = this_balance.data.name
+                            this_asset_cache.asset_symbol = this_balance.data.symbol
+                            self.session.add(this_asset_cache)
+                            self.session.commit()
 
                 self.signals.result.emit(self.user_input_file)
             else:
@@ -658,13 +660,14 @@ class MainWindow(QMainWindow):
     def open_asset_transaction_history(self):
         self.asset_transaction_history_list = self.session.query(mixin_sqlalchemy_type.MySnapshot).filter_by(snap_asset_asset_id = self.asset_instance_in_item.asset_id).order_by(mixin_sqlalchemy_type.MySnapshot.id.desc()).all()
         self.widget_transaction_list_detail = self.create_transaction_history(self.asset_transaction_history_list)
-        header = self.widget_transaction_list_detail.horizontalHeader()       
-        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
-        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
-        header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
-        header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
-        header.setSectionResizeMode(4, QHeaderView.ResizeToContents)
-        header.setSectionResizeMode(5, QHeaderView.ResizeToContents)
+        if len(self.asset_transaction_history_list) > 0:
+            header = self.widget_transaction_list_detail.horizontalHeader()       
+            header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
+            header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+            header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
+            header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
+            header.setSectionResizeMode(4, QHeaderView.ResizeToContents)
+            header.setSectionResizeMode(5, QHeaderView.ResizeToContents)
 
         self.widget_transaction_list_detail.clicked.connect(self.asset_transaction_record_selected)
         self.widget_transaction_list_detail.setSelectionBehavior(QAbstractItemView.SelectRows)
@@ -686,12 +689,13 @@ class MainWindow(QMainWindow):
         this_tableModel = TransactionHistoryTableModel(None, self.all_transaction_history_list, header)
         self.account_transaction_history_widget.setModel(this_tableModel)
         self.account_transaction_history_widget.update()
-        header = self.account_transaction_history_widget.horizontalHeader()       
-        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
-        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
-        header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
-        header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
-        header.setSectionResizeMode(4, QHeaderView.ResizeToContents)
+        if len(self.all_transaction_history_list) > 0:
+            header = self.account_transaction_history_widget.horizontalHeader()       
+            header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
+            header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+            header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
+            header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
+            header.setSectionResizeMode(4, QHeaderView.ResizeToContents)
 
 
 
@@ -1672,8 +1676,8 @@ class MainWindow(QMainWindow):
 
     def received_asset_balance(self, asset):
         if asset.is_success:
-            len_of_known_asset_id = len(self.session.query(mixin_sqlalchemy_type.Mixin_asset_record).filter_by(asset_id = asset.data.asset_id).all())
-            if len_of_known_asset_id == 0:
+            asset_symbol = self.fetch_asset_symbol_from_asset_id(asset.data.asset_id)
+            if asset_symbol == None:
                 this_asset_cache = mixin_sqlalchemy_type.Mixin_asset_record()
                 this_asset_cache.asset_id = asset.data.asset_id
                 this_asset_cache.asset_name = asset.data.name
@@ -1851,13 +1855,14 @@ class MainWindow(QMainWindow):
         ocean_history_table.clicked.connect(self.ocean_list_record_selected)
         ocean_history_table.setSelectionBehavior(QAbstractItemView.SelectRows)
         header = ocean_history_table.horizontalHeader()       
-        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
-        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
-        header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
-        header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
-        header.setSectionResizeMode(4, QHeaderView.ResizeToContents)
-        header.setSectionResizeMode(5, QHeaderView.ResizeToContents)
-        header.setSectionResizeMode(6, QHeaderView.ResizeToContents)
+        if len(self.ocean_history_list) > 0:
+            header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
+            header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+            header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
+            header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
+            header.setSectionResizeMode(4, QHeaderView.ResizeToContents)
+            header.setSectionResizeMode(5, QHeaderView.ResizeToContents)
+            header.setSectionResizeMode(6, QHeaderView.ResizeToContents)
 
 
         if len(self.ocean_history_list) > 0:
