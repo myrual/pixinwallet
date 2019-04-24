@@ -1717,7 +1717,12 @@ class MainWindow(QMainWindow):
         print(oceanone_api.load_my_order(self.selected_wallet_record.userid, self.selected_wallet_record.session_id, self.oceanone_key_in_pem))
 
     def ocean_open_history(self):
-        self.ocean_history_list = self.session.query(mixin_sqlalchemy_type.Ocean_trade_record).all()
+        ocean_history_list = self.session.query(mixin_sqlalchemy_type.Ocean_trade_record).all()
+        self.ocean_history_list = []
+        for each_record_ocean in ocean_history_list:
+            print(each_record_ocean.order_id)
+            if each_record_ocean.order_id != None and each_record_ocean.order_id != "":
+                self.ocean_history_list.append(each_record_ocean)
         this_table_model = OceanHistoryTableModel(None, self.ocean_history_list, ["Pay Asset", "Pay amount", "Target asset", "Price", "Operation", "Side", "Order_id"])
         self.ocean_cancel_order_btn = QPushButton("Cancel")
         self.ocean_cancel_order_btn.pressed.connect(self.ocean_cancel_order_btn_pressed)
@@ -1759,9 +1764,13 @@ class MainWindow(QMainWindow):
             self.asset_to_cancel_ocean_order = self.non_zero_asset_list[0]
             i = 0
             for each in self.non_zero_asset_list:
-                cancel_order_pay_asset_combo.addItem(each.symbol)
+                cancel_order_pay_asset_combo.addItem(each.name + each.balance + each.symbol)
 
             ocean_history_layout.addWidget(cancel_order_pay_asset_combo)
+        else:
+            self.asset_to_cancel_ocean_order = None 
+            self.ocean_cancel_order_btn.setDisabled(True)
+
         ocean_history_layout.addWidget(self.ocean_cancel_order_pin)
 
         ocean_history_layout.addWidget(self.ocean_cancel_order_label)
