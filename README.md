@@ -5,6 +5,8 @@ The generated account keyfile is a text file with filename "xxx.pixinkey". Your 
 
 [Developer resource](https://github.com/awesome-mixin-network/mixin_network_sdk_resource) of Mixin Network.
 
+[macOS download](https://github.com/myrual/pixinwallet/releases/download/v0.0.5/pixinwallet.zip)
+
 ## Try to be "Batteries Included" 
 ### Having an instant cryptocurrency exchange
 [ExinCore](https://github.com/ExinOne/ExinCore) is a secure and instant cryptocurrency exchange build on Mixin Network. Just pay to ExinCore, Exin will send asset to your wallet in 2 seconds.
