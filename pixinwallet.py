@@ -1340,8 +1340,6 @@ class MainWindow(QMainWindow):
         self.selected_asset_manageasset.setDisabled(False)
         self.selected_asset_show_history.setDisabled(False)
         self.selected_asset_show_history.setText("Open history of " + self.asset_instance_in_item.name)
-        self.show_deposit_address_btn.setDisabled(False)
-        self.show_deposit_address_btn.setText("Show deposit address of " + self.asset_instance_in_item.name)
         self.asset_detail_in_balance_page.setModel(AssetDetail_TableModel(None, self.asset_instance_in_item, self.account_balance))
         self.asset_detail_in_balance_page.update()
         header = self.asset_detail_in_balance_page.verticalHeader()       
@@ -2112,7 +2110,6 @@ class MainWindow(QMainWindow):
             congratulations_msg.exec_()
 
     def create_balance_widget(self):
-        Balance_detail_layout = QHBoxLayout()
         self.selected_asset_send = QPushButton("Send")
         self.selected_asset_send.setDisabled(True)
         self.selected_asset_send.pressed.connect(self.send_asset_to_address)
@@ -2122,34 +2119,35 @@ class MainWindow(QMainWindow):
         self.selected_asset_show_history = QPushButton("History")
         self.selected_asset_show_history.pressed.connect(self.open_asset_transaction_history)
         self.selected_asset_show_history.setDisabled(True)
-        self.show_deposit_address_btn = QPushButton("Show deposit address")
-        self.show_deposit_address_btn.pressed.connect(self.pop_deposit_addess_of_asset)
-        self.show_deposit_address_btn.setDisabled(True)
 
-        Balance_detail_layout.addWidget(self.selected_asset_send)
-        Balance_detail_layout.addWidget(self.show_deposit_address_btn)
-        Balance_detail_layout.addWidget(self.selected_asset_manageasset)
-        Balance_detail_layout.addWidget(self.selected_asset_show_history)
+
+        asset_operation_layout = QVBoxLayout()
+        asset_operation_layout.addWidget(self.selected_asset_send)
+        asset_operation_layout.addWidget(self.selected_asset_manageasset)
+        asset_operation_layout.addWidget(self.selected_asset_show_history)
 
         self.balance_list_tableview = QTableView()
         self.balance_list_tableview.clicked.connect(self.balance_list_record_selected)
 
-        widget_balance_detail = QWidget()
-        widget_balance_detail.setLayout(Balance_detail_layout)
+        asset_operation_widget = QWidget()
+        asset_operation_widget.setLayout(asset_operation_layout)
+
         self.asset_detail_in_balance_page = QTableView()
+
+        asset_detail_operation_layout = QVBoxLayout()
+        asset_detail_operation_layout.addWidget(self.asset_detail_in_balance_page)
+        asset_detail_operation_layout.addWidget(asset_operation_widget)
+        balance_detail_operation_widget = QWidget()
+        balance_detail_operation_widget.setLayout(asset_detail_operation_layout)
+
 
         balance_and_detail_layout = QHBoxLayout()
         balance_and_detail_layout.addWidget(self.balance_list_tableview)
-        balance_and_detail_layout.addWidget(self.asset_detail_in_balance_page)
+        balance_and_detail_layout.addWidget(balance_detail_operation_widget)
         widget_balance = QWidget()
         widget_balance.setLayout(balance_and_detail_layout)
 
-        balance_detail_operation_layout = QVBoxLayout()
-        balance_detail_operation_layout.addWidget(widget_balance)
-        balance_detail_operation_layout.addWidget(widget_balance_detail)
-        balance_detail_operation_widget = QWidget()
-        balance_detail_operation_widget.setLayout(balance_detail_operation_layout)
-        return balance_detail_operation_widget
+        return widget_balance
 
 
     def tab_is_selected(self, index):
