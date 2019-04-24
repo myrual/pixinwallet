@@ -657,6 +657,17 @@ class MainWindow(QMainWindow):
         this_tableModel = TransactionHistoryTableModel(None, self.all_transaction_history_list, header)
         self.account_transaction_history_widget.setModel(this_tableModel)
         self.account_transaction_history_widget.update()
+        header = self.account_transaction_history_widget.horizontalHeader()       
+        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(4, QHeaderView.ResizeToContents)
+
+
+
+
+
 
     def open_transaction_history(self):
         self.all_transaction_history_list = self.session.query(mixin_sqlalchemy_type.MySnapshot).order_by(mixin_sqlalchemy_type.MySnapshot.id.desc()).all()
@@ -1114,6 +1125,15 @@ class MainWindow(QMainWindow):
         print(self.the_last_snapshots_time)
         self.transaction_statusBar.showMessage(wallet_api.snapshot_time_difference_now(searched_snapshots_result.data[-1]))
         for eachsnapshots in searched_snapshots_result.data:
+            asset_symbol = self.fetch_asset_symbol_from_asset_id(eachsnapshots.asset.asset_id)
+            if asset_symbol == None:
+                this_asset_cache              = mixin_sqlalchemy_type.Mixin_asset_record()
+                this_asset_cache.asset_id     = eachsnapshots.asset.asset_id
+                this_asset_cache.asset_name   = eachsnapshots.asset.name
+                this_asset_cache.asset_symbol = eachsnapshots.asset.symbol
+                self.session.add(this_asset_cache)
+                self.session.commit()
+
             if (eachsnapshots.is_my_snap()):
                 found_snapshot_quantity = len(self.session.query(mixin_sqlalchemy_type.MySnapshot).filter_by(snap_snapshot_id = eachsnapshots.snapshot_id).all())
                 if(found_snapshot_quantity == 0):
@@ -1591,10 +1611,20 @@ class MainWindow(QMainWindow):
         #ocean_worker.signals.finished.connect(self.thread_complete)
         self.threadPool.start(ocean_worker)
 
+    def update_ocean_pay_amount_placeholder_by_balance(self, asset_id):
+        asset_balance_string = "%s amount"%self.ocean_base_asset_selection_asset[0]
+        if hasattr(self, "account_balance"):
+            for eachAsset in self.account_balance:
+                if eachAsset.asset_id == asset_id:
+                    asset_balance_string = "%s amount, %s in your wallet"%(eachAsset.symbol, eachAsset.balance)
+                    break
+        return asset_balance_string
+
     def ocean_base_asset_change(self, indexActived):
         self.ocean_base_asset_selection_asset = self.ocean_id_name[indexActived]
         self.price_unit.setText(self.ocean_base_asset_selection_asset[0] + " per " + self.ocean_target_id_name[indexActived].asset_symbol)
-        self.ocean_target_asset_amount_input.setPlaceholderText("%s amount"%self.ocean_base_asset_selection_asset[0])
+        asset_balance_string = self.update_ocean_pay_amount_placeholder_by_balance(self.ocean_base_asset_selection_asset[1])
+        self.ocean_target_asset_amount_input.setPlaceholderText(asset_balance_string)
         self.ocean_target_asset_price_input.setPlaceholderText("Mininum price " + self.ocean_base_asset_selection_asset[2])
 
 
@@ -1606,7 +1636,8 @@ class MainWindow(QMainWindow):
         self.price_unit.setText(self.ocean_base_asset_selection_asset[0] + " per " + self.ocean_target_asset_selection_asset.asset_symbol)
         self.ocean_buy_btn.setText("Buy "+ self.ocean_target_asset_selection_asset.asset_symbol)
         self.ocean_sell_btn.setText("Sell "+ self.ocean_target_asset_selection_asset.asset_symbol)
-        self.ocean_target_asset_sell_amount_input.setPlaceholderText("%s amount"%self.ocean_target_asset_selection_asset.asset_symbol)
+        asset_balance_string = self.update_ocean_pay_amount_placeholder_by_balance(self.ocean_target_asset_selection_asset.asset_id)
+        self.ocean_target_asset_sell_amount_input.setPlaceholderText(asset_balance_string)
         self.fetchOceanPrice()
 
     def received_asset_balance(self, asset):
@@ -1969,8 +2000,12 @@ class MainWindow(QMainWindow):
         amount_sell_layout = QHBoxLayout()
         amount_sell_layout.addWidget(self.ocean_target_asset_sell_amount_input)
 
-        self.ocean_target_asset_amount_input.setPlaceholderText("%s amount"%self.ocean_id_name[0][0])
-        self.ocean_target_asset_sell_amount_input.setPlaceholderText("%s amount"%self.ocean_target_id_name[0].asset_symbol)
+        asset_balance_string = self.update_ocean_pay_amount_placeholder_by_balance(self.ocean_base_asset_selection_asset[1])
+        self.ocean_target_asset_amount_input.setPlaceholderText(asset_balance_string)
+
+        asset_balance_string = self.update_ocean_pay_amount_placeholder_by_balance(self.ocean_target_id_name[0].asset_id)
+
+        self.ocean_target_asset_sell_amount_input.setPlaceholderText(asset_balance_string)
 
         amount_widget = QWidget()
         amount_widget.setLayout(amount_layout)
