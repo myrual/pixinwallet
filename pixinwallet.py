@@ -270,6 +270,66 @@ def foundMainChainName(chain_id, balance_result_list):
         if asset_is_main_chain_token(eachAssetPublicChain) and eachAssetPublicChain.chain_id == chain_id:
             return eachAssetPublicChain.name
     return False
+class AssetDetail_TableModel(QAbstractTableModel):
+    """
+    keep the method names
+    they are an integral part of the model
+    """
+    def __init__(self, parent, eachAsset, balance_result_list,  *args):
+        QAbstractTableModel.__init__(self, parent, *args)
+        finalData = []
+        thisRecord = []
+        chain_name = foundMainChainName(eachAsset.chain_id, balance_result_list)
+        if chain_name != False:
+            thisRecord.append(chain_name)
+            if asset_is_main_chain_token(eachAsset):
+                thisRecord.append("")
+            elif eachAsset.chain_id == mixin_asset_id_collection.ETH_ASSET_ID:
+                thisRecord.append("ERC20 contract : " + eachAsset.asset_key)
+            elif eachAsset.chain_id == mixin_asset_id_collection.EOS_ASSET_ID:
+                thisRecord.append("EOS contract : " + eachAsset.asset_key)
+            else:
+                thisRecord.append("")
+        else:
+            thisRecord.append("")
+            thisRecord.append("")
+        if eachAsset.chain_id in mixin_asset_id_collection.Block_interval:
+            pending_seconds = mixin_asset_id_collection.Block_interval[eachAsset.chain_id] * eachAsset.confirmations
+            if pending_seconds < 60:
+                thisRecord.append(str(pending_seconds) + " seconds")
+            else:
+                pending_minutes = pending_seconds/60
+                thisRecord.append(str(int(pending_minutes)) + " minutes")
+        else:
+            thisRecord.append("NA")
+        finalData.append(thisRecord)
+
+        self.mylist = finalData
+        self.header = ["Main chain", "Contract address", "Pending duration before deposit is confirmed"]
+
+    def rowCount(self, parent):
+        return len(self.mylist)
+
+    def columnCount(self, parent):
+        if len(self.mylist) > 0:
+            return len(self.mylist[0])
+        return 0
+        
+    def data(self, index, role):
+        if not index.isValid():
+            return None
+        value = self.mylist[index.row()][index.column()]
+        if role == Qt.EditRole:
+            return value
+        elif role == Qt.DisplayRole:
+            return value
+
+    def headerData(self, col, orientation, role):
+        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+            return self.header[col]
+        return None
+
+
 class Balance_TableModel(QAbstractTableModel):
     """
     keep the method names
@@ -285,30 +345,7 @@ class Balance_TableModel(QAbstractTableModel):
             this_asset_value_in_usd_in_float =  float(eachAsset.balance) * float(eachAsset.price_usd)
             usd_value_with_twodigi_after_dot = int(100 * this_asset_value_in_usd_in_float)/100
             thisRecord.append(str(usd_value_with_twodigi_after_dot) + " usd")
-            chain_name = foundMainChainName(eachAsset.chain_id, balance_result_list)
-            if chain_name != False:
-                thisRecord.append(chain_name)
-                if asset_is_main_chain_token(eachAsset):
-                    thisRecord.append("")
-                elif eachAsset.chain_id == mixin_asset_id_collection.ETH_ASSET_ID:
-                    thisRecord.append("ERC20 contract : " + eachAsset.asset_key)
-                elif eachAsset.chain_id == mixin_asset_id_collection.EOS_ASSET_ID:
-                    thisRecord.append("EOS contract : " + eachAsset.asset_key)
-                else:
-                    thisRecord.append("")
-
-            else:
-                thisRecord.append("")
-                thisRecord.append("")
-            if eachAsset.chain_id in mixin_asset_id_collection.Block_interval:
-                pending_seconds = mixin_asset_id_collection.Block_interval[eachAsset.chain_id] * eachAsset.confirmations
-                if pending_seconds < 60:
-                    thisRecord.append(str(pending_seconds) + " seconds")
-                else:
-                    pending_minutes = pending_seconds/60
-                    thisRecord.append(str(int(pending_minutes)) + " minutes")
-            else:
-                thisRecord.append("NA")
+            thisRecord.append(eachAsset.price_usd)
             finalData.append(thisRecord)
 
         self.mylist = finalData
@@ -1169,7 +1206,7 @@ class MainWindow(QMainWindow):
                     asset_balance_result = self.selected_wallet_record.get_singleasset_balance(default_id)
                     if asset_balance_result.is_success:
                         final_balance_result.append(asset_balance_result.data)
-            this_balance_model = Balance_TableModel(self, final_balance_result, ["Asset name", "Amount", "Market value", "Main chain", "Contract address", "Pending duration before deposit is confirmed"])
+            this_balance_model = Balance_TableModel(self, final_balance_result, ["Asset name", "Amount", "Market value", "Price"])
             self.balance_list_tableview.setModel(this_balance_model)
             self.balance_list_tableview.update()
             if hasattr(self, "balance_selected_row"):
@@ -1308,6 +1345,13 @@ class MainWindow(QMainWindow):
         self.selected_asset_show_history.setText("Open history of " + self.asset_instance_in_item.name)
         self.show_deposit_address_btn.setDisabled(False)
         self.show_deposit_address_btn.setText("Show deposit address of " + self.asset_instance_in_item.name)
+        self.asset_detail_in_balance_page.setModel(AssetDetail_TableModel(None, self.asset_instance_in_item, self.account_balance))
+        self.asset_detail_in_balance_page.update()
+        header = self.asset_detail_in_balance_page.horizontalHeader()       
+        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
+
 
     def update_asset_address_detail(self, this_withdraw_address, label_widget):
         stringForAddress = ""
@@ -2069,8 +2113,7 @@ class MainWindow(QMainWindow):
             congratulations_msg.exec_()
 
     def create_balance_widget(self):
-        self.balance_and_detail_layout = QVBoxLayout()
-        self.Balance_detail_layout = QHBoxLayout()
+        Balance_detail_layout = QHBoxLayout()
         self.selected_asset_send = QPushButton("Send")
         self.selected_asset_send.setDisabled(True)
         self.selected_asset_send.pressed.connect(self.send_asset_to_address)
@@ -2084,22 +2127,30 @@ class MainWindow(QMainWindow):
         self.show_deposit_address_btn.pressed.connect(self.pop_deposit_addess_of_asset)
         self.show_deposit_address_btn.setDisabled(True)
 
-        self.Balance_detail_layout.addWidget(self.selected_asset_send)
-        self.Balance_detail_layout.addWidget(self.show_deposit_address_btn)
-        self.Balance_detail_layout.addWidget(self.selected_asset_manageasset)
-        self.Balance_detail_layout.addWidget(self.selected_asset_show_history)
+        Balance_detail_layout.addWidget(self.selected_asset_send)
+        Balance_detail_layout.addWidget(self.show_deposit_address_btn)
+        Balance_detail_layout.addWidget(self.selected_asset_manageasset)
+        Balance_detail_layout.addWidget(self.selected_asset_show_history)
 
         self.balance_list_tableview = QTableView()
         self.balance_list_tableview.clicked.connect(self.balance_list_record_selected)
 
-        self.widget_balance_detail = QWidget()
-        self.widget_balance_detail.setLayout(self.Balance_detail_layout)
-        self.widget_balance_detail.show()
-        self.balance_and_detail_layout.addWidget(self.balance_list_tableview)
-        self.balance_and_detail_layout.addWidget(self.widget_balance_detail)
+        widget_balance_detail = QWidget()
+        widget_balance_detail.setLayout(Balance_detail_layout)
+        self.asset_detail_in_balance_page = QTableView()
+
+        balance_and_detail_layout = QHBoxLayout()
+        balance_and_detail_layout.addWidget(self.balance_list_tableview)
+        balance_and_detail_layout.addWidget(self.asset_detail_in_balance_page)
         widget_balance = QWidget()
-        widget_balance.setLayout(self.balance_and_detail_layout)
-        return widget_balance
+        widget_balance.setLayout(balance_and_detail_layout)
+
+        balance_detail_operation_layout = QVBoxLayout()
+        balance_detail_operation_layout.addWidget(widget_balance)
+        balance_detail_operation_layout.addWidget(widget_balance_detail)
+        balance_detail_operation_widget = QWidget()
+        balance_detail_operation_widget.setLayout(balance_detail_operation_layout)
+        return balance_detail_operation_widget
 
 
     def tab_is_selected(self, index):
