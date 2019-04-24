@@ -8,16 +8,15 @@ The generated account keyfile is a text file with filename "xxx.pixinkey". Your 
 [macOS application download](https://github.com/myrual/pixinwallet/releases/download/v0.0.5/pixinwallet.zip)
 
 ## Try to be "Batteries Included" 
-### Having an instant cryptocurrency exchange
+### Include an instant cryptocurrency exchange
 [ExinCore](https://github.com/ExinOne/ExinCore) is a secure and instant cryptocurrency exchange build on Mixin Network. Just pay to ExinCore, Exin will send asset to your wallet in 2 seconds.
-### Having a decentralized exchange
+### Include an open and transparent exchange
 [OceanOne](http://github.com/mixinnetwork/oceanone) is a decentralized exchange build on Mixin Network. Pay to OceanOne to sell your asset, OceanOne will send asset to your wallet after matched your order.
 
 OceanOne is great because: 
-1. List any asset supported by Mixin Network. 13 blockchain asset, Any ERC20, EOS token, TRC10 token. 
-2. Asset are sent to your wallet in 1 second. 
-3. NO register process. NO KYC.
-4. Open Source
+1. No sign up required.
+2. No deposit required. Asset is sent to your wallet in less than 5 seconds if your order is matched. 
+3. No listing process. You can list any asset supported by Mixin Network. 13 blockchain asset and any ERC20, EOS token, TRC10 token. 
 
 ## Clone repo to computer
 ```bash
