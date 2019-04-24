@@ -277,19 +277,14 @@ class AssetDetail_TableModel(QAbstractTableModel):
     """
     def __init__(self, parent, eachAsset, balance_result_list,  *args):
         QAbstractTableModel.__init__(self, parent, *args)
-        finalData = []
         thisRecord = []
         chain_name = foundMainChainName(eachAsset.chain_id, balance_result_list)
         if chain_name != False:
             thisRecord.append(chain_name)
             if asset_is_main_chain_token(eachAsset):
-                thisRecord.append("")
-            elif eachAsset.chain_id == mixin_asset_id_collection.ETH_ASSET_ID:
-                thisRecord.append("ERC20 contract : " + eachAsset.asset_key)
-            elif eachAsset.chain_id == mixin_asset_id_collection.EOS_ASSET_ID:
-                thisRecord.append("EOS contract : " + eachAsset.asset_key)
+                thisRecord.append("Main chain token")
             else:
-                thisRecord.append("")
+                thisRecord.append(chain_name + " contract : " + eachAsset.asset_key)
         else:
             thisRecord.append("")
             thisRecord.append("")
@@ -302,30 +297,32 @@ class AssetDetail_TableModel(QAbstractTableModel):
                 thisRecord.append(str(int(pending_minutes)) + " minutes")
         else:
             thisRecord.append("NA")
-        finalData.append(thisRecord)
 
-        self.mylist = finalData
-        self.header = ["Main chain", "Contract address", "Pending duration before deposit is confirmed"]
-
+        if eachAsset.chain_id == mixin_asset_id_collection.EOS_ASSET_ID:
+            thisRecord.append(eachAsset.account_name)
+            thisRecord.append(eachAsset.account_tag)
+            self.mylist = thisRecord
+            self.header = ["Main chain", "Token type", "Deposit confirmation duration", "Deposit account name", "Deposit payment memo:(MUST ENTER WHEN YOU DEPOSIT)"]
+        else:
+            thisRecord.append(eachAsset.public_key)
+            self.mylist = thisRecord
+            self.header = ["Main chain", "Token type", "Deposit confirmation duration", "Deposit address"]
     def rowCount(self, parent):
         return len(self.mylist)
-
     def columnCount(self, parent):
-        if len(self.mylist) > 0:
-            return len(self.mylist[0])
-        return 0
-        
+        return 1       
     def data(self, index, role):
         if not index.isValid():
             return None
-        value = self.mylist[index.row()][index.column()]
+
+        value = self.mylist[index.row()]
         if role == Qt.EditRole:
             return value
         elif role == Qt.DisplayRole:
             return value
 
     def headerData(self, col, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+        if orientation == Qt.Vertical and role == Qt.DisplayRole:
             return self.header[col]
         return None
 
@@ -1347,10 +1344,12 @@ class MainWindow(QMainWindow):
         self.show_deposit_address_btn.setText("Show deposit address of " + self.asset_instance_in_item.name)
         self.asset_detail_in_balance_page.setModel(AssetDetail_TableModel(None, self.asset_instance_in_item, self.account_balance))
         self.asset_detail_in_balance_page.update()
-        header = self.asset_detail_in_balance_page.horizontalHeader()       
+        header = self.asset_detail_in_balance_page.verticalHeader()       
         header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
         header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
         header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
+        header = self.asset_detail_in_balance_page.horizontalHeader()       
+        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
 
 
     def update_asset_address_detail(self, this_withdraw_address, label_widget):
