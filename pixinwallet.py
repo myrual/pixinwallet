@@ -302,7 +302,7 @@ class AssetDetail_TableModel(QAbstractTableModel):
             thisRecord.append(eachAsset.account_name)
             thisRecord.append(eachAsset.account_tag)
             self.mylist = thisRecord
-            self.header = ["Main chain", "Token type", "Deposit confirmation duration", "Deposit account name", "Deposit payment memo:(MUST ENTER WHEN YOU DEPOSIT)"]
+            self.header = ["Main chain", "Token type", "Deposit confirmation duration", "Deposit account name", "Deposit payment memo:"]
         else:
             thisRecord.append(eachAsset.public_key)
             self.mylist = thisRecord
@@ -1338,7 +1338,7 @@ class MainWindow(QMainWindow):
                 direction = "from "
             else:
                 direction = "to "
-            self.transaction_explain_label.setText("%s %s\n%s"%(direction, result.get("opponent_name"), result.get("memo")))
+            self.transaction_explain_label.setText("%s"%(result))
         else:
             self.transaction_explain_label.setText("")
 
@@ -2244,6 +2244,12 @@ class MainWindow(QMainWindow):
             transaction_layout.addWidget(self.transaction_statusBar)
             transaction_widget = QWidget()
             transaction_widget.setLayout(transaction_layout)
+            self.transaction_record_explain_table = QTableView()
+            transaction_history_detail_layout = QHBoxLayout()
+            transaction_history_detail_layout.addWidget(transaction_widget)
+            transaction_history_detail_layout.addWidget(self.transaction_record_explain_table)
+            transaction_history_detail_widget = QWidget()
+            transaction_history_detail_widget.setLayout(transaction_history_detail_layout)
 
             self.exin_title_trade_list_detail = self.create_exin_exchange_widget()
             self.oceanone_title_trade_list_detail = self.create_ocean_exchange_widget()
@@ -2252,7 +2258,7 @@ class MainWindow(QMainWindow):
             self.account_tab_widget.addTab(self.widget_balance_widget, "Balance")
             self.account_tab_widget.addTab(self.exin_title_trade_list_detail, "Instant Exin Exchange")
             self.account_tab_widget.addTab(self.oceanone_title_trade_list_detail, "OceanOne exchange")
-            self.account_tab_widget.addTab(transaction_widget, "Transactions")
+            self.account_tab_widget.addTab(transaction_history_detail_widget, "Transactions")
             self.account_tab_widget.show()
             self.account_tab_widget.currentChanged.connect(self.tab_is_selected)
 

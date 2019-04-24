@@ -79,10 +79,10 @@ def memo_is_pay_from_exin(input_snapshot):
 def exincore_can_explain_snapshot(input_snapshot):
     result = memo_is_pay_from_exin(input_snapshot)
     if result != False:
-        return {"opponent_name":"EXIN CORE Exchange", "memo":str(memo_is_pay_from_exin(input_snapshot))}
+        return result
     result = memo_is_pay_to_exin(input_snapshot)
     if result != False:
-        return {"opponent_name":"EXIN CORE Exchange", "memo":str(memo_is_pay_to_exin(input_snapshot))}
+        return result 
     return False
 
 EXIN_EXEC_TYPE_REQUEST = 0
@@ -104,8 +104,14 @@ class Exin_execute_request(Exin_execute):
         self.pay_asset      = input_snapshot.asset
         self.order          = input_snapshot.trace_id
         super().__init__(EXIN_EXEC_TYPE_REQUEST)
-    def __str__(self):
+    def explain(self):
         headString = "order: %s, pay %s %s to exin to buy %s "%(self.order, self.pay_amount, self.pay_asset.symbol, self.request_asset)
+        header = ["order", "action", "pay amount", "pay asset", "required asset id"]
+        data   = [self.order, self.pay_amount, self.pay_asset.symbol, self.request_asset]
+        return (header, data)
+
+    def __str__(self):
+        headString = "order to ExinCore : %s, pay %s %s to exin to buy %s "%(self.order, self.pay_amount, self.pay_asset.symbol, self.request_asset)
         return headString
 
 class Exin_execute_result(Exin_execute):
@@ -117,8 +123,78 @@ class Exin_execute_result(Exin_execute):
         self.type           = exin_order["T"]
         self.order          = exin_order["O"]
         super().__init__(EXIN_EXEC_TYPE_RESULT)
+    def explain(self):
+        header = []
+        data   = []
+        if(self.order_result == 1000):
+            header.append("exin result")
+            data.append("Success")
+            header.append("price")
+            data.append(self.price)
+
+            header.append("fee")
+            data.append(self.fee)
+
+
+        if(self.order_result == 1001):
+            header.append("exin result")
+            data.append("failed")
+            header.append("reason")
+            data.append("order not found or invalid")
+        if(self.order_result == 1002):
+            header.append("exin result")
+            data.append("failed")
+            header.append("reason")
+            data.append("The request data is invalid")
+
+        if(self.order_result == 1003):
+            header.append("exin result")
+            data.append("failed")
+            header.append("reason")
+            data.append("The market not supported")
+
+        if(self.order_result == 1004):
+            header.append("exin result")
+            data.append("failed")
+            header.append("reason")
+            data.append("Failed exchange")
+        if(self.order_result == 1005):
+            header.append("exin result")
+            data.append("Partial exchange")
+
+        if(self.order_result == 1006):
+            header.append("exin result")
+            data.append("failed")
+            header.append("reason")
+            data.append("Insufficient pool")
+
+        if(self.order_result == 1007):
+            header.append("exin result")
+            data.append("failed")
+            header.append("reason")
+            data.append("Below the minimum exchange amount")
+
+        if(self.order_result == 1008):
+            header.append("exin result")
+            data.append("failed")
+            header.append("reason")
+            data.append("Exceeding the maximum exchange amount")
+
+        if (self.type == "F"):
+            header.append("exin result")
+            data.append("Refund")
+            header.append("reason")
+            data.append("memo is not correct")
+
+        if (self.type == "E"):
+            header.append("exin result")
+            data.append("failed")
+            header.append("reason")
+            data.append("failed to execute your order")
+        return (header, data)
+
     def __str__(self):
-        headString = ""
+        headString = "With ExinCore "
         if(self.order_result == 1000):
             headString = headString + "Successful exchanged"
             headString = headString + " at price:" +  self.price

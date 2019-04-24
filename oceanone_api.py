@@ -17,11 +17,109 @@ def memo_is_pay_from_oceanone(input_snapshot):
         return False
     try:
         exin_order = umsgpack.unpackb(base64.b64decode(memo_at_snap), allow_invalid_utf8=True)
-        return str(exin_order)
+        if type(exin_order) == type({}) and "S"in exin_order:
+            result = Ocean_response(input_snapshot, exin_order)
+            return result
+
+        return False
     except umsgpack.InsufficientDataException:
         return False
     except binascii.Error:
         return False
+
+class Ocean_execute_request_register_pubkey():
+    def __init__(self, input_snapshot, msgpack_value):
+        self.pay_amount      = abs(float(input_snapshot.amount))
+        self.pay_asset       = input_snapshot.asset
+        self.pubkey = msgpack_value.get("U")
+
+    def explain(self):
+        header = ["registger pubkey", "pay amount", "pay asset"]
+        data   = [self.pubkey, self.pay_amount, self.pay_asset.symbol]
+        return (header, data)
+
+    def __str__(self):
+        headString = "register pubkey %s"%(self.pubkey)
+        return headString
+
+
+class Ocean_execute_request_cancel():
+    def __init__(self, input_snapshot, msgpack_value):
+        self.pay_amount      = abs(float(input_snapshot.amount))
+        self.pay_asset       = input_snapshot.asset
+        asset_uuid_raw       = msgpack_value.get("O")
+        self.to_cancel_order = str(uuid.UUID(bytes = asset_uuid_raw))
+
+
+    def explain(self):
+        header = ["Ocean order to be cancelled"]
+        data   = [self.to_cancel_order]
+        return (header, data)
+
+    def __str__(self):
+        headString = "cancel order %s "%(self.to_cancel_order)
+        return headString
+
+
+class Ocean_execute_request_market():
+    def __init__(self, input_snapshot, msgpack_value):
+        self.pay_amount     = abs(float(input_snapshot.amount))
+
+        asset_uuid_raw      = msgpack_value.get("A")
+        self.request_asset  = str(uuid.UUID(bytes = asset_uuid_raw))
+        self.pay_asset      = input_snapshot.asset
+        self.order          = input_snapshot.trace_id
+        self.side_type      = msgpack_value.get("S")
+    def explain(self):
+        header = ["market price order", "pay amount", "pay asset", "to exchange asset id"]
+        data   = [self.order, self.pay_amount, self.pay_asset.symbol, self.request_asset]
+        return (header, data)
+
+    def __str__(self):
+        headString = "Market price order to OceanOne: %s, pay %s %s to ocean to exchange %s at price %"%(self.order, self.pay_amount, self.pay_asset.symbol, self.request_asset, self.price)
+        return headString
+
+
+class Ocean_response():
+    def __init__(self, input_snapshot, msgpack_value):
+        self.pay_amount     = abs(float(input_snapshot.amount))
+        asset_uuid_raw      = msgpack_value.get("A")
+        self.asset_id       = asset_uuid_raw
+        bid_uuid_raw        = msgpack_value.get("B")
+        self.bid_id         = bid_uuid_raw
+        order_uuid_raw      = msgpack_value.get("O")
+        self.order_id       = order_uuid_raw
+        self.status         = msgpack_value.get("S")
+        self.pay_asset      = input_snapshot.asset
+    def explain(self):
+        header = ["Asset", "Bid", "Order", "Status"]
+        data   = [self.pay_asset.symbol, self.bid_id, self.order_id, self.status]
+        return (header, data)
+
+    def __str__(self):
+        headString = "Ocean response asset %s, bid %s order %s status %s"%(self.pay_asset.symbol, self.bid_id, self.order_id, self.status)
+        return headString
+
+
+class Ocean_execute_request_limited():
+    def __init__(self, input_snapshot, msgpack_value):
+        self.pay_amount     = abs(float(input_snapshot.amount))
+
+        asset_uuid_raw      = msgpack_value.get("A")
+        self.request_asset  = str(uuid.UUID(bytes = asset_uuid_raw))
+        self.pay_asset      = input_snapshot.asset
+        self.order          = input_snapshot.trace_id
+        self.side_type      = msgpack_value.get("S")
+        self.price          = msgpack_value.get("P")
+    def explain(self):
+        header = ["order", "pay amount", "pay asset", "to exchange asset id", "price"]
+        data   = [self.order, self.pay_amount, self.pay_asset.symbol, self.request_asset, self.price]
+        return (header, data)
+
+    def __str__(self):
+        headString = "Limit price to OceanOne: %s, pay %s %s to ocean to exchange %s at price %s"%(self.order, self.pay_amount, self.pay_asset.symbol, self.request_asset, self.price)
+        return headString
+
 
 def memo_is_pay_to_ocean(input_snapshot):
     memo_at_snap = input_snapshot.memo
@@ -29,35 +127,36 @@ def memo_is_pay_to_ocean(input_snapshot):
         return False
     try:
         exin_order = umsgpack.unpackb(base64.b64decode(memo_at_snap), allow_invalid_utf8=True)
-
         if type(exin_order) == type({}) and "A"in exin_order:
-            result = "exchange %s at price %s "%(str(uuid.UUID(bytes = exin_order.get("A"))), exin_order.get("P"))
+            if "P" in exin_order:
+                result = Ocean_execute_request_limited(input_snapshot, exin_order)
+            else:
+                result = Ocean_execute_request_market(input_snapshot, exin_order)
             return result
         elif type(exin_order) == type({}) and (not "A"in exin_order)and ("O"in exin_order):
-            result = "cancel order %s"%(str(uuid.UUID(bytes = exin_order.get("O"))))
+            result = Ocean_execute_request_cancel(input_snapshot, exin_order)
             return result
         elif type(exin_order) == type({}) and (not "A"in exin_order)and ("U"in exin_order):
-            result = "register public key %s"%(str(exin_order.get("O")))
+            result = Ocean_execute_request_register_pubkey(input_snapshot, exin_order)
             return result
         else:
-            return "Failed to explain"
-
+            return False
     except umsgpack.InsufficientDataException:
-        return input_snapshot.memo
+        return False
     except binascii.Error:
-        return input_snapshot.memo
+        return False
     except ValueError:
-        return exin_order
+        return False
 
 
 def oceanone_can_explain_snapshot(input_snapshot):
 
     result = memo_is_pay_from_oceanone(input_snapshot)
     if result != False:
-        return {"opponent_name":"OceanOne Exchange", "memo":str(memo_is_pay_from_oceanone(input_snapshot))}
+        return result
     result = memo_is_pay_to_ocean(input_snapshot)
     if result != False:
-        return {"opponent_name":"OceanOne Exchange", "memo":str(memo_is_pay_to_ocean(input_snapshot))}
+        return result
     return False
 
 
