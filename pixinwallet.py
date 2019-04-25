@@ -1643,13 +1643,22 @@ class MainWindow(QMainWindow):
             self.threadPool.start(update_asset_name_worker)
 
         else:
-            current_selection = self.quote_target_asset_selection.currentIndex()
             ocean_target_asset_selection_asset = self.get_ocean_target_asset_selection_asset()
             if ocean_target_asset_selection_asset != None:
                 ocean_worker = Ocean_Thread(self.ocean_base_asset_selection_asset[1], ocean_target_asset_selection_asset.asset_id)
                 ocean_worker.signals.result.connect(self.received_ocean_result)
                 #ocean_worker.signals.finished.connect(self.thread_complete)
                 self.threadPool.start(ocean_worker)
+
+    def reload_ocean_target_selection_asset(self):
+        self.quote_target_asset_selection.clear()
+        known_asset_list = self.known_assets()
+        i = 0
+        self.ocean_target_id_name = []
+        for each in known_asset_list:
+            self.quote_target_asset_selection.insertItem(i, each.asset_symbol + " asset", each.asset_id)
+            self.ocean_target_id_name.append(each)
+            i += 1
 
     def get_ocean_target_asset_selection_asset(self):
         current_selection = self.quote_target_asset_selection.currentIndex()
@@ -1994,14 +2003,7 @@ class MainWindow(QMainWindow):
         self.ocean_base_asset_selection_asset= self.ocean_id_name[0]
 
         self.quote_target_asset_selection = QComboBox()
-        known_asset_list = self.known_assets()
-        i = 0
-        self.ocean_target_id_name = []
-        for each in known_asset_list:
-            self.quote_target_asset_selection.insertItem(i, each.asset_symbol + " asset", each.asset_id)
-            self.ocean_target_id_name.append(each)
-            i += 1
-
+        self.reload_ocean_target_selection_asset()
         self.quote_target_asset_selection.currentIndexChanged.connect(self.ocean_target_asset_change)
         self.ocean_target_asset_id_input = QLineEdit()
         self.ocean_target_asset_id_input.setPlaceholderText("Asset id")
