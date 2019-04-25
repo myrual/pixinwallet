@@ -5,7 +5,7 @@ The generated account keyfile is a text file with filename "xxx.pixinkey". Your 
 
 [Developer resource](https://github.com/awesome-mixin-network/mixin_network_sdk_resource) of Mixin Network.
 
-[macOS application download](https://github.com/myrual/pixinwallet/releases/download/v0.0.5/pixinwallet.zip)
+[macOS application download](https://github.com/myrual/pixinwallet/releases/download/v0.0.6/pixinwallet_macOS.zip)
 
 ## Try to be "Batteries Included" 
 ### Include an instant cryptocurrency exchange
