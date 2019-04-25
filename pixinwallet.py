@@ -242,15 +242,7 @@ class CreateAccount_Thread(QRunnable):
                     this_balance = new_wallet.get_singleasset_balance(eachAssetID)
                     if(this_balance.is_success):
                         self.signals.progress.emit("Generated deposit address for " + this_balance.data.name)
-                        len_of_known_asset_id = len(self.session.query(mixin_sqlalchemy_type.Mixin_asset_record).filter_by(asset_id = eachAssetID).all())
-                        if len_of_known_asset_id == 0:
-                            this_asset_cache = mixin_sqlalchemy_type.Mixin_asset_record()
-                            this_asset_cache.asset_id = this_balance.data.asset_id
-                            this_asset_cache.asset_name = this_balance.data.name
-                            this_asset_cache.asset_symbol = this_balance.data.symbol
-                            self.session.add(this_asset_cache)
-                            self.session.commit()
-
+                        self.add_asset_into_localdb_if_never_see(this_balance.data)
                 self.signals.result.emit(self.user_input_file)
             else:
                 self.signals.progress.emit("Failed to create wallet")
@@ -1154,20 +1146,23 @@ class MainWindow(QMainWindow):
             self.withdraw_addresses_list_widget.update()
         return
 
+    def add_asset_into_localdb_if_never_see(self, asset_data):
+        asset_symbol = self.fetch_asset_symbol_from_asset_id(asset_data.asset_id)
+        if asset_symbol == None:
+            this_asset_cache                    = mixin_sqlalchemy_type.Mixin_asset_record()
+            this_asset_cache.asset_id           = asset_data.asset_id
+            this_asset_cache.asset_name         = asset_data.name
+            this_asset_cache.asset_symbol       = asset_data.symbol
+            self.session.add(this_asset_cache)
+            self.session.commit()
+
     def received_snapshot(self, searched_snapshots_result):
         self.the_last_snapshots_time = searched_snapshots_result.data[-1].created_at
         print(self.the_last_snapshots_time)
         self.transaction_statusBar.showMessage(wallet_api.snapshot_time_difference_now(searched_snapshots_result.data[-1]))
         for eachsnapshots in searched_snapshots_result.data:
             asset_symbol = self.fetch_asset_symbol_from_asset_id(eachsnapshots.asset.asset_id)
-            if asset_symbol == None:
-                this_asset_cache              = mixin_sqlalchemy_type.Mixin_asset_record()
-                this_asset_cache.asset_id     = eachsnapshots.asset.asset_id
-                this_asset_cache.asset_name   = eachsnapshots.asset.name
-                this_asset_cache.asset_symbol = eachsnapshots.asset.symbol
-                self.session.add(this_asset_cache)
-                self.session.commit()
-
+            self.add_asset_into_localdb_if_never_see(eachsnapshots.asset)
             if (eachsnapshots.is_my_snap()):
                 found_snapshot_quantity = len(self.session.query(mixin_sqlalchemy_type.MySnapshot).filter_by(snap_snapshot_id = eachsnapshots.snapshot_id).all())
                 if(found_snapshot_quantity == 0):
@@ -1252,6 +1247,8 @@ class MainWindow(QMainWindow):
             asset_id_from_server = []
             for eachAsset in balance_result.data:
                 asset_id_from_server.append(eachAsset.asset_id)
+                self.add_asset_into_localdb_if_never_see(eachAsset)
+
             for default_id in mixin_asset_id_collection.MIXIN_DEFAULT_CHAIN_GROUP:
                 if not (default_id in asset_id_from_server):
                     asset_balance_result = self.selected_wallet_record.get_singleasset_balance(default_id)
@@ -1677,14 +1674,8 @@ class MainWindow(QMainWindow):
 
     def received_asset_balance(self, asset):
         if asset.is_success:
-            asset_symbol = self.fetch_asset_symbol_from_asset_id(asset.data.asset_id)
-            if asset_symbol == None:
-                this_asset_cache = mixin_sqlalchemy_type.Mixin_asset_record()
-                this_asset_cache.asset_id = asset.data.asset_id
-                this_asset_cache.asset_name = asset.data.name
-                this_asset_cache.asset_symbol = asset.data.symbol
-                self.session.add(this_asset_cache)
-                self.session.commit()
+            self.add_asset_into_localdb_if_never_see(asset.data)
+
     def fetch_asset_symbol_from_asset_id(self, asset_id_string):
         known_assets = self.session.query(mixin_sqlalchemy_type.Mixin_asset_record).filter_by(asset_id = asset_id_string).all()
         if len(known_assets) == 0:
@@ -1989,7 +1980,8 @@ class MainWindow(QMainWindow):
             i += 1
 
         quote_target_asset_selection.currentIndexChanged.connect(self.ocean_target_asset_change)
-        self.ocean_target_asset_selection_asset = self.ocean_target_id_name[0]
+        if len(self.ocean_target_id_name):
+            self.ocean_target_asset_selection_asset = self.ocean_target_id_name[0]
 
 
         self.ocean_target_asset_id_input = QLineEdit()
@@ -2031,7 +2023,6 @@ class MainWindow(QMainWindow):
 
         price_layout = QHBoxLayout()
         self.price_unit = QLabel()
-        self.price_unit.setText(self.ocean_base_asset_selection_asset[0] + " per " + self.ocean_target_asset_selection_asset.asset_symbol)
 
         price_layout.addWidget(self.ocean_target_asset_price_input)
         price_layout.addWidget(self.price_unit)
@@ -2049,11 +2040,6 @@ class MainWindow(QMainWindow):
         update_asset_balance_worker.signals.result.connect(self.update_ocean_pay_amount_base)
         self.threadPool.start(update_asset_balance_worker)
 
-        self.ocean_target_asset_sell_amount_input.setPlaceholderText("% amount"%self.ocean_target_id_name[0].asset_symbol)
-        update_asset_balance_worker = ReadAsset_Info_Thread(self.selected_wallet_record, self.ocean_target_id_name[0].asset_id)
-        update_asset_balance_worker.signals.result.connect(self.update_ocean_pay_amount_target)
-        self.threadPool.start(update_asset_balance_worker)
-
 
         amount_widget = QWidget()
         amount_widget.setLayout(amount_layout)
@@ -2061,10 +2047,18 @@ class MainWindow(QMainWindow):
         amount_sell_widget.setLayout(amount_sell_layout)
 
 
-        self.ocean_buy_btn = QPushButton("Buy "+ self.ocean_target_id_name[0].asset_symbol)
+        self.ocean_buy_btn = QPushButton("Buy ")
         self.ocean_buy_btn.pressed.connect(self.ocean_make_buy_order)
-        self.ocean_sell_btn = QPushButton("Sell " + self.ocean_target_id_name[0].asset_symbol)
+        self.ocean_sell_btn = QPushButton("Sell")
         self.ocean_sell_btn.pressed.connect(self.ocean_make_sell_order)
+        if len(self.ocean_target_id_name):
+            self.price_unit.setText(self.ocean_base_asset_selection_asset[0] + " per " + self.ocean_target_asset_selection_asset.asset_symbol)
+            self.ocean_target_asset_sell_amount_input.setPlaceholderText("% amount"%self.ocean_target_id_name[0].asset_symbol)
+            update_asset_balance_worker = ReadAsset_Info_Thread(self.selected_wallet_record, self.ocean_target_id_name[0].asset_id)
+            update_asset_balance_worker.signals.result.connect(self.update_ocean_pay_amount_target)
+            self.threadPool.start(update_asset_balance_worker)
+            self.ocean_buy_btn.setText("Buy "+ self.ocean_target_id_name[0].asset_symbol)
+            self.ocean_sell_btn.setText("Sell " + self.ocean_target_id_name[0].asset_symbol)
 
         history_btn = QPushButton("Ocean history in local wallet")
         history_btn.pressed.connect(self.ocean_open_history)
