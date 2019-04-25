@@ -1723,11 +1723,11 @@ class MainWindow(QMainWindow):
     def update_ocean_pay_amount_base(self, asset_info):
         print("ocean pay amount base is finished for %s"%asset_info.data.symbol)
         if asset_info.is_success:
-            self.ocean_target_asset_amount_input.setPlaceholderText("% amount, %s in wallet"%(asset_info.data.symbol, asset_info.data.balance))
+            self.ocean_target_asset_amount_input.setPlaceholderText("%s amount, %s in wallet"%(asset_info.data.symbol, asset_info.data.balance))
         return
     def update_ocean_pay_amount_target(self, asset_info):
         if asset_info.is_success:
-            self.ocean_target_asset_sell_amount_input.setPlaceholderText("% amount, %s in wallet"%(asset_info.data.symbol, asset_info.data.balance))
+            self.ocean_target_asset_sell_amount_input.setPlaceholderText("%s amount, %s in wallet"%(asset_info.data.symbol, asset_info.data.balance))
         return
     def known_assets(self):
         know_asset_id_name_groups = self.session.query(mixin_sqlalchemy_type.Mixin_asset_record).order_by(mixin_sqlalchemy_type.Mixin_asset_record.id.asc()).all()
