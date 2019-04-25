@@ -378,9 +378,21 @@ def find_snapshot_of(client_id, in_snapshots):
     return mysnapshots_result
 def snapshot_time_difference_now(snap_shopt):
     diff = time.time() - iso8601.parse_date(snap_shopt.created_at).timestamp()
+    remain = (", timestamp: %s"%snap_shopt.created_at)
     if int(diff) > 0:
-        return "%s seconds remain"%(int(diff))
-    return "synced"
+        diff_in_day = int(diff/(60 * 60 * 24))
+        if diff_in_day > 0:
+            return "Receiving records happened %s day ago"%(diff_in_day) + remain
+        diff_in_hour = int(diff/(60 * 60))
+        if diff_in_hour > 0:
+            return "Receiving records happened %s hour ago"%(diff_in_hour) + remain
+
+        diff_in_minute = int(diff/(60))
+        if diff_in_minute > 0:
+            return "Receiving records happened %s minute ago"%(diff_in_minute) + remain
+        return "Receiving records happened %s seconds ago"%(int(diff)) + remain
+    else:
+        return "synced " + remain
 def append_wallet_into_csv_file(this_wallet, file_name):
     with open(file_name, 'a', newline='') as csvfile:
         csvwriter = csv.writer(csvfile)
