@@ -1615,7 +1615,9 @@ class MainWindow(QMainWindow):
 
     def received_ocean_result(self, oceanResult):
         if hasattr(oceanResult, "timestamp"):
-            ask_order_model = OceanOrder_TableModel(None, reversed(oceanResult.ask_order_list), ["Ask price in " + self.ocean_base_asset_selection_asset[0], "Ask " + self.ocean_target_asset_selection_asset.asset_symbol + " amount", "Funds in " + self.ocean_base_asset_selection_asset[0]])
+            ocean_target_asset_selection_asset = self.get_ocean_target_asset_selection_asset()
+            if ocean_target_asset_selection_asset != None:
+                ask_order_model = OceanOrder_TableModel(None, reversed(oceanResult.ask_order_list), ["Ask price in " + self.ocean_base_asset_selection_asset[0], "Ask " + ocean_target_asset_selection_asset.asset_symbol + " amount", "Funds in " + self.ocean_base_asset_selection_asset[0]])
             self.ocean_order_ask_book_widget.setModel(ask_order_model)
             self.ocean_order_ask_book_widget.update()
             self.ocean_order_ask_book_widget.selectRow(len(oceanResult.ask_order_list) - 1)
@@ -1641,14 +1643,26 @@ class MainWindow(QMainWindow):
             self.threadPool.start(update_asset_name_worker)
 
         else:
-            ocean_worker = Ocean_Thread(self.ocean_base_asset_selection_asset[1], self.ocean_target_asset_selection_asset.asset_id)
-        ocean_worker.signals.result.connect(self.received_ocean_result)
-        #ocean_worker.signals.finished.connect(self.thread_complete)
-        self.threadPool.start(ocean_worker)
+            current_selection = self.quote_target_asset_selection.currentIndex()
+            ocean_target_asset_selection_asset = self.get_ocean_target_asset_selection_asset()
+            if ocean_target_asset_selection_asset != None:
+                ocean_worker = Ocean_Thread(self.ocean_base_asset_selection_asset[1], ocean_target_asset_selection_asset.asset_id)
+                ocean_worker.signals.result.connect(self.received_ocean_result)
+                #ocean_worker.signals.finished.connect(self.thread_complete)
+                self.threadPool.start(ocean_worker)
+
+    def get_ocean_target_asset_selection_asset(self):
+        current_selection = self.quote_target_asset_selection.currentIndex()
+        if current_selection >= 0 and current_selection < len(self.ocean_target_id_name):
+            return self.ocean_target_id_name[current_selection]
+        else:
+            return None
 
     def ocean_base_asset_change(self, indexActived):
         self.ocean_base_asset_selection_asset = self.ocean_id_name[indexActived]
-        self.price_unit.setText(self.ocean_base_asset_selection_asset[0] + " per " + self.ocean_target_asset_selection_asset.asset_symbol)
+        ocean_target_asset_selection_asset = self.get_ocean_target_asset_selection_asset()
+        if ocean_target_asset_selection_asset != None:
+            self.price_unit.setText(self.ocean_base_asset_selection_asset[0] + " per " + ocean_target_asset_selection_asset.asset_symbol)
 
         update_asset_balance_worker = ReadAsset_Info_Thread(self.selected_wallet_record, self.ocean_base_asset_selection_asset[1])
         update_asset_balance_worker.signals.result.connect(self.update_ocean_pay_amount_base)
@@ -1661,15 +1675,15 @@ class MainWindow(QMainWindow):
 
     def ocean_target_asset_change(self, indexActived):
         print("indexActived%d"%indexActived)
-        self.ocean_target_asset_selection_asset = self.ocean_target_id_name[indexActived]
-        self.price_unit.setText(self.ocean_base_asset_selection_asset[0] + " per " + self.ocean_target_asset_selection_asset.asset_symbol)
-        self.ocean_buy_btn.setText("Buy "+ self.ocean_target_asset_selection_asset.asset_symbol)
-        self.ocean_sell_btn.setText("Sell "+ self.ocean_target_asset_selection_asset.asset_symbol)
-        update_asset_balance_worker = ReadAsset_Info_Thread(self.selected_wallet_record, self.ocean_target_asset_selection_asset.asset_id)
-        update_asset_balance_worker.signals.result.connect(self.update_ocean_pay_amount_target)
-        self.threadPool.start(update_asset_balance_worker)
-
-        self.fetchOceanPrice()
+        ocean_target_asset_selection_asset = self.get_ocean_target_asset_selection_asset()
+        if ocean_target_asset_selection_asset != None:
+            self.price_unit.setText(self.ocean_base_asset_selection_asset[0] + " per " + ocean_target_asset_selection_asset.asset_symbol)
+            self.ocean_buy_btn.setText("Buy "+ ocean_target_asset_selection_asset.asset_symbol)
+            self.ocean_sell_btn.setText("Sell "+ ocean_target_asset_selection_asset.asset_symbol)
+            update_asset_balance_worker = ReadAsset_Info_Thread(self.selected_wallet_record, ocean_target_asset_selection_asset.asset_id)
+            update_asset_balance_worker.signals.result.connect(self.update_ocean_pay_amount_target)
+            self.threadPool.start(update_asset_balance_worker)
+            self.fetchOceanPrice()
 
     def received_asset_balance(self, asset):
         if asset.is_success:
@@ -1710,7 +1724,9 @@ class MainWindow(QMainWindow):
             price  = float(changedText)
             amount = float(self.ocean_target_asset_amount_input.text())
             if amount > 0 and price > 0:
-                self.order_funds_label.setText("%s %s"%(str(amount/price), self.ocean_target_asset_selection_asset.asset_symbol))
+                ocean_target_asset_selection_asset = self.get_ocean_target_asset_selection_asset()
+                if ocean_target_asset_selection_asset != None:
+                    self.order_funds_label.setText("%s %s"%(str(amount/price), ocean_target_asset_selection_asset.asset_symbol))
             amount = float(self.ocean_target_asset_sell_amount_input.text())
             if amount > 0 and price > 0:
                 self.order_funds_sell_label.setText("%s %s"%(str(amount/price), self.ocean_base_asset_selection_asset[0]))
@@ -1722,7 +1738,9 @@ class MainWindow(QMainWindow):
             amount = float(changedText)
             price = float(self.ocean_target_asset_price_input.text())
             if amount > 0 and price > 0:
-                self.order_funds_label.setText("%s %s"%(str(amount/price), self.ocean_target_asset_selection_asset.asset_symbol))
+                ocean_target_asset_selection_asset = self.get_ocean_target_asset_selection_asset()
+                if ocean_target_asset_selection_asset != None:
+                    self.order_funds_label.setText("%s %s"%(str(amount/price), ocean_target_asset_selection_asset.asset_symbol))
         except ValueError:
             return
     def ocean_sell_amount_change(self, changedText):
@@ -1891,7 +1909,10 @@ class MainWindow(QMainWindow):
         
     def ocean_make_sell_order(self):
         current_base_asset   = self.ocean_base_asset_selection_asset[1]
-        current_target_asset = self.ocean_target_asset_selection_asset.asset_id
+        ocean_target_asset_selection_asset = self.get_ocean_target_asset_selection_asset()
+        if ocean_target_asset_selection_asset == None:
+            return
+        current_target_asset = ocean_target_asset_selection_asset.asset_id
         current_amount       = self.ocean_target_asset_sell_amount_input.text()
         current_price        = self.ocean_target_asset_price_input.text()
         current_input_pin    = self.ocean_pin_input.text()
@@ -1923,7 +1944,10 @@ class MainWindow(QMainWindow):
 
     def ocean_make_buy_order(self):
         current_base_asset   = self.ocean_base_asset_selection_asset[1]
-        current_target_asset = self.ocean_target_asset_selection_asset.asset_id
+        ocean_target_asset_selection_asset = self.get_ocean_target_asset_selection_asset()
+        if ocean_target_asset_selection_asset == None:
+            return
+        current_target_asset = ocean_target_asset_selection_asset.asset_id
         current_amount       = self.ocean_target_asset_amount_input.text()
         current_price        = self.ocean_target_asset_price_input.text()
         current_input_pin    = self.ocean_pin_input.text()
@@ -1969,26 +1993,22 @@ class MainWindow(QMainWindow):
 
         self.ocean_base_asset_selection_asset= self.ocean_id_name[0]
 
-        quote_target_asset_selection = QComboBox()
+        self.quote_target_asset_selection = QComboBox()
         known_asset_list = self.known_assets()
         i = 0
         self.ocean_target_id_name = []
         for each in known_asset_list:
-            quote_target_asset_selection.insertItem(i, each.asset_symbol + " asset", each.asset_id)
+            self.quote_target_asset_selection.insertItem(i, each.asset_symbol + " asset", each.asset_id)
             self.ocean_target_id_name.append(each)
             i += 1
 
-        quote_target_asset_selection.currentIndexChanged.connect(self.ocean_target_asset_change)
-        if len(self.ocean_target_id_name):
-            self.ocean_target_asset_selection_asset = self.ocean_target_id_name[0]
-
-
+        self.quote_target_asset_selection.currentIndexChanged.connect(self.ocean_target_asset_change)
         self.ocean_target_asset_id_input = QLineEdit()
         self.ocean_target_asset_id_input.setPlaceholderText("Asset id")
 
         quote_layout = QHBoxLayout()
         quote_layout.addWidget(quote_asset_selection)
-        quote_layout.addWidget(quote_target_asset_selection)
+        quote_layout.addWidget(self.quote_target_asset_selection)
 
         quote_widget = QWidget()
         quote_widget.setLayout(quote_layout)
@@ -2051,7 +2071,9 @@ class MainWindow(QMainWindow):
         self.ocean_sell_btn = QPushButton("Sell")
         self.ocean_sell_btn.pressed.connect(self.ocean_make_sell_order)
         if len(self.ocean_target_id_name):
-            self.price_unit.setText(self.ocean_base_asset_selection_asset[0] + " per " + self.ocean_target_asset_selection_asset.asset_symbol)
+            ocean_target_asset_selection_asset = self.get_ocean_target_asset_selection_asset()
+            if ocean_target_asset_selection_asset != None:
+                self.price_unit.setText(self.ocean_base_asset_selection_asset[0] + " per " + ocean_target_asset_selection_asset.asset_symbol)
             self.ocean_target_asset_sell_amount_input.setPlaceholderText("% amount"%self.ocean_target_id_name[0].asset_symbol)
             update_asset_balance_worker = ReadAsset_Info_Thread(self.selected_wallet_record, self.ocean_target_id_name[0].asset_id)
             update_asset_balance_worker.signals.result.connect(self.update_ocean_pay_amount_target)
