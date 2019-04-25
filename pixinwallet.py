@@ -2011,6 +2011,10 @@ class MainWindow(QMainWindow):
         quote_layout = QHBoxLayout()
         quote_layout.addWidget(quote_asset_selection)
         quote_layout.addWidget(self.quote_target_asset_selection)
+        reload_ocean_target_btn = QPushButton("reload asset list")
+        reload_ocean_target_btn.pressed.connect(self.reload_ocean_target_selection_asset)
+        quote_layout.addWidget(reload_ocean_target_btn)
+
 
         quote_widget = QWidget()
         quote_widget.setLayout(quote_layout)
