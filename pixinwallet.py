@@ -242,7 +242,6 @@ class CreateAccount_Thread(QRunnable):
                     this_balance = new_wallet.get_singleasset_balance(eachAssetID)
                     if(this_balance.is_success):
                         self.signals.progress.emit("Generated deposit address for " + this_balance.data.name)
-                        self.add_asset_into_localdb_if_never_see(this_balance.data)
                 self.signals.result.emit(self.user_input_file)
             else:
                 self.signals.progress.emit("Failed to create wallet")
