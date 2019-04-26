@@ -291,6 +291,50 @@ class SnapExplain_TableModel(QAbstractTableModel):
             return self.header[col]
         return None
 
+class AssetIntro_TableModel(QAbstractTableModel):
+    """
+    keep the method names
+    they are an integral part of the model
+    """
+    def __init__(self, parent, eachAsset, balance_result_list, *args):
+        QAbstractTableModel.__init__(self, parent, *args)
+        thisRecord = []
+
+        thisRecord.append(eachAsset.name)
+        chain_name = foundMainChainName(eachAsset.chain_id, balance_result_list)
+        if chain_name != False:
+            thisRecord.append(chain_name)
+            if asset_is_main_chain_token(eachAsset):
+                thisRecord.append("Main chain token")
+            else:
+                thisRecord.append(chain_name + " contract : " + eachAsset.asset_key)
+        else:
+            thisRecord.append(eachAsset.chain_id)
+            thisRecord.append(eachAsset.asset_key)
+
+        thisRecord.append("https://mixin.one/snapshots/"+eachAsset.asset_id)
+        self.mylist = thisRecord
+        self.header = ["Name", "Main chain", "Asset type", "asset id"]
+    def rowCount(self, parent):
+        return len(self.mylist)
+    def columnCount(self, parent):
+        return 1       
+    def data(self, index, role):
+        if not index.isValid():
+            return None
+
+        value = self.mylist[index.row()]
+        if role == Qt.EditRole:
+            return value
+        elif role == Qt.DisplayRole:
+            return value
+
+    def headerData(self, col, orientation, role):
+        if orientation == Qt.Vertical and role == Qt.DisplayRole:
+            return self.header[col]
+        return None
+
+
 
 class AssetDetail_TableModel(QAbstractTableModel):
     """
@@ -391,6 +435,47 @@ class Balance_TableModel(QAbstractTableModel):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             return self.header[col]
         return None
+
+class MixinAsset_TableModel(QAbstractTableModel):
+    """
+    keep the method names
+    they are an integral part of the model
+    """
+    def __init__(self, parent, mixin_asset_record, header = ["name", "symbol", "asset-id"], *args):
+        QAbstractTableModel.__init__(self, parent, *args)
+        finalData = []
+        for eachOrder in mixin_asset_record:
+            thisRecord = []
+            thisRecord.append(eachOrder.asset_name)
+            thisRecord.append(eachOrder.asset_symbol)
+            thisRecord.append("https://mixin.one/snapshots/"+eachOrder.asset_id)
+            finalData.append(thisRecord)
+
+        self.mylist = finalData
+        self.header = header
+
+    def rowCount(self, parent):
+        return len(self.mylist)
+
+    def columnCount(self, parent):
+        if len(self.mylist) > 0:
+            return len(self.mylist[0])
+        return 0
+        
+    def data(self, index, role):
+        if not index.isValid():
+            return None
+        value = self.mylist[index.row()][index.column()]
+        if role == Qt.EditRole:
+            return value
+        elif role == Qt.DisplayRole:
+            return value
+
+    def headerData(self, col, orientation, role):
+        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+            return self.header[col]
+        return None
+
 
 class OceanOrder_TableModel(QAbstractTableModel):
 
@@ -1685,6 +1770,8 @@ class MainWindow(QMainWindow):
         if ocean_target_asset_selection_asset != None:
             self.price_unit.setText(quote_asset[0] + " per " + ocean_target_asset_selection_asset.asset_symbol)
 
+
+        self.ocean_target_asset_amount_input.setPlaceholderText("%s amount"%(quote_asset[0]))
         update_asset_balance_worker = ReadAsset_Info_Thread(self.selected_wallet_record, quote_asset[1])
         update_asset_balance_worker.signals.result.connect(self.update_ocean_pay_amount_base)
         self.threadPool.start(update_asset_balance_worker)
@@ -1702,6 +1789,8 @@ class MainWindow(QMainWindow):
             self.price_unit.setText(quote_asset[0] + " per " + ocean_target_asset_selection_asset.asset_symbol)
             self.ocean_buy_btn.setText("Buy "+ ocean_target_asset_selection_asset.asset_symbol)
             self.ocean_sell_btn.setText("Sell "+ ocean_target_asset_selection_asset.asset_symbol)
+            self.ocean_target_asset_sell_amount_input.setPlaceholderText("%s amount"%(ocean_target_asset_selection_asset.asset_symbol))
+
             update_asset_balance_worker = ReadAsset_Info_Thread(self.selected_wallet_record, ocean_target_asset_selection_asset.asset_id)
             update_asset_balance_worker.signals.result.connect(self.update_ocean_pay_amount_target)
             self.threadPool.start(update_asset_balance_worker)
@@ -1728,6 +1817,16 @@ class MainWindow(QMainWindow):
     def update_ocean_pay_amount_target(self, asset_info):
         if asset_info.is_success:
             self.ocean_target_asset_sell_amount_input.setPlaceholderText("%s amount, %s in wallet"%(asset_info.data.symbol, asset_info.data.balance))
+            self.asset_detail_in_ocean_page.setModel(AssetIntro_TableModel(None, asset_info.data, self.account_balance))
+            self.asset_detail_in_ocean_page.update()
+            header = self.asset_detail_in_ocean_page.verticalHeader()       
+            header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
+            header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+            header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
+            header = self.asset_detail_in_ocean_page.horizontalHeader()       
+            header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
+
+
         return
     def known_assets(self):
         know_asset_id_name_groups = self.session.query(mixin_sqlalchemy_type.Mixin_asset_record).order_by(mixin_sqlalchemy_type.Mixin_asset_record.id.asc()).all()
@@ -2027,17 +2126,18 @@ class MainWindow(QMainWindow):
         quote_layout = QHBoxLayout()
         quote_layout.addWidget(self.quote_asset_selection)
         quote_layout.addWidget(self.quote_target_asset_selection)
-        reload_ocean_target_btn = QPushButton("reload asset list")
+        reload_ocean_target_btn = QPushButton("load more")
         reload_ocean_target_btn.pressed.connect(self.reload_ocean_target_selection_asset)
         quote_layout.addWidget(reload_ocean_target_btn)
-
-
         quote_widget = QWidget()
         quote_widget.setLayout(quote_layout)
 
 
         operation_this_layout = QVBoxLayout()
         operation_this_layout.addWidget(quote_widget)
+
+        self.asset_detail_in_ocean_page = QTableView()
+        operation_this_layout.addWidget(self.asset_detail_in_ocean_page)
         operation_this_layout.addWidget(self.ocean_target_asset_id_input)
 
         fetchOceanPriceBtn = QPushButton("Get price")
