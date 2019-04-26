@@ -299,22 +299,38 @@ class AssetIntro_TableModel(QAbstractTableModel):
     def __init__(self, parent, eachAsset, balance_result_list, *args):
         QAbstractTableModel.__init__(self, parent, *args)
         thisRecord = []
+        self.header = []
 
         thisRecord.append(eachAsset.name)
+        self.header.append("Name")
         chain_name = foundMainChainName(eachAsset.chain_id, balance_result_list)
         if chain_name != False:
             thisRecord.append(chain_name)
+            self.header.append("Main chain")
             if asset_is_main_chain_token(eachAsset):
-                thisRecord.append("Main chain token")
+                thisRecord.append("Main chain native token")
+                self.header.append("token type")
             else:
-                thisRecord.append(chain_name + " contract : " + eachAsset.asset_key)
+                thisRecord.append("Token issued by contract")
+                self.header.append("token type")
+                if eachAsset.chain_id == mixin_asset_id_collection.ETH_ASSET_ID:
+                    thisRecord.append("https://etherscan.io/address/" + eachAsset.asset_key)
+                    self.header.append("Info on main chain")
+                elif eachAsset.chain_id == mixin_asset_id_collection.EOS_ASSET_ID:
+                    thisRecord.append("https://eosflare.io/token/" + eachAsset.asset_key.replace(":", "/"))
+                    self.header.append("Info on main chain")
+                else:
+                    self.header.append("token contract on main chain")
+                    thisRecord.append(chain_name + " contract : " + eachAsset.asset_key)
         else:
             thisRecord.append(eachAsset.chain_id)
+            self.header.append("Chain ID")
             thisRecord.append(eachAsset.asset_key)
+            self.header.append("asset key")
 
         thisRecord.append("https://mixin.one/snapshots/"+eachAsset.asset_id)
+        self.header.append("Info on Mixin Newtork")
         self.mylist = thisRecord
-        self.header = ["Name", "Main chain", "Asset type", "asset id"]
     def rowCount(self, parent):
         return len(self.mylist)
     def columnCount(self, parent):
