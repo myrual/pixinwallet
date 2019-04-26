@@ -2153,8 +2153,9 @@ class MainWindow(QMainWindow):
         operation_this_layout.addWidget(quote_widget)
 
         self.asset_detail_in_ocean_page = QTableView()
-        operation_this_layout.addWidget(self.asset_detail_in_ocean_page)
+
         operation_this_layout.addWidget(self.ocean_target_asset_id_input)
+        operation_this_layout.addWidget(self.asset_detail_in_ocean_page)
 
         fetchOceanPriceBtn = QPushButton("Get price")
         fetchOceanPriceBtn.pressed.connect(self.fetchOceanPrice)
