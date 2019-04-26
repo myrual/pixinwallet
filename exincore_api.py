@@ -106,8 +106,8 @@ class Exin_execute_request(Exin_execute):
         super().__init__(EXIN_EXEC_TYPE_REQUEST)
     def explain(self):
         headString = "order: %s, pay %s %s to exin to buy %s "%(self.order, self.pay_amount, self.pay_asset.symbol, self.request_asset)
-        header = ["order", "action", "pay amount", "pay asset", "required asset id"]
-        data   = [self.order, self.pay_amount, self.pay_asset.symbol, self.request_asset]
+        header = ["opponent", "order", "action", "pay amount", "pay asset", "required asset id"]
+        data   = ["exin", self.order, self.pay_amount, self.pay_asset.symbol, self.request_asset]
         return (header, data)
 
     def __str__(self):
@@ -126,6 +126,8 @@ class Exin_execute_result(Exin_execute):
     def explain(self):
         header = []
         data   = []
+        header.append("opponent")
+        data.append("exin")
         if(self.order_result == 1000):
             header.append("exin result")
             data.append("Success")
