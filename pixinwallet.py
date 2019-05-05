@@ -1370,45 +1370,6 @@ class MainWindow(QMainWindow):
         self.update_asset_address_detail(self.withdraw_address_instance_in_item, self.withdraw_address_of_asset_detail_label)
         self.remove_address_btn.setDisabled(False)
 
-    def update_transaction_list_record_detail(self):
-        totalString = ""
-        totalString += ("UTC Timestamp: %s\n"%self.transaction_record_in_item.snap_created_at)
-        totalString += ("opponent: %s\n"%self.transaction_record_in_item.snap_opponent_id)
-        totalString += ("asset name: %s\n"%self.transaction_record_in_item.snap_asset_name)
-        totalString += ("type: %s\n"%self.transaction_record_in_item.snap_type)
-        totalString += ("memo: %s\n"%self.transaction_record_in_item.snap_memo)
-        singleSnapShot                  = wallet_api.Snapshot()
-        singleSnapShot.snapshot_id      = self.transaction_record_in_item.snap_snapshot_id
-        singleSnapShot.type             = self.transaction_record_in_item.snap_type
-        singleSnapShot.amount           = self.transaction_record_in_item.snap_amount
-        singleSnapShot.created_at       = self.transaction_record_in_item.snap_created_at
-        singleSnapShot.asset            = wallet_api.Static_Asset()
-
-        singleSnapShot.asset.asset_id   = self.transaction_record_in_item.snap_asset_asset_id
-        singleSnapShot.asset.chain_id   = self.transaction_record_in_item.snap_asset_chain_id
-        singleSnapShot.asset.name       = self.transaction_record_in_item.snap_asset_name
-        singleSnapShot.asset.symbol     = self.transaction_record_in_item.snap_asset_symbol
-        singleSnapShot.source           = self.transaction_record_in_item.snap_source
-        singleSnapShot.user_id          = self.transaction_record_in_item.snap_user_id
-        singleSnapShot.opponent_id      = self.transaction_record_in_item.snap_opponent_id
-        singleSnapShot.trace_id         = self.transaction_record_in_item.snap_trace_id
-        singleSnapShot.memo             = self.transaction_record_in_item.snap_memo
-
-
-        is_exin = exincore_api.about_me(singleSnapShot)
-        if(is_exin):
-            totalString += ("ExinChange: %s\n"%str(is_exin))
-        self.transaction_record_detail.setText(totalString)
-
-
-    def transaction_list_record_actived(self, itemCurr, itemPre):
-        self.transaction_record_in_item = itemCurr.data(0x0100)
-        self.update_transaction_list_record_detail()
-
-    def transaction_list_record_selected(self, itemSelect):
-        self.transaction_record_in_item = itemSelect.data(0x0100)
-        self.update_transaction_list_record_detail()
-
     def update_exin_detail(self):
         self.selected_trade_buy_btn.setText("Buy " + self.selected_exin_result.exchange_asset_symbol)
         self.selected_trade_buy_btn.setDisabled(False)
@@ -1475,7 +1436,7 @@ class MainWindow(QMainWindow):
             header = self.transaction_record_explain_table.horizontalHeader()       
             header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
         else:
-            self.transaction_record_explain_table.setModel(SnapExplain_TableModel(None, [], []))
+            self.transaction_record_explain_table.setModel(SnapExplain_TableModel(None, ["https://mixin.one/snapshots/" + thisSnapshot.snapshot_id], ["snapshotid"]))
             self.transaction_record_explain_table.update()
 
 
