@@ -35,5 +35,5 @@ app = BUNDLE(exe,
              icon=None,
              bundle_identifier=None,
              info_plist={
-                'NSHighResolutionCapable': 'True','CFBundleShortVersionString':'0.0.7'
+                'NSHighResolutionCapable': 'True','CFBundleShortVersionString':'0.0.8'
              })
