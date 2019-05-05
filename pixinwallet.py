@@ -822,10 +822,11 @@ class MainWindow(QMainWindow):
 
     def balance_load_thread_complete(self):
         print("Balance THREAD COMPLETE")
-        worker = Balance_Thread(self.selected_wallet_record, 60)
-        worker.signals.result.connect(self.received_balance_result)
-        worker.signals.finished.connect(self.balance_load_thread_complete)
-        self.threadPool.start(worker)
+        if self.account_tab_widget.currentIndex() == 0:
+            worker = Balance_Thread(self.selected_wallet_record, 60)
+            worker.signals.result.connect(self.received_balance_result)
+            worker.signals.finished.connect(self.balance_load_thread_complete)
+            self.threadPool.start(worker)
 
     def create_wallet_confirm_chosen_block(self,user_input_name, user_input_pin, user_input_file):
 
