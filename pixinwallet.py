@@ -814,11 +814,11 @@ class MainWindow(QMainWindow):
         print("THREAD COMPLETE")
     def exin_thread_complete(self):
         print("EXIN THREAD COMPLETE")
-        exin_worker = ExinPrice_Thread(mixin_asset_id_collection.USDT_ASSET_ID, "", 60)
-        exin_worker.signals.result.connect(self.received_exin_result)
-        exin_worker.signals.finished.connect(self.exin_thread_complete)
-        self.threadPool.start(exin_worker)
-
+        if self.account_tab_widget.currentIndex() == 1:
+            exin_worker = ExinPrice_Thread(mixin_asset_id_collection.USDT_ASSET_ID, "", 60)
+            exin_worker.signals.result.connect(self.received_exin_result)
+            exin_worker.signals.finished.connect(self.exin_thread_complete)
+            self.threadPool.start(exin_worker)
 
     def balance_load_thread_complete(self):
         print("Balance THREAD COMPLETE")
@@ -1833,14 +1833,15 @@ class MainWindow(QMainWindow):
     def update_ocean_pay_amount_target(self, asset_info):
         if asset_info.is_success:
             self.ocean_target_asset_sell_amount_input.setPlaceholderText("%s amount, %s in wallet"%(asset_info.data.symbol, asset_info.data.balance))
-            self.asset_detail_in_ocean_page.setModel(AssetIntro_TableModel(None, asset_info.data, self.account_balance))
-            self.asset_detail_in_ocean_page.update()
-            header = self.asset_detail_in_ocean_page.verticalHeader()       
-            header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
-            header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
-            header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
-            header = self.asset_detail_in_ocean_page.horizontalHeader()       
-            header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
+            if hasattr(self, "account_balance"):
+                self.asset_detail_in_ocean_page.setModel(AssetIntro_TableModel(None, asset_info.data, self.account_balance))
+                self.asset_detail_in_ocean_page.update()
+                header = self.asset_detail_in_ocean_page.verticalHeader()       
+                header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
+                header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+                header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
+                header = self.asset_detail_in_ocean_page.horizontalHeader()       
+                header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
 
 
         return
@@ -2157,7 +2158,7 @@ class MainWindow(QMainWindow):
         operation_this_layout.addWidget(self.ocean_target_asset_id_input)
         operation_this_layout.addWidget(self.asset_detail_in_ocean_page)
 
-        fetchOceanPriceBtn = QPushButton("Get price")
+        fetchOceanPriceBtn = QPushButton("Load order")
         fetchOceanPriceBtn.pressed.connect(self.fetchOceanPrice)
         operation_this_layout.addWidget(fetchOceanPriceBtn)
 
@@ -2288,6 +2289,7 @@ class MainWindow(QMainWindow):
         order_book_layout = QVBoxLayout()
         order_book_layout.addWidget(self.ocean_order_ask_book_widget)
         order_book_layout.addWidget(self.ocean_order_bid_book_widget)
+        order_book_layout.setAlignment(Qt.AlignCenter)
         order_book_widget = QWidget()
         order_book_widget.setLayout(order_book_layout)
         final_widget = QWidget()
@@ -2395,6 +2397,12 @@ class MainWindow(QMainWindow):
         print("tab is changed" + str(index))
         if index == 0:
             self.update_balance()
+        if index == 1:
+            exin_worker = ExinPrice_Thread(mixin_asset_id_collection.USDT_ASSET_ID, "")
+            exin_worker.signals.result.connect(self.received_exin_result)
+            exin_worker.signals.finished.connect(self.exin_thread_complete)
+            self.threadPool.start(exin_worker)
+
         if index == 3:
             self.update_transaction_history()
 
@@ -2455,12 +2463,6 @@ class MainWindow(QMainWindow):
             self.account_tab_widget.addTab(transaction_history_detail_widget, "Transactions")
             self.account_tab_widget.show()
             self.account_tab_widget.currentChanged.connect(self.tab_is_selected)
-
-            exin_worker = ExinPrice_Thread(mixin_asset_id_collection.USDT_ASSET_ID, "")
-            exin_worker.signals.result.connect(self.received_exin_result)
-            exin_worker.signals.finished.connect(self.exin_thread_complete)
-
-            self.threadPool.start(exin_worker)
         else:
             return
 
