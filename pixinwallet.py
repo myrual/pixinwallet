@@ -695,6 +695,46 @@ class TransactionHistoryTableModel(QAbstractTableModel):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             return self.header[col]
         return None
+
+class TopAsset_TableModel(QAbstractTableModel):
+    """
+    keep the method names
+    they are an integral part of the model
+    """
+    def __init__(self, parent, topasset_list, header, *args):
+        QAbstractTableModel.__init__(self, parent, *args)
+        finalData = []
+        for eachAsset in topasset_list:
+            thisRecord = []
+            thisRecord.append(eachAsset.symbol)
+            thisRecord.append("{:,}".format(int(float(eachAsset.capitalization))))
+            thisRecord.append(eachAsset.price_usd)
+            finalData.append(thisRecord)
+        self.mylist = finalData
+        self.header = header
+
+    def rowCount(self, parent):
+        return len(self.mylist)
+
+    def columnCount(self, parent):
+        if len(self.mylist) > 0:
+            return len(self.mylist[0])
+        return 0
+        
+    def data(self, index, role):
+        if not index.isValid():
+            return None
+        value = self.mylist[index.row()][index.column()]
+        if role == Qt.EditRole:
+            return value
+        elif role == Qt.DisplayRole:
+            return value
+
+    def headerData(self, col, orientation, role):
+        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+            return self.header[col]
+        return None
+
 class MainWindow(QMainWindow):
     def __init__(self, *args, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
@@ -2372,6 +2412,7 @@ class MainWindow(QMainWindow):
             top_asset_list = wallet_api.top_asset_mixin_network()
             for each in top_asset_list:
                 print("%s %s"%(each.symbol, each.capitalization))
+            self.mixin_network_security_widget.setModel(TopAsset_TableModel(None, top_asset_list, ["Symbol", "Total value in USD", "Price"]))
 
     def update_balance(self):
         worker = Balance_Thread(self.selected_wallet_record)
@@ -2420,10 +2461,7 @@ class MainWindow(QMainWindow):
             transaction_history_detail_widget = QWidget()
             transaction_history_detail_widget.setLayout(transaction_history_detail_layout)
 
-            mixin_network_security_layout = QHBoxLayout()
-            mixin_network_security_layout.addWidget(QLabel("Mixin Network status"))
-            mixin_network_security_widget = QWidget()
-            mixin_network_security_widget.setLayout(mixin_network_security_layout)
+            self.mixin_network_security_widget = QTableView()
 
             self.exin_title_trade_list_detail = self.create_exin_exchange_widget()
             self.oceanone_title_trade_list_detail = self.create_ocean_exchange_widget()
@@ -2433,7 +2471,7 @@ class MainWindow(QMainWindow):
             self.account_tab_widget.addTab(self.exin_title_trade_list_detail, "Instant Exin Exchange")
             self.account_tab_widget.addTab(self.oceanone_title_trade_list_detail, "OceanOne exchange")
             self.account_tab_widget.addTab(transaction_history_detail_widget, "Transactions")
-            self.account_tab_widget.addTab(mixin_network_security_widget, "Mixin Network status")
+            self.account_tab_widget.addTab(self.mixin_network_security_widget, "Mixin Network status")
             self.account_tab_widget.show()
             self.account_tab_widget.currentChanged.connect(self.tab_is_selected)
         else:
