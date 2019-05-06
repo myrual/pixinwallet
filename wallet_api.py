@@ -123,6 +123,7 @@ class Asset(Static_Asset):
         self.asset_key = jsonInput.get("asset_key")
         self.price_usd = jsonInput.get("price_usd")
         self.confirmations = jsonInput.get("confirmations")
+        self.capitalization = jsonInput.get("capitalization")
 
     def deposit_address(self):
         result_desposit = []
@@ -282,6 +283,18 @@ def fetchTokenForCreateUser(body, url):
     r = requests.post(url, json=body, headers=headers)
     result_obj = r.json()
     return result_obj.get("token")
+
+def top_asset_mixin_network():
+
+    headers = {
+        'Content-Type': 'application/json',
+        'Content-length': '0',
+    }
+    response = requests.get('https://api.mixin.one/network/assets/top', headers=headers)
+    result_obj = response.json()
+    if "data" in result_obj:
+        asset_array = result_obj.get("data")
+        return Asset_list(asset_array)
 
 
 class WalletRecord():

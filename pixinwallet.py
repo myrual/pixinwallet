@@ -736,6 +736,7 @@ class MainWindow(QMainWindow):
         self.timer.start()
 
         self.threadPool = QThreadPool()
+        self.threadPool.setMaxThreadCount(8)
         print("Multithreading with maximum %d threads" % self.threadPool.maxThreadCount())
     def create_transaction_history(self, all_transaction_history_list):
 
@@ -2367,6 +2368,10 @@ class MainWindow(QMainWindow):
 
         if index == 3:
             self.update_transaction_history()
+        if index == 4:
+            top_asset_list = wallet_api.top_asset_mixin_network()
+            for each in top_asset_list:
+                print("%s %s"%(each.symbol, each.capitalization))
 
     def update_balance(self):
         worker = Balance_Thread(self.selected_wallet_record)
@@ -2415,6 +2420,11 @@ class MainWindow(QMainWindow):
             transaction_history_detail_widget = QWidget()
             transaction_history_detail_widget.setLayout(transaction_history_detail_layout)
 
+            mixin_network_security_layout = QHBoxLayout()
+            mixin_network_security_layout.addWidget(QLabel("Mixin Network status"))
+            mixin_network_security_widget = QWidget()
+            mixin_network_security_widget.setLayout(mixin_network_security_layout)
+
             self.exin_title_trade_list_detail = self.create_exin_exchange_widget()
             self.oceanone_title_trade_list_detail = self.create_ocean_exchange_widget()
 
@@ -2423,6 +2433,7 @@ class MainWindow(QMainWindow):
             self.account_tab_widget.addTab(self.exin_title_trade_list_detail, "Instant Exin Exchange")
             self.account_tab_widget.addTab(self.oceanone_title_trade_list_detail, "OceanOne exchange")
             self.account_tab_widget.addTab(transaction_history_detail_widget, "Transactions")
+            self.account_tab_widget.addTab(mixin_network_security_widget, "Mixin Network status")
             self.account_tab_widget.show()
             self.account_tab_widget.currentChanged.connect(self.tab_is_selected)
         else:
