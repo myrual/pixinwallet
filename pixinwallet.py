@@ -1886,6 +1886,30 @@ class MainWindow(QMainWindow):
                     self.order_funds_label.setText("%s %s"%(str(amount/price), ocean_target_asset_selection_asset.asset_symbol))
         except ValueError:
             return
+
+    def mixin_node_change(self, changedText):
+        try:
+            totalNodes = int(changedText)
+
+            self.maximum_failed_node_mixin_label.setText("Mixin Network can still work even %d node stopped"%wallet_api.minimum_nodes_attack_mixin(totalNodes))
+            minimum_value_to_stop_text = "The minimum cost to stop Mixin Network is %d xin token"%(wallet_api.minimum_nodes_attack_mixin(totalNodes)* 10000)
+
+            minimum_value_to_control_text = "The cost to control Mixin Network is %d XIN token"%(wallet_api.minimum_nodes_control_mixin(totalNodes) * 10000)
+            if hasattr(self, "xin_token_price"):
+                minimum_usd_to_stop = wallet_api.minimum_nodes_attack_mixin(totalNodes)* 10000 * float(self.xin_token_price)
+                minimum_value_to_stop_text += " , about "
+                minimum_value_to_stop_text += "{:,}".format(minimum_usd_to_stop)
+                minimum_value_to_stop_text += " USD"
+
+                minimum_usd_to_control = wallet_api.minimum_nodes_control_mixin(totalNodes)* 10000 * float(self.xin_token_price)
+                minimum_value_to_control_text += ", about "
+                minimum_value_to_control_text += "{:,}".format(minimum_usd_to_control)
+                minimum_value_to_control_text += " USD"
+
+            self.minimum_node_to_stop_mixin_label.setText(minimum_value_to_stop_text)
+            self.minimum_node_to_control_mixin_label.setText(minimum_value_to_control_text)
+        except ValueError:
+            return
     def ocean_sell_amount_change(self, changedText):
         try:
             amount = float(changedText)
@@ -2410,9 +2434,15 @@ class MainWindow(QMainWindow):
             self.update_transaction_history()
         if index == 4:
             top_asset_list = wallet_api.top_asset_mixin_network()
+            self.total_value_exclude_xin_token = 0
             for each in top_asset_list:
                 print("%s %s"%(each.symbol, each.capitalization))
-            self.mixin_network_security_widget.setModel(TopAsset_TableModel(None, top_asset_list, ["Symbol", "Total value in USD", "Price"]))
+                if each.asset_id == mixin_asset_id_collection.XIN_ASSET_ID:
+                    self.xin_token_price = each.price_usd
+                else:
+                    self.total_value_exclude_xin_token += float(each.capitalization)
+            self.mixin_network_topasset_table.setModel(TopAsset_TableModel(None, top_asset_list, ["Symbol", "Total value in USD", "Price"]))
+            self.total_asset_usd_value_exclude_xin_label.setText("{:,}".format(int(self.total_value_exclude_xin_token)) + " USD asset(exclude XIN token) in Mixin Network")
 
     def update_balance(self):
         worker = Balance_Thread(self.selected_wallet_record)
@@ -2461,7 +2491,26 @@ class MainWindow(QMainWindow):
             transaction_history_detail_widget = QWidget()
             transaction_history_detail_widget.setLayout(transaction_history_detail_layout)
 
-            self.mixin_network_security_widget = QTableView()
+            self.mixin_network_topasset_table = QTableView()
+            mixin_network_security_layer = QVBoxLayout()
+            mixin_network_security_layer.addWidget(QLabel("Total mixin nodes:"))
+            self.total_mixin_node_input = QLineEdit()
+            self.total_mixin_node_input.textChanged.connect(self.mixin_node_change)
+            mixin_network_security_layer.addWidget(self.total_mixin_node_input)
+
+            self.total_asset_usd_value_exclude_xin_label = QLabel("")
+            self.maximum_failed_node_mixin_label = QLabel("0")
+            self.minimum_node_to_stop_mixin_label = QLabel("A")
+            self.minimum_node_to_control_mixin_label = QLabel("B")
+            mixin_network_security_layer.addWidget(self.maximum_failed_node_mixin_label)
+            mixin_network_security_layer.addWidget(self.minimum_node_to_stop_mixin_label)
+            mixin_network_security_layer.addWidget(self.minimum_node_to_control_mixin_label)
+            mixin_network_security_layer.addWidget(self.total_asset_usd_value_exclude_xin_label)
+
+            mixin_network_security_layer.addWidget(self.mixin_network_topasset_table)
+            mixin_network_security_widget = QWidget()
+            mixin_network_security_widget.setLayout(mixin_network_security_layer)
+            
 
             self.exin_title_trade_list_detail = self.create_exin_exchange_widget()
             self.oceanone_title_trade_list_detail = self.create_ocean_exchange_widget()
@@ -2471,7 +2520,7 @@ class MainWindow(QMainWindow):
             self.account_tab_widget.addTab(self.exin_title_trade_list_detail, "Instant Exin Exchange")
             self.account_tab_widget.addTab(self.oceanone_title_trade_list_detail, "OceanOne exchange")
             self.account_tab_widget.addTab(transaction_history_detail_widget, "Transactions")
-            self.account_tab_widget.addTab(self.mixin_network_security_widget, "Mixin Network status")
+            self.account_tab_widget.addTab(mixin_network_security_widget, "Mixin Network status")
             self.account_tab_widget.show()
             self.account_tab_widget.currentChanged.connect(self.tab_is_selected)
         else:

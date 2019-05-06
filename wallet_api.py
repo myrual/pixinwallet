@@ -297,6 +297,18 @@ def top_asset_mixin_network():
         return Asset_list(asset_array)
 
 
+def find_f_in_pbft(totalNodes):
+    for f in range(totalNodes):
+        if(((3*f+1) <= totalNodes) and ((3 * f + 4) > totalNodes)):
+            return f
+    return 0
+    
+def minimum_nodes_attack_mixin(totalNodes):
+    return find_f_in_pbft(totalNodes) + 1
+
+def minimum_nodes_control_mixin(totalNodes):
+    return find_f_in_pbft(totalNodes) * 2 + 1
+
 class WalletRecord():
     def __init__(self, pin, userid, session_id, pin_token, private_key):
        self.pin = pin
