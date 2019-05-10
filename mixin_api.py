@@ -513,12 +513,30 @@ class MIXIN_API:
 
         else:
             encrypted_pin = input_encrypted_pin
-        body = {'asset_id': to_asset_id, 'counter_user_id': to_user_id, 'amount': str(to_asset_amount),
+        body = {'asset_id': to_asset_id, 'opponent_id': to_user_id, 'amount': str(to_asset_amount),
                 'pin': encrypted_pin.decode('utf8'), 'trace_id': trace_uuid, 'memo': memo}
         if trace_uuid == "":
             body['trace_id'] = str(uuid.uuid1())
 
         return self.__genNetworkPostRequest('/transfers', body)
+
+    def transferTo_MainNet(self, to_account_key, to_asset_id, to_asset_amount, memo, trace_uuid="", input_pin = "", input_encrypted_pin = ""):
+
+        if input_encrypted_pin == "":
+            # generate encrypted pin
+            if (input_pin == ""):
+                encrypted_pin = self.genEncrypedPin()
+            else:
+                encrypted_pin = self.genEncrypedPin_withPin(input_pin)
+
+        else:
+            encrypted_pin = input_encrypted_pin
+        body = {'asset_id': to_asset_id, 'opponent_key': to_account_key, 'amount': str(to_asset_amount),
+                'pin': encrypted_pin.decode('utf8'), 'trace_id': trace_uuid, 'memo': memo}
+        if trace_uuid == "":
+            body['trace_id'] = str(uuid.uuid1())
+
+        return self.__genNetworkPostRequest('/transactions', body)
 
     """
     Read transfer by trace ID.

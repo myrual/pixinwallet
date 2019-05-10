@@ -975,8 +975,36 @@ class MainWindow(QMainWindow):
         worker.signals.result.connect(self.received_asset_withdraw_addresses_result)
         worker.signals.finished.connect(self.thread_complete)
         self.threadPool.start(worker)
+    def close_Create_Mainnet_Windows(self):
+        self.create_withdraw_address_widget.close()
+        if True:
+            for i in self.mainnet_address_list:
+                self.mainnet_withdraw_addresses_list_widget.takeItem(0)
+            self.mainnet_address_list = []
 
+            Main_net_address_list = self.session.query(mixin_sqlalchemy_type.Main_net_address).all()
+            for each_mainnet_address in Main_net_address_list:
+                this_list_item = QListWidgetItem()
+                this_list_item.setData(0x0100, each_mainnet_address)
+                this_list_item.setText(each_mainnet_address.name)
+                self.mainnet_withdraw_addresses_list_widget.addItem(this_list_item)
+                self.mainnet_address_list.append(this_list_item)
+            self.mainnet_withdraw_addresses_list_widget.update()
         return
+
+
+    def pressed_create_mainnet_withdraw_address(self):
+        print("Account tag %s, deposit address %s"%(self.account_tag_edit.text(), self.public_key_edit.text()))
+        new_main_net_address = mixin_sqlalchemy_type.Main_net_address()
+        new_main_net_address.name = self.account_tag_edit.text()
+        new_main_net_address.address = self.public_key_edit.text()
+        self.session.add(new_main_net_address)
+        self.session.commit()
+
+        OK_button = QPushButton("Done")
+        OK_button.pressed.connect(self.close_Create_Mainnet_Windows)
+        self.create_withdraw_address_layout.addWidget(OK_button)
+
     def pressed_create_withdraw_address_bitcoin(self):
         print("Account tag %s, deposit address %s, pin %s"%(self.account_tag_edit.text(), self.public_key_edit.text(), self.asset_pin_edit.text()))
         self.Add_address_btn.setDisabled(True)
@@ -1135,7 +1163,20 @@ class MainWindow(QMainWindow):
         self.remove_withdraw_address__widget = QWidget()
         self.remove_withdraw_address__widget.setLayout(remove_withdraw_address_layout)
         self.remove_withdraw_address__widget.show()
+    def pop_Remove_mainnet_withdraw_address_window_bitcoinstyle(self):
+        self.session.delete(self.mainnet_address_instance_in_item)
+        for i in self.mainnet_address_list:
+            self.mainnet_withdraw_addresses_list_widget.takeItem(0)
+        self.mainnet_address_list = []
 
+        Main_net_address_list = self.session.query(mixin_sqlalchemy_type.Main_net_address).all()
+        for each_mainnet_address in Main_net_address_list:
+            this_list_item = QListWidgetItem()
+            this_list_item.setData(0x0100, each_mainnet_address)
+            this_list_item.setText(each_mainnet_address.name)
+            self.mainnet_withdraw_addresses_list_widget.addItem(this_list_item)
+            self.mainnet_address_list.append(this_list_item)
+        self.mainnet_withdraw_addresses_list_widget.update()
 
     def pop_create_withdraw_address_window_eosstyle(self):
 
@@ -1162,6 +1203,30 @@ class MainWindow(QMainWindow):
         create_withdraw_address_layout.addWidget(Add_address_btn)
 
         self.create_withdraw_address_eos_layout = create_withdraw_address_layout
+
+        self.create_withdraw_address_widget = QWidget()
+        self.create_withdraw_address_widget.setLayout(create_withdraw_address_layout)
+        self.create_withdraw_address_widget.show()
+
+
+    def pop_create_mainnet_address_window_bitcoinstyle(self):
+
+
+        account_tag_widget    = QLabel("Account alias:")
+        self.account_tag_edit = QLineEdit()
+        public_key_widget     = QLabel("Mixin main net address:")
+        self.public_key_edit  = QLineEdit()
+        Add_mainnet_address_btn       = QPushButton("Create")
+        Add_mainnet_address_btn.pressed.connect(self.pressed_create_mainnet_withdraw_address)
+
+        create_withdraw_address_layout = QVBoxLayout()
+        create_withdraw_address_layout.addWidget(account_tag_widget)
+        create_withdraw_address_layout.addWidget(self.account_tag_edit)
+        create_withdraw_address_layout.addWidget(public_key_widget)
+        create_withdraw_address_layout.addWidget(self.public_key_edit)
+        create_withdraw_address_layout.addWidget(Add_mainnet_address_btn)
+
+        self.create_withdraw_address_layout = create_withdraw_address_layout
 
         self.create_withdraw_address_widget = QWidget()
         self.create_withdraw_address_widget.setLayout(create_withdraw_address_layout)
@@ -1508,7 +1573,15 @@ class MainWindow(QMainWindow):
         self.balance_selected_row = index.row()
         self.asset_instance_in_item = self.account_balance[self.balance_selected_row]
         self.selected_asset_send.setDisabled(False)
-        self.selected_asset_send.setText("Send " + self.asset_instance_in_item.name)
+        self.selected_asset_send.setText("Send %s to %s address"%(self.asset_instance_in_item.name, self.asset_instance_in_item.name))
+        if self.asset_instance_in_item.asset_id == mixin_asset_id_collection.CNB_ASSET_ID or self.asset_instance_in_item.asset_id == mixin_asset_id_collection.XIN_ASSET_ID:
+            self.selected_asset_send_to_main_net.setDisabled(False)
+            self.selected_asset_send_to_main_net.setText("Send %s to Mixin address"%self.asset_instance_in_item.name)
+            self.selected_asset_manageasset_mainnet.setDisabled(False)
+        else:
+            self.selected_asset_send_to_main_net.setDisabled(True)
+            self.selected_asset_send_to_main_net.setText("Send %s to Mixin address"%self.asset_instance_in_item.name)
+            self.selected_asset_manageasset_mainnet.setDisabled(True)
         self.selected_asset_manageasset.setDisabled(False)
         self.selected_asset_show_history.setDisabled(False)
         self.selected_asset_show_history.setText("Open history of " + self.asset_instance_in_item.name)
@@ -1546,13 +1619,35 @@ class MainWindow(QMainWindow):
             return
 
         self.withdraw_address_instance_in_item = itemSelect.data(0x0100)
-        self.update_asset_address_detail(self.withdraw_address_instance_in_item)
+        self.update_asset_address_detail(self.withdraw_address_instance_in_item, self.withdraw_address_of_asset_detail_label)
+
         self.remove_address_btn.setDisabled(False)
+    def mainnet_withdraw_address_list_record_selection_actived(self,itemCurr, itemPre):
+        if itemCurr == None:
+            self.withdraw_address_of_asset_detail_label.setText("")
+            return
+        self.mainnet_address_instance_in_item = itemCurr.data(0x0100)
+        self.withdraw_address_of_asset_detail_label.setText("Address:%s"%(self.mainnet_address_instance_in_item.address))
+        self.remove_address_btn.setDisabled(False)
+
+    def mainnet_address_list_record_selected(self, itemSelect):
+        if itemSelect == None:
+            return
+
+        self.mainnet_address_instance_in_item = itemSelect.data(0x0100)
+        self.withdraw_address_of_asset_detail_label.setText("Address:%s"%(self.mainnet_address_instance_in_item.address))
+        self.remove_address_btn.setDisabled(False)
+
     def send_withdrawaddress_list_record_indexChanged(self, indexActived):
         print("index changed %d"%indexActived)
         self.selected_withdraw_address = self.withdraw_address_of_asset_list[indexActived]
         self.update_asset_address_detail(self.selected_withdraw_address, self.send_address_title_widget)
         self.send_asset_to_withdraw_address_btn.setDisabled(False)
+    def send_mainnet_withdrawaddress_list_record_indexChanged(self, indexActived):
+        print("index changed %d"%indexActived)
+        self.selected_mainnet_withdraw_address = self.mainnet_address_list[indexActived]
+        self.send_asset_to_withdraw_address_btn.setDisabled(False)
+        self.send_address_title_widget.setText("to %s !"%(self.selected_mainnet_withdraw_address.address))
 
     def pay_to_exin_pressed(self, base_asset, echange_asset):
         self.trade_exin_widget.close()
@@ -1571,8 +1666,23 @@ class MainWindow(QMainWindow):
             congratulations_msg.setText("Failed to pay, reason %s" % str(tranfer_result))
             congratulations_msg.exec_()
 
+
     def send_asset_to_withdraw_address_pressed(self):
         withdraw_asset_result = self.selected_wallet_record.withdraw_asset_to(self.selected_withdraw_address.address_id, self.send_amount_edit_Label_widget.text(), "", "", self.send_pin_edit_Label_widget.text())
+        if withdraw_asset_result.is_success:
+            self.update_balance()
+            self.send_asset_widget.close()
+            congratulations_msg = QMessageBox()
+            congratulations_msg.setText("Your withdraw operation is successful, verify it on blockchain explorer on https://mixin.one/snapshots/%s" % withdraw_asset_result.data.snapshot_id)
+            congratulations_msg.setTextInteractionFlags(Qt.TextSelectableByMouse)
+            congratulations_msg.exec_()
+        else:
+            congratulations_msg = QMessageBox()
+            congratulations_msg.setText("Failed to send, reason %s" % str(withdraw_asset_result))
+            congratulations_msg.exec_()
+
+    def send_asset_to_mainnet_address_pressed(self):
+        withdraw_asset_result = self.selected_wallet_record.transfer_to_mainnet(self.selected_mainnet_withdraw_address.address, self.asset_instance_in_item.asset_id, self.mainnet_send_amount_edit_Label_widget.text(), "", "", self.send_pin_edit_Label_widget.text())
         if withdraw_asset_result.is_success:
             self.update_balance()
             self.send_asset_widget.close()
@@ -1635,6 +1745,59 @@ class MainWindow(QMainWindow):
             return
 
 
+    def send_asset_to_address_of_mainnet(self):
+        if (hasattr(self, "asset_instance_in_item")):
+            send_asset_title_label_widget = QLabel("Send " + self.asset_instance_in_item.name + " to Mixin Address")
+            send_amount_title_widget = QLabel("amount, %s %s available"%(self.asset_instance_in_item.balance, self.asset_instance_in_item.symbol))
+            self.mainnet_send_amount_edit_Label_widget = QLineEdit()
+
+            send_pin_title_widget = QLabel("Asset pin:")
+            self.send_pin_edit_Label_widget = QLineEdit()
+            self.send_pin_edit_Label_widget.setMaxLength(6)
+            self.send_pin_edit_Label_widget.setEchoMode(QLineEdit.Password)
+            self.send_address_title_widget = QLabel("to ")
+
+            self.send_address_selection_widget = QComboBox()
+            Main_net_address_list = self.session.query(mixin_sqlalchemy_type.Main_net_address).all()
+            self.mainnet_address_list = []
+
+            i = 0
+            for each_address in Main_net_address_list:
+                self.send_address_selection_widget.insertItem(i, each_address.name, userData = each_address)
+                self.mainnet_address_list.append(each_address)
+                i += 1
+ 
+            self.send_address_selection_widget.currentIndexChanged.connect(self.send_mainnet_withdrawaddress_list_record_indexChanged)
+            if len(Main_net_address_list) > 0:
+                self.send_address_title_widget.setText("to %s !"%self.mainnet_address_list[0].address)
+                self.selected_mainnet_withdraw_address = self.mainnet_address_list[0]
+            else:
+                self.send_asset_to_withdraw_address_btn.setDisabled(True)
+            self.send_asset_to_withdraw_address_btn = QPushButton("Send")
+            self.send_asset_to_withdraw_address_btn.pressed.connect(self.send_asset_to_mainnet_address_pressed)
+
+            send_asset_layout = QVBoxLayout()
+            send_asset_layout.addWidget(send_asset_title_label_widget)
+            send_asset_layout.addWidget(self.send_address_title_widget)
+            send_asset_layout.addWidget(self.send_address_selection_widget)
+
+            send_asset_layout.addWidget(send_amount_title_widget)
+
+            send_asset_layout.addWidget(self.mainnet_send_amount_edit_Label_widget)
+            send_asset_layout.addWidget(send_pin_title_widget)
+            send_asset_layout.addWidget(self.send_pin_edit_Label_widget)
+
+            send_asset_layout.addWidget(self.send_asset_to_withdraw_address_btn)
+            self.send_asset_widget = QWidget()
+            self.send_asset_widget.setLayout(send_asset_layout)
+            self.send_asset_widget.show()
+
+        else:
+            return
+
+
+
+
     def send_asset_to_address(self):
         if (hasattr(self, "asset_instance_in_item")):
             send_asset_title_label_widget = QLabel("Send " + self.asset_instance_in_item.name + " to:")
@@ -1673,6 +1836,61 @@ class MainWindow(QMainWindow):
             worker.signals.result.connect(self.received_send_withdraw_addresses_result)
             worker.signals.finished.connect(self.thread_complete)
             self.threadPool.start(worker)
+        else:
+            return
+
+
+
+    def open_manage_main_net_address(self):
+        if (hasattr(self, "asset_instance_in_item")):
+            add_withdraw_address_asset_btn = QPushButton("Add new address")
+            add_withdraw_address_asset_btn.pressed.connect(self.pop_create_mainnet_address_window_bitcoinstyle)
+
+            self.withdraw_addresses_list_and_new_layout = QVBoxLayout()
+            self.withdraw_addresses_list_and_new_layout.addWidget(add_withdraw_address_asset_btn)
+            self.mainnet_withdraw_addresses_list_widget = QListWidget()
+            Main_net_address_list = self.session.query(mixin_sqlalchemy_type.Main_net_address).all()
+
+            self.mainnet_address_list = []
+            for each_mainnet_address in Main_net_address_list:
+                this_list_item = QListWidgetItem()
+                this_list_item.setData(0x0100, each_mainnet_address)
+                this_list_item.setText(each_mainnet_address.name)
+                print(each_mainnet_address.name)
+                self.mainnet_withdraw_addresses_list_widget.addItem(this_list_item)
+                self.mainnet_address_list.append(this_list_item)
+
+            self.mainnet_withdraw_addresses_list_widget.itemClicked.connect(self.mainnet_address_list_record_selected)
+            self.mainnet_withdraw_addresses_list_widget.currentItemChanged.connect(self.mainnet_withdraw_address_list_record_selection_actived)
+            self.withdraw_address_list = []
+
+
+            self.withdraw_addresses_list_and_new_layout.addWidget(self.mainnet_withdraw_addresses_list_widget)
+
+
+            withdraw_addresses_list_and_new_widget = QWidget()
+            withdraw_addresses_list_and_new_widget.setLayout(self.withdraw_addresses_list_and_new_layout)
+
+            self.withdraw_address_of_asset_detail_label = QLabel()
+            remove_address_btn = QPushButton("Delete")
+            remove_address_btn.pressed.connect(self.pop_Remove_mainnet_withdraw_address_window_bitcoinstyle)
+            remove_address_btn.setDisabled(True)
+            self.remove_address_btn = remove_address_btn
+
+            withdraw_addresses_detail_layout = QVBoxLayout()
+
+
+            withdraw_addresses_detail_layout.addWidget(self.withdraw_address_of_asset_detail_label)
+            withdraw_addresses_detail_layout.addWidget(remove_address_btn)
+
+            withdraw_addresses_detail_widget = QWidget()
+            withdraw_addresses_detail_widget.setLayout(withdraw_addresses_detail_layout)
+            withdraw_addresses_list_and_new_detail_layout = QHBoxLayout()
+            withdraw_addresses_list_and_new_detail_layout.addWidget(withdraw_addresses_list_and_new_widget)
+            withdraw_addresses_list_and_new_detail_layout.addWidget(withdraw_addresses_detail_widget)
+            self.withdraw_addresses_list_and_new_detail_Widget = QWidget()
+            self.withdraw_addresses_list_and_new_detail_Widget.setLayout(withdraw_addresses_list_and_new_detail_layout)
+            self.withdraw_addresses_list_and_new_detail_Widget.show()
         else:
             return
 
@@ -2396,9 +2614,17 @@ class MainWindow(QMainWindow):
         self.selected_asset_send = QPushButton("Send")
         self.selected_asset_send.setDisabled(True)
         self.selected_asset_send.pressed.connect(self.send_asset_to_address)
+        self.selected_asset_send_to_main_net = QPushButton("Send to Main Net")
+        self.selected_asset_send_to_main_net.setDisabled(True)
+        self.selected_asset_send_to_main_net.pressed.connect(self.send_asset_to_address_of_mainnet)
+
         self.selected_asset_manageasset = QPushButton("Manage contact")
         self.selected_asset_manageasset.setDisabled(True)
         self.selected_asset_manageasset.pressed.connect(self.open_widget_manage_asset)
+        self.selected_asset_manageasset_mainnet = QPushButton("Manage contact for Mixin Main net")
+        self.selected_asset_manageasset_mainnet.setDisabled(True)
+        self.selected_asset_manageasset_mainnet.pressed.connect(self.open_manage_main_net_address)
+
         self.selected_asset_show_history = QPushButton("History")
         self.selected_asset_show_history.pressed.connect(self.open_asset_transaction_history)
         self.selected_asset_show_history.setDisabled(True)
@@ -2408,6 +2634,9 @@ class MainWindow(QMainWindow):
         asset_operation_layout.addWidget(self.selected_asset_send)
         asset_operation_layout.addWidget(self.selected_asset_manageasset)
         asset_operation_layout.addWidget(self.selected_asset_show_history)
+
+        asset_operation_layout.addWidget(self.selected_asset_send_to_main_net)
+        asset_operation_layout.addWidget(self.selected_asset_manageasset_mainnet)
 
         self.balance_list_tableview = QTableView()
         self.balance_list_tableview.clicked.connect(self.balance_list_record_selected)

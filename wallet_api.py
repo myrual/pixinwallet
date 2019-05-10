@@ -353,6 +353,13 @@ class WalletRecord():
         return transfer_result
 
         print(transfer_result_json)
+    def transfer_to_mainnet(self, destination_key, asset_id, amount_tosend, memo_input, this_uuid, asset_pin_input):
+        transfer_result_json = self.mixinAPIInstance.transferTo_MainNet(destination_key, asset_id, amount_tosend, memo_input, this_uuid, asset_pin_input)
+        transfer_result = Mixin_Wallet_API_Result(transfer_result_json, Transfer_result)
+        return transfer_result
+
+        print(transfer_result_json)
+
     def withdraw_asset_to(self, address_id, withdraw_amount, withdraw_memo, withdraw_this_uuid, withdraw_asset_pin):
         asset_withdraw_result_json = self.mixinAPIInstance.withdrawals(address_id, withdraw_amount, withdraw_memo, withdraw_this_uuid, withdraw_asset_pin)
         withdraw_result = Mixin_Wallet_API_Result(asset_withdraw_result_json, Withdrawal)

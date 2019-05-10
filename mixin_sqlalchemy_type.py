@@ -70,3 +70,14 @@ class Ocean_trade_record(Base):
         return "<Asset (id='%s', symbol ='%s', name ='%s')>" % (
                                 self.asset_id, self.asset_symbol, self.asset_name)
 
+class Main_net_address(Base):
+    __tablename__ = 'main_net_address'
+    # Here we define columns for the table person
+    # Notice that each column is also a normal Python instance attribute.
+    id = Column(Integer, primary_key=True)
+    name = Column(String(256))
+    address = Column(String(256))
+    def __repr__(self):
+        return "<Main net address (id='%s', symbol ='%s', name ='%s')>" % (
+                                self.id, self.name, self.address)
+
