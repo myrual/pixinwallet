@@ -89,7 +89,7 @@ class ReadAsset_Info_Thread(QRunnable):
             self.signals.result.emit(result)
         finally:
             self.signals.finished.emit()
-        print("Account snapshot Thread")
+        print("ReadAsset_Info_Thread")
 
 
 class Ocean_Thread(QRunnable):
@@ -709,6 +709,7 @@ class TopAsset_TableModel(QAbstractTableModel):
             thisRecord.append(eachAsset.symbol)
             thisRecord.append("{:,}".format(int(float(eachAsset.capitalization))))
             thisRecord.append(eachAsset.price_usd)
+            thisRecord.append("https://mixin.one/snapshots/"+eachAsset.asset_id)
             finalData.append(thisRecord)
         self.mylist = finalData
         self.header = header
@@ -845,11 +846,15 @@ class MainWindow(QMainWindow):
     def print_output(self, s):
         print(s)
     def snap_thread_complete(self):
-        header = ["Amount", "Asset", "Created at", "opponent", "Type"]
-        all_transaction_history_list = self.session.query(mixin_sqlalchemy_type.MySnapshot).order_by(mixin_sqlalchemy_type.MySnapshot.id.desc()).all()
-        this_tableModel = TransactionHistoryTableModel(None , all_transaction_history_list, header)
-        self.account_transaction_history_widget.setModel(this_tableModel)
-        self.account_transaction_history_widget.update()
+        print("snap_thread_complete, total %d active thread"%self.threadPool.activeThreadCount())
+
+    def snap_thread_error_complete(self):
+        print("snap_thread_error_complete, total %d active thread"%self.threadPool.activeThreadCount())
+        self.mysnapshots_worker = AccountsSnapshots_Thread(self.selected_wallet_record, self.the_last_snapshots_time, 10)
+        self.mysnapshots_worker.signals.result.connect(self.received_snapshot)
+        self.mysnapshots_worker.signals.finished.connect(self.snap_thread_complete)
+        self.mysnapshots_worker.signals.error.connect(self.snap_thread_error_complete)
+        self.threadPool.start(self.mysnapshots_worker)
 
     def thread_complete(self):
         print("THREAD COMPLETE")
@@ -860,6 +865,8 @@ class MainWindow(QMainWindow):
             exin_worker.signals.result.connect(self.received_exin_result)
             exin_worker.signals.finished.connect(self.exin_thread_complete)
             self.threadPool.start(exin_worker)
+        else:
+            return
 
     def balance_load_thread_complete(self):
         print("Balance THREAD COMPLETE")
@@ -868,6 +875,8 @@ class MainWindow(QMainWindow):
             worker.signals.result.connect(self.received_balance_result)
             worker.signals.finished.connect(self.balance_load_thread_complete)
             self.threadPool.start(worker)
+        else:
+            return
 
     def create_wallet_confirm_chosen_block(self,user_input_name, user_input_pin, user_input_file):
 
@@ -1299,6 +1308,7 @@ class MainWindow(QMainWindow):
             self.session.commit()
 
     def received_snapshot(self, searched_snapshots_result):
+        print("received_snapshot")
         self.the_last_snapshots_time = searched_snapshots_result.data[-1].created_at
         print(self.the_last_snapshots_time)
         self.transaction_statusBar.showMessage(wallet_api.snapshot_time_difference_now(searched_snapshots_result.data[-1]))
@@ -1354,10 +1364,12 @@ class MainWindow(QMainWindow):
         delay_seconds = 0
         if len(searched_snapshots_result.data) < 100:
             delay_seconds = 90 
-        mysnapshots_worker = AccountsSnapshots_Thread(self.selected_wallet_record, self.the_last_snapshots_time, delay_seconds)
-        mysnapshots_worker.signals.result.connect(self.received_snapshot)
-        #mysnapshots_worker.signals.finished.connect(self.snap_thread_complete)
-        self.threadPool.start(mysnapshots_worker)
+        self.mysnapshots_worker = AccountsSnapshots_Thread(self.selected_wallet_record, self.the_last_snapshots_time, delay_seconds)
+        self.mysnapshots_worker.signals.result.connect(self.received_snapshot)
+        self.mysnapshots_worker.signals.finished.connect(self.snap_thread_complete)
+        self.mysnapshots_worker.signals.error.connect(self.snap_thread_error_complete)
+        self.threadPool.start(self.mysnapshots_worker)
+
 
     def received_user_profile_result(self, user_profile_result):
         self.loggedin_user_profile = user_profile_result
@@ -1369,10 +1381,11 @@ class MainWindow(QMainWindow):
             created_at_string = lastRecord.snap_created_at
         else:
             created_at_string = self.loggedin_user_profile.data.created_at
-        mysnapshots_worker = AccountsSnapshots_Thread(self.selected_wallet_record, created_at_string)
-        mysnapshots_worker.signals.result.connect(self.received_snapshot)
-        mysnapshots_worker.signals.finished.connect(self.thread_complete)
-        self.threadPool.start(mysnapshots_worker)
+        self.mysnapshots_worker = AccountsSnapshots_Thread(self.selected_wallet_record, created_at_string)
+        self.mysnapshots_worker.signals.result.connect(self.received_snapshot)
+        self.mysnapshots_worker.signals.finished.connect(self.snap_thread_complete)
+        self.mysnapshots_worker.signals.error.connect(self.snap_thread_error_complete)
+        self.threadPool.start(self.mysnapshots_worker)
  
     def received_exin_result(self, exin_result):
         self.exin_result = exin_result
@@ -2441,7 +2454,7 @@ class MainWindow(QMainWindow):
                     self.xin_token_price = each.price_usd
                 else:
                     self.total_value_exclude_xin_token += float(each.capitalization)
-            self.mixin_network_topasset_table.setModel(TopAsset_TableModel(None, top_asset_list, ["Symbol", "Total value in USD", "Price"]))
+            self.mixin_network_topasset_table.setModel(TopAsset_TableModel(None, top_asset_list, ["Symbol", "Total value in USD", "Price", "Asset link in browser"]))
             self.total_asset_usd_value_exclude_xin_label.setText("{:,}".format(int(self.total_value_exclude_xin_token)) + " USD asset(exclude XIN token) in Mixin Network")
 
     def update_balance(self):
