@@ -1688,6 +1688,7 @@ class MainWindow(QMainWindow):
             self.send_asset_widget.close()
             congratulations_msg = QMessageBox()
             congratulations_msg.setText("Your withdraw operation is successful, verify it on blockchain explorer on https://mixin.one/snapshots/%s" % withdraw_asset_result.data.snapshot_id)
+            self.selected_wallet_record.find_snapshot(withdraw_asset_result.data.snapshot_id)
             congratulations_msg.setTextInteractionFlags(Qt.TextSelectableByMouse)
             congratulations_msg.exec_()
         else:

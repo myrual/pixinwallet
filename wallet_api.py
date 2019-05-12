@@ -275,6 +275,30 @@ class Transfer_result():
         """
         result = "Successfully transfer %s %s to %s at %s with trace id:%s, snapshot id:%s"%(self.amount, self.asset_id, self.opponent_id, self.created_at, self.trace_id, self.snapshot_id)
         return result
+
+class Transfer_Mainnet_result():
+    def __init__(self, data_dict):
+
+        self.amount       = data_dict.get("amount")
+        self.memo         = data_dict.get("memo")
+        self.snapshot_id  = data_dict.get("snapshot")
+        self.asset_id     = data_dict.get("asset_id")
+        self.type         = data_dict.get("type")
+        self.trace_id     = data_dict.get("trace_id")
+        self.opponent_key  = data_dict.get("opponent_key")
+        self.created_at   = data_dict.get("created_at")
+        self.state = data_dict.get("state")
+        self.transaction_hash = data_dict.get("transaction_hash")
+        self.snapshot_hash = data_dict.get("snapshot_hash")
+        self.snapshot_at = data_dict.get("snapshot_at")
+            
+    def __str__(self):
+        """Format: Name on the first line
+        and all grades on the second line,
+        separated by spaces.
+        """
+        result = "Successfully transfer %s %s to %s at %s with trace id:%s, snapshot id:%s, transaction hash %s, snapshot hash %s, snapshot_at %s"%(self.amount, self.asset_id, self.opponent_key, self.created_at, self.trace_id, self.snapshot_id, self.transaction_hash, self.snapshot_hash, self.snapshot_at)
+        return result
 def fetchTokenForCreateUser(body, url):
     body_in_json = json.dumps(body)
     headers = {
@@ -352,13 +376,12 @@ class WalletRecord():
         transfer_result = Mixin_Wallet_API_Result(transfer_result_json, Transfer_result)
         return transfer_result
 
-        print(transfer_result_json)
     def transfer_to_mainnet(self, destination_key, asset_id, amount_tosend, memo_input, this_uuid, asset_pin_input):
         transfer_result_json = self.mixinAPIInstance.transferTo_MainNet(destination_key, asset_id, amount_tosend, memo_input, this_uuid, asset_pin_input)
-        transfer_result = Mixin_Wallet_API_Result(transfer_result_json, Transfer_result)
+        print(transfer_result_json)
+        transfer_result = Mixin_Wallet_API_Result(transfer_result_json, Transfer_Mainnet_result)
         return transfer_result
 
-        print(transfer_result_json)
 
     def withdraw_asset_to(self, address_id, withdraw_amount, withdraw_memo, withdraw_this_uuid, withdraw_asset_pin):
         asset_withdraw_result_json = self.mixinAPIInstance.withdrawals(address_id, withdraw_amount, withdraw_memo, withdraw_this_uuid, withdraw_asset_pin)
@@ -401,6 +424,10 @@ class WalletRecord():
             else:
                 break
         return mysnapshots_result
+    def find_snapshot(self, snapshot_id):
+        snapshot_json = self.mixinAPIInstance.account_snapshot(snapshot_id)
+        print(snapshot_json)
+        return
 
 def find_snapshot_of(client_id, in_snapshots):
     mysnapshots_result = []
