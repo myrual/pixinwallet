@@ -2123,7 +2123,7 @@ class MainWindow(QMainWindow):
         try:
             totalNodes = int(changedText)
 
-            self.maximum_failed_node_mixin_label.setText("Mixin Network can still work even %d node stopped"%wallet_api.minimum_nodes_attack_mixin(totalNodes))
+            self.maximum_failed_node_mixin_label.setText("Mixin Network can still work even %d node stopped"%(wallet_api.minimum_nodes_attack_mixin(totalNodes) - 1))
             minimum_value_to_stop_text = "The minimum cost to stop Mixin Network is %d xin token"%(wallet_api.minimum_nodes_attack_mixin(totalNodes)* 10000)
 
             minimum_value_to_control_text = "The cost to control Mixin Network is %d XIN token"%(wallet_api.minimum_nodes_control_mixin(totalNodes) * 10000)
