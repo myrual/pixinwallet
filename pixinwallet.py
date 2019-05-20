@@ -701,7 +701,7 @@ class Fullnodes_TableModel(QAbstractTableModel):
     keep the method names
     they are an integral part of the model
     """
-    def __init__(self, parent, fullnodes_list, header, *args):
+    def __init__(self, parent, fullnodes_list, github_node_info, header, *args):
         QAbstractTableModel.__init__(self, parent, *args)
         finalData = []
         for eachNode in fullnodes_list:
@@ -710,6 +710,15 @@ class Fullnodes_TableModel(QAbstractTableModel):
             thisRecord.append(eachNode.node)
             thisRecord.append(eachNode.payee)
             thisRecord.append(eachNode.signer)
+            i = 0
+            for eachGithub in github_node_info:
+                if eachNode.signer == eachGithub.get("signer"):
+                    thisRecord.append(eachGithub.get("host"))
+                    break
+                else:
+                    i+=1
+            if i == len(github_node_info):
+                thisRecord.append("Anonymous")
             finalData.append(thisRecord)
         self.mylist = finalData
         self.header = header
@@ -2729,9 +2738,10 @@ class MainWindow(QMainWindow):
             self.total_asset_usd_value_exclude_xin_label.setText("{:,}".format(int(self.total_value_exclude_xin_token)) + " USD asset(exclude XIN token) in Mixin Network")
 
             main_net_info = wallet_api.main_net_info()
+            main_net_node = wallet_api.github_main_net_node_info()
             self.total_mixin_node_input.setText(str(len(main_net_info.graph.consensus)))
             self.total_node_label.setText("Total %d full nodes"%len(main_net_info.graph.consensus))
-            self.mixin_network_fullnodes_table.setModel(Fullnodes_TableModel(None, main_net_info.graph.consensus, ["State", "Node id", "Payee", "Signer"]))
+            self.mixin_network_fullnodes_table.setModel(Fullnodes_TableModel(None, main_net_info.graph.consensus, main_net_node, ["State", "Node id", "Payee", "Signer", "host"]))
 
     def update_balance(self):
         worker = Balance_Thread(self.selected_wallet_record)
