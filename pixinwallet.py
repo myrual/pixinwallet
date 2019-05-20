@@ -2726,6 +2726,11 @@ class MainWindow(QMainWindow):
         if index == 3:
             self.update_transaction_history()
         if index == 4:
+            main_net_info = wallet_api.main_net_info()
+            main_net_node = wallet_api.github_main_net_node_info()
+            self.total_node_label.setText("Total %d full nodes"%len(main_net_info.graph.consensus))
+            self.mixin_network_fullnodes_table.setModel(Fullnodes_TableModel(None, main_net_info.graph.consensus, main_net_node, ["State", "Node id", "Payee", "Signer", "host"]))
+        if index == 5:
             top_asset_list = wallet_api.top_asset_mixin_network()
             self.total_value_exclude_xin_token = 0
             for each in top_asset_list:
@@ -2737,11 +2742,6 @@ class MainWindow(QMainWindow):
             self.mixin_network_topasset_table.setModel(TopAsset_TableModel(None, top_asset_list, ["Symbol", "Total value in USD", "Price", "Asset link in browser"]))
             self.total_asset_usd_value_exclude_xin_label.setText("{:,}".format(int(self.total_value_exclude_xin_token)) + " USD asset(exclude XIN token) in Mixin Network")
 
-            main_net_info = wallet_api.main_net_info()
-            main_net_node = wallet_api.github_main_net_node_info()
-            self.total_mixin_node_input.setText(str(len(main_net_info.graph.consensus)))
-            self.total_node_label.setText("Total %d full nodes"%len(main_net_info.graph.consensus))
-            self.mixin_network_fullnodes_table.setModel(Fullnodes_TableModel(None, main_net_info.graph.consensus, main_net_node, ["State", "Node id", "Payee", "Signer", "host"]))
 
     def update_balance(self):
         worker = Balance_Thread(self.selected_wallet_record)
@@ -2811,11 +2811,15 @@ class MainWindow(QMainWindow):
             mixin_network_security_layer.addWidget(self.mixin_network_topasset_table)
             self.total_node_label = QLabel()
 
-            mixin_network_security_layer.addWidget(self.total_node_label)
-            mixin_network_security_layer.addWidget(self.mixin_network_fullnodes_table)
+            mixin_network_status_layer = QVBoxLayout()
+
+            mixin_network_status_layer.addWidget(self.total_node_label)
+            mixin_network_status_layer.addWidget(self.mixin_network_fullnodes_table)
             mixin_network_security_widget = QWidget()
             mixin_network_security_widget.setLayout(mixin_network_security_layer)
-            
+            mixin_network_status_widget = QWidget()
+            mixin_network_status_widget.setLayout(mixin_network_status_layer)
+           
 
             self.exin_title_trade_list_detail = self.create_exin_exchange_widget()
             self.oceanone_title_trade_list_detail = self.create_ocean_exchange_widget()
@@ -2825,7 +2829,9 @@ class MainWindow(QMainWindow):
             self.account_tab_widget.addTab(self.exin_title_trade_list_detail, "Instant Exin Exchange")
             self.account_tab_widget.addTab(self.oceanone_title_trade_list_detail, "OceanOne exchange")
             self.account_tab_widget.addTab(transaction_history_detail_widget, "Transactions")
-            self.account_tab_widget.addTab(mixin_network_security_widget, "Mixin Network status")
+
+            self.account_tab_widget.addTab(mixin_network_status_widget, "Mixin Network status")
+            self.account_tab_widget.addTab(mixin_network_security_widget, "Mixin Network threaten status")
             self.account_tab_widget.show()
             self.account_tab_widget.currentChanged.connect(self.tab_is_selected)
         else:

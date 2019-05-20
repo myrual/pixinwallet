@@ -365,6 +365,10 @@ def main_net_info():
         asset_array = result_obj.get("data")
         return Main_net_info(asset_array)
     return None
+def github_main_net_node_info():
+    response = requests.get('https://raw.githubusercontent.com/MixinNetwork/mixin/master/config/nodes.json')
+    result_obj = response.json()
+    return result_obj
 
 def find_f_in_pbft(totalNodes):
     for f in range(totalNodes):
