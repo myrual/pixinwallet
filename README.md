@@ -48,13 +48,15 @@ Open wallet file
 ![](https://github.com/myrual/pixinwallet/raw/master/open_wallet_file.png)
 
 Show balance
-![](https://github.com/myrual/pixinwallet/blob/master/balance_screen.png)
+![](https://github.com/myrual/pixinwallet/raw/master/balance_screen.png)
 
 Instant trade on ExinCore
-![](https://github.com/myrual/pixinwallet/blob/master/exin_exchange_screen.png)
+![](https://github.com/myrual/pixinwallet/raw/master/exin_exchange_screen.png)
 Trade asset on OceanOne
 ![](https://github.com/myrual/pixinwallet/raw/master/OceanOne_Screen.png)
 
+Current Mixin Network status
+![](https://github.com/myrual/pixinwallet/raw/master/mixin_network_status.png)
 
 ### Generate standalone macOS app by pyinstaller
 Install pyinstaller
