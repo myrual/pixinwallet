@@ -696,6 +696,47 @@ class TransactionHistoryTableModel(QAbstractTableModel):
             return self.header[col]
         return None
 
+class Fullnodes_TableModel(QAbstractTableModel):
+    """
+    keep the method names
+    they are an integral part of the model
+    """
+    def __init__(self, parent, fullnodes_list, header, *args):
+        QAbstractTableModel.__init__(self, parent, *args)
+        finalData = []
+        for eachNode in fullnodes_list:
+            thisRecord = []
+            thisRecord.append(eachNode.state)
+            thisRecord.append(eachNode.node)
+            thisRecord.append(eachNode.payee)
+            thisRecord.append(eachNode.signer)
+            finalData.append(thisRecord)
+        self.mylist = finalData
+        self.header = header
+
+    def rowCount(self, parent):
+        return len(self.mylist)
+
+    def columnCount(self, parent):
+        if len(self.mylist) > 0:
+            return len(self.mylist[0])
+        return 0
+        
+    def data(self, index, role):
+        if not index.isValid():
+            return None
+        value = self.mylist[index.row()][index.column()]
+        if role == Qt.EditRole:
+            return value
+        elif role == Qt.DisplayRole:
+            return value
+
+    def headerData(self, col, orientation, role):
+        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+            return self.header[col]
+        return None
+
+
 class TopAsset_TableModel(QAbstractTableModel):
     """
     keep the method names
@@ -2688,10 +2729,9 @@ class MainWindow(QMainWindow):
             self.total_asset_usd_value_exclude_xin_label.setText("{:,}".format(int(self.total_value_exclude_xin_token)) + " USD asset(exclude XIN token) in Mixin Network")
 
             main_net_info = wallet_api.main_net_info()
-            print(main_net_info)
-            for eachNode in main_net_info.graph.consensus:
-                print("Node: %s, state: %s, payee %s, signer %s"%(eachNode.node, eachNode.state, eachNode.payee, eachNode.signer))
-                self.total_mixin_node_input.setText(str(len(main_net_info.graph.consensus)))
+            self.total_mixin_node_input.setText(str(len(main_net_info.graph.consensus)))
+            self.total_node_label.setText("Total %d full nodes"%len(main_net_info.graph.consensus))
+            self.mixin_network_fullnodes_table.setModel(Fullnodes_TableModel(None, main_net_info.graph.consensus, ["State", "Node id", "Payee", "Signer"]))
 
     def update_balance(self):
         worker = Balance_Thread(self.selected_wallet_record)
@@ -2741,6 +2781,8 @@ class MainWindow(QMainWindow):
             transaction_history_detail_widget.setLayout(transaction_history_detail_layout)
 
             self.mixin_network_topasset_table = QTableView()
+            self.mixin_network_fullnodes_table = QTableView()
+
             mixin_network_security_layer = QVBoxLayout()
             mixin_network_security_layer.addWidget(QLabel("Total mixin nodes:"))
             self.total_mixin_node_input = QLineEdit()
@@ -2757,6 +2799,10 @@ class MainWindow(QMainWindow):
             mixin_network_security_layer.addWidget(self.total_asset_usd_value_exclude_xin_label)
 
             mixin_network_security_layer.addWidget(self.mixin_network_topasset_table)
+            self.total_node_label = QLabel()
+
+            mixin_network_security_layer.addWidget(self.total_node_label)
+            mixin_network_security_layer.addWidget(self.mixin_network_fullnodes_table)
             mixin_network_security_widget = QWidget()
             mixin_network_security_widget.setLayout(mixin_network_security_layer)
             
