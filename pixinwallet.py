@@ -2687,6 +2687,12 @@ class MainWindow(QMainWindow):
             self.mixin_network_topasset_table.setModel(TopAsset_TableModel(None, top_asset_list, ["Symbol", "Total value in USD", "Price", "Asset link in browser"]))
             self.total_asset_usd_value_exclude_xin_label.setText("{:,}".format(int(self.total_value_exclude_xin_token)) + " USD asset(exclude XIN token) in Mixin Network")
 
+            main_net_info = wallet_api.main_net_info()
+            print(main_net_info)
+            for eachNode in main_net_info.graph.consensus:
+                print("Node: %s, state: %s, payee %s, signer %s"%(eachNode.node, eachNode.state, eachNode.payee, eachNode.signer))
+                self.total_mixin_node_input.setText(str(len(main_net_info.graph.consensus)))
+
     def update_balance(self):
         worker = Balance_Thread(self.selected_wallet_record)
         worker.signals.result.connect(self.received_balance_result)

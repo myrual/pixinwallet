@@ -320,6 +320,51 @@ def top_asset_mixin_network():
         asset_array = result_obj.get("data")
         return Asset_list(asset_array)
 
+class Main_net_node():
+    def __init__(self, inputData):
+        self.node   = inputData.get("node")
+        self.payee  = inputData.get("payee")
+        self.signer = inputData.get("signer")
+        self.state  = inputData.get("state")
+
+class Main_net_graph():
+    def __init__(self, inputData):
+        self.topology  = inputData.get("topology")
+        all_consensus = inputData.get("consensus")
+        result = []
+        for each in all_consensus:
+            result.append(Main_net_node(each))
+        self.consensus = result
+
+class Main_net_queue():
+    def __init__(self, inputData):
+        self.caches       = inputData.get("caches")
+        self.finals       = inputData.get("finals")
+        self.transactions =inputData.get("transactions")
+class Main_net_info():
+    def __init__(self, inputData):
+        self.network = inputData.get("network")
+        self.node    = inputData.get("node")
+        self.version = inputData.get("version")
+        self.uptime  = inputData.get("uptime")
+        self.queue   = Main_net_queue(inputData.get("queue"))
+        self.graph   = Main_net_graph(inputData.get("graph"))
+
+    def __str__(self):
+        """Format: Name on the first line
+        and all grades on the second line,
+        separated by spaces.
+        """
+        result = "Mixin main net node status: network %s, node %s , version %s, uptime %s, topology %s, total %d nodes, "%(self.network, self.node, self.version, self.uptime, self.graph.topology, len(self.graph.consensus))
+        return result
+
+def main_net_info():
+    response = requests.get('https://api.mixinwallet.com/getinfo')
+    result_obj = response.json()
+    if "data" in result_obj:
+        asset_array = result_obj.get("data")
+        return Main_net_info(asset_array)
+    return None
 
 def find_f_in_pbft(totalNodes):
     for f in range(totalNodes):
