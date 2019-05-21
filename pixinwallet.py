@@ -2828,7 +2828,7 @@ class MainWindow(QMainWindow):
             self.account_tab_widget.addTab(self.widget_balance_widget, "Balance")
             self.account_tab_widget.addTab(self.exin_title_trade_list_detail, "Instant Exin Exchange")
             self.account_tab_widget.addTab(self.oceanone_title_trade_list_detail, "OceanOne exchange")
-            self.account_tab_widget.addTab(transaction_history_detail_widget, "Transactions")
+            self.account_tab_widget.addTab(transaction_history_detail_widget, "My transactions")
 
             self.account_tab_widget.addTab(mixin_network_status_widget, "Mixin Network status")
             self.account_tab_widget.addTab(mixin_network_security_widget, "Mixin Network threaten status")
