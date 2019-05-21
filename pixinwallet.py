@@ -118,6 +118,31 @@ class Ocean_Thread(QRunnable):
         print("Ocean Thread")
 
 
+class Mixin_node_info_Thread(QRunnable):
+    def __init__(self, *args, **kwargs):
+        super(Mixin_node_info_Thread, self).__init__()
+        self.args = args
+        self.kwargs = kwargs
+        self.signals = WorkerSignals()
+
+    @pyqtSlot()
+    def run(self):
+        try:
+            main_net_info = wallet_api.main_net_info()
+            main_net_node = wallet_api.github_main_net_node_info()
+            main_net_result = [main_net_info, main_net_node]
+
+        except:
+            traceback.print_exc()
+            exctype, value = sys.exc_info()[:2]
+            self.signals.error.emit((exctype, value, traceback.format_exc()))
+        else:
+            self.signals.result.emit(main_net_result)
+        finally:
+            self.signals.finished.emit()
+        print("Mixin_node_info_Thread")
+
+
 class MixinTopAsset_Thread(QRunnable):
     def __init__(self, *args, **kwargs):
         super(MixinTopAsset_Thread, self).__init__()
@@ -1524,6 +1549,12 @@ class MainWindow(QMainWindow):
         self.mysnapshots_worker.signals.error.connect(self.snap_thread_error_complete)
         self.threadPool.start(self.mysnapshots_worker)
  
+    def received_mixin_node_info_result(self, mixin_node_info_result):
+        main_net_info = mixin_node_info_result[0]
+        main_net_node = mixin_node_info_result[1]
+        self.total_node_label.setText("Total %d full nodes"%len(main_net_info.graph.consensus))
+        self.mixin_network_fullnodes_table.setModel(Fullnodes_TableModel(None, main_net_info.graph.consensus, main_net_node, ["State", "Node id", "Payee", "Signer", "host"]))
+
     def received_mixin_top_result(self, top_asset_list):
         self.total_value_exclude_xin_token = 0
         for each in top_asset_list:
@@ -2759,10 +2790,10 @@ class MainWindow(QMainWindow):
         if index == 3:
             self.update_transaction_history()
         if index == 4:
-            main_net_info = wallet_api.main_net_info()
-            main_net_node = wallet_api.github_main_net_node_info()
-            self.total_node_label.setText("Total %d full nodes"%len(main_net_info.graph.consensus))
-            self.mixin_network_fullnodes_table.setModel(Fullnodes_TableModel(None, main_net_info.graph.consensus, main_net_node, ["State", "Node id", "Payee", "Signer", "host"]))
+            mixin_node_info_thread = Mixin_node_info_Thread()
+            mixin_node_info_thread.signals.result.connect(self.received_mixin_node_info_result)
+            self.threadPool.start(mixin_node_info_thread)
+
         if index == 5:
             mixin_top_worker = MixinTopAsset_Thread()
             mixin_top_worker.signals.result.connect(self.received_mixin_top_result)
