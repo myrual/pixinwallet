@@ -2797,7 +2797,6 @@ class MainWindow(QMainWindow):
         if index == 5:
             mixin_top_worker = MixinTopAsset_Thread()
             mixin_top_worker.signals.result.connect(self.received_mixin_top_result)
-            mixin_top_worker.signals.finished.connect(self.exin_thread_complete)
             self.threadPool.start(mixin_top_worker)
 
     def update_balance(self):
