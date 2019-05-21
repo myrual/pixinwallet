@@ -118,6 +118,28 @@ class Ocean_Thread(QRunnable):
         print("Ocean Thread")
 
 
+class MixinTopAsset_Thread(QRunnable):
+    def __init__(self, *args, **kwargs):
+        super(MixinTopAsset_Thread, self).__init__()
+        self.args = args
+        self.kwargs = kwargs
+        self.signals = WorkerSignals()
+
+    @pyqtSlot()
+    def run(self):
+        try:
+            top_asset_list = wallet_api.top_asset_mixin_network()
+        except:
+            traceback.print_exc()
+            exctype, value = sys.exc_info()[:2]
+            self.signals.error.emit((exctype, value, traceback.format_exc()))
+        else:
+            self.signals.result.emit(top_asset_list)
+        finally:
+            self.signals.finished.emit()
+        print("ExinPrice Thread")
+
+
 class ExinPrice_Thread(QRunnable):
     def __init__(self, base_asset_id, target_asset_id = "", delay_seconds = 0,  *args, **kwargs):
         super(ExinPrice_Thread, self).__init__()
@@ -1502,6 +1524,17 @@ class MainWindow(QMainWindow):
         self.mysnapshots_worker.signals.error.connect(self.snap_thread_error_complete)
         self.threadPool.start(self.mysnapshots_worker)
  
+    def received_mixin_top_result(self, top_asset_list):
+        self.total_value_exclude_xin_token = 0
+        for each in top_asset_list:
+            print("%s %s"%(each.symbol, each.capitalization))
+            if each.asset_id == mixin_asset_id_collection.XIN_ASSET_ID:
+                self.xin_token_price = each.price_usd
+            else:
+                self.total_value_exclude_xin_token += float(each.capitalization)
+        self.mixin_network_topasset_table.setModel(TopAsset_TableModel(None, top_asset_list, ["Symbol", "Total value in USD", "Price", "Asset link in browser"]))
+        self.total_asset_usd_value_exclude_xin_label.setText("{:,}".format(int(self.total_value_exclude_xin_token)) + " USD asset(exclude XIN token) in Mixin Network")
+
     def received_exin_result(self, exin_result):
         self.exin_result = exin_result
         this_model = ExinPrice_TableModel(self, exin_result, ["price in USDT", "Asset", "Min amount", "Max amount"])
@@ -2731,17 +2764,10 @@ class MainWindow(QMainWindow):
             self.total_node_label.setText("Total %d full nodes"%len(main_net_info.graph.consensus))
             self.mixin_network_fullnodes_table.setModel(Fullnodes_TableModel(None, main_net_info.graph.consensus, main_net_node, ["State", "Node id", "Payee", "Signer", "host"]))
         if index == 5:
-            top_asset_list = wallet_api.top_asset_mixin_network()
-            self.total_value_exclude_xin_token = 0
-            for each in top_asset_list:
-                print("%s %s"%(each.symbol, each.capitalization))
-                if each.asset_id == mixin_asset_id_collection.XIN_ASSET_ID:
-                    self.xin_token_price = each.price_usd
-                else:
-                    self.total_value_exclude_xin_token += float(each.capitalization)
-            self.mixin_network_topasset_table.setModel(TopAsset_TableModel(None, top_asset_list, ["Symbol", "Total value in USD", "Price", "Asset link in browser"]))
-            self.total_asset_usd_value_exclude_xin_label.setText("{:,}".format(int(self.total_value_exclude_xin_token)) + " USD asset(exclude XIN token) in Mixin Network")
-
+            mixin_top_worker = MixinTopAsset_Thread()
+            mixin_top_worker.signals.result.connect(self.received_mixin_top_result)
+            mixin_top_worker.signals.finished.connect(self.exin_thread_complete)
+            self.threadPool.start(mixin_top_worker)
 
     def update_balance(self):
         worker = Balance_Thread(self.selected_wallet_record)
