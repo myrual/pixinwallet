@@ -326,6 +326,7 @@ class Main_net_node():
         self.payee  = inputData.get("payee")
         self.signer = inputData.get("signer")
         self.state  = inputData.get("state")
+        self.timestamp = inputData.get("timestamp")
 
 class Main_net_graph():
     def __init__(self, inputData):

@@ -12,6 +12,7 @@ import mixin_sqlalchemy_type
 import exincore_api
 import oceanone_api
 import base64
+import datetime
 
 
 class WorkerSignals(QObject):
@@ -757,6 +758,7 @@ class Fullnodes_TableModel(QAbstractTableModel):
             thisRecord.append(eachNode.node)
             thisRecord.append(eachNode.payee)
             thisRecord.append(eachNode.signer)
+
             i = 0
             for eachGithub in github_node_info:
                 if eachNode.signer == eachGithub.get("signer"):
@@ -766,6 +768,7 @@ class Fullnodes_TableModel(QAbstractTableModel):
                     i+=1
             if i == len(github_node_info):
                 thisRecord.append("Anonymous")
+            thisRecord.append(str(datetime.date.fromtimestamp((eachNode.timestamp)/(1000 * 1000 * 1000))))
             finalData.append(thisRecord)
         self.mylist = finalData
         self.header = header
@@ -1552,8 +1555,8 @@ class MainWindow(QMainWindow):
     def received_mixin_node_info_result(self, mixin_node_info_result):
         main_net_info = mixin_node_info_result[0]
         main_net_node = mixin_node_info_result[1]
-        self.total_node_label.setText("Total %d full nodes"%len(main_net_info.graph.consensus))
-        self.mixin_network_fullnodes_table.setModel(Fullnodes_TableModel(None, main_net_info.graph.consensus, main_net_node, ["State", "Node id", "Payee", "Signer", "host"]))
+        self.total_node_label.setText("Uptime: %s\nVersion: %s\n Total %d full nodes"%(main_net_info.uptime, main_net_info.version, len(main_net_info.graph.consensus)))
+        self.mixin_network_fullnodes_table.setModel(Fullnodes_TableModel(None, main_net_info.graph.consensus, main_net_node, ["State", "Node id", "Payee", "Signer", "host", "joined time"]))
 
     def received_mixin_top_result(self, top_asset_list):
         self.total_value_exclude_xin_token = 0
@@ -2790,6 +2793,8 @@ class MainWindow(QMainWindow):
         if index == 3:
             self.update_transaction_history()
         if index == 4:
+
+            self.total_node_label.setText("Loading...")
             mixin_node_info_thread = Mixin_node_info_Thread()
             mixin_node_info_thread.signals.result.connect(self.received_mixin_node_info_result)
             self.threadPool.start(mixin_node_info_thread)
@@ -2866,6 +2871,7 @@ class MainWindow(QMainWindow):
 
             mixin_network_security_layer.addWidget(self.mixin_network_topasset_table)
             self.total_node_label = QLabel()
+
 
             mixin_network_status_layer = QVBoxLayout()
 
