@@ -3,6 +3,7 @@ A Bitcoin and altcoin wallet written in python and qt. The wallet use [Mixin Net
 
 The generated account keyfile is a text file with filename "xxx.pixinkey". Your can import the content to [mixinlight](https://mixinlight.github.io) and [mixwallet](https://github.com/over140/mixwallet)
 
+The backend server code to generate token is https://github.com/awesome-mixin-network/mixin-free-token-generator-python
 [Developer resource](https://github.com/awesome-mixin-network/mixin_network_sdk_resource) of Mixin Network.
 
 [macOS application download](https://github.com/myrual/pixinwallet/releases)
