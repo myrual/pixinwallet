@@ -1,4 +1,4 @@
-# Pixin wallet: Bitcoin, altcoin wallet written in PyQt
+# Pixin wallet: Bitcoin, altcoin wallet written in PyQt（No maintainer）
 A Bitcoin and altcoin wallet written in python and qt. The wallet use [Mixin Network](https://mixin.one) to hold many cryptocurrency and keep Mixin Network account key file on your PC intead of cloud. 
 
 The generated account keyfile is a text file with filename "xxx.pixinkey". Your can import the content to [mixinlight](https://mixinlight.github.io) and [mixwallet](https://github.com/over140/mixwallet)
